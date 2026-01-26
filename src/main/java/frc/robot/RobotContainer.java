@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.vision.PoseCameraManager;
 
 public class RobotContainer {
 
@@ -46,7 +47,7 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-    private final PoseCameraManager 
+    private final PoseCameraManager poseCameraManager = new PoseCameraManager(drivetrain);
 
     public RobotContainer() {
         configureBindings();
