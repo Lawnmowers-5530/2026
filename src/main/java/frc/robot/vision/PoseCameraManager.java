@@ -20,13 +20,14 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 /**
  * Manages all pose cameras. Designed to declutter
  * {@link Swerve Swerve}.
  */
-public class PoseCameraManager {
+public class PoseCameraManager extends SubsystemBase{
     static AprilTagFieldLayout layout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
     public ArrayList<PoseCamera> camList = new ArrayList<>();
     private CommandSwerveDrivetrain swerve;
@@ -80,6 +81,7 @@ public class PoseCameraManager {
         return Optional.empty();
     }
 
+    @Override
     public void periodic() {
 
         var poseEstimates = this.getEstimatedPoses();
