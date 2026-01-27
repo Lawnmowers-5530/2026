@@ -28,7 +28,7 @@ deploy {
             artifacts {
                 // First part is artifact name, 2nd is artifact type
                 // getTargetTypeClass is a shortcut to get the class type using a string
-                
+
                 frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
                 }
 
@@ -47,7 +47,7 @@ deploy {
                     files = project.fileTree('src/main/deploy')
                     directory = '/home/lvuser/deploy'
                     deleteOldFiles = false // Change to true to delete files on roboRIO that no
-                                           // longer exist in deploy directory of this project
+                    // longer exist in deploy directory of this project
                 }
 
                 frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
@@ -72,6 +72,7 @@ def includeDesktopSupport = true
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
 dependencies {
+
     annotationProcessor wpi.java.deps.wpilibAnnotations()
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
@@ -92,6 +93,12 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.42'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
 }
 
 test {
@@ -127,25 +134,25 @@ tasks.withType(JavaCompile) {
 
 project.compileJava.dependsOn(createVersionFile)
 gversion {
-  srcDir       = "src/main/java/"
-  classPackage = "frc.robot.generated"
-  className    = "BuildConstants"
-  dateFormat   = "yyyy-MM-dd HH:mm:ss z"
-  timeZone     = "America/Detroit"
-  indent       = "  "
+    srcDir = "src/main/java/"
+    classPackage = "frc.robot.generated"
+    className = "BuildConstants"
+    dateFormat = "yyyy-MM-dd HH:mm:ss z"
+    timeZone = "America/Detroit"
+    indent = "  "
 }
 
-def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp
+def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp // binary executable deploy job for robotnative so wpilib new commands gets deployed as well, does nothing since there is no main function
 
 model {
     components {
         library(JniNativeLibrarySpec) {
-            
+
             binaries.all {
                 linker.args "-Wl,-z,now", "-Wl,-z,relro"
                 cppCompiler.args "-Wall", "-O3"
             }
-        
+
             targetPlatform wpi.platforms.roborio
 
             baseName = "RobotNative"
@@ -154,7 +161,7 @@ model {
                 cpp {
                     source {
                         srcDir project(":").file("src/main/cpp/RobotNative")
-                        include "*.cpp"
+                        include "**/*.cpp"
                     }
                     exportedHeaders {
                         srcDir project(":").file("src/main/cpp/RobotNative/include")
@@ -165,26 +172,31 @@ model {
             wpi.cpp.vendor.cpp(it)
             wpi.cpp.deps.wpilib(it)
         }
-        
-        jebaitProgram(NativeExecutableSpec) { // program to bait gradlerio into copying the wpilibnewcommands cpp library, does nothing
-            targetPlatform wpi.platforms.roborio
+
+        binary(NativeExecutableSpec) {
 
             binaries.all {
-                cppCompiler.args "-Oz"
+                linker.args "-Wl,-z,now", "-Wl,-z,relro"
+                cppCompiler.args "-Wall", "-O3"
             }
 
-            sources.cpp {
-                source {
-                    srcDir 'src/main/cpp/Jebait'
-                    include '*.cpp'
-                }
-                exportedHeaders {
-                    srcDir 'src/main/cpp/Jebait'
+            targetPlatform wpi.platforms.roborio
+
+            baseName = "RobotNative"
+
+            sources {
+                cpp {
+                    source {
+                        srcDir project(":").file("src/main/cpp/RobotNative")
+                        include "**/*.cpp"
+                    }
+                    exportedHeaders {
+                        srcDir project(":").file("src/main/cpp/RobotNative/include")
+                    }
                 }
             }
 
             deployArtifact2.component = it
-            
             wpi.cpp.vendor.cpp(it)
             wpi.cpp.deps.wpilib(it)
         }
@@ -194,12 +206,13 @@ model {
 task generateJniHeaders(type: JavaCompile) {
     group = "build"
     description = "Generate jni headers"
-    
-    source  = sourceSets.main.java
+
+    source = sourceSets.main.java
     classpath = sourceSets.main.compileClasspath
 
     destinationDirectory = file("${buildDir}/jni-temp")
     options.headerOutputDirectory = file("src/main/cpp/RobotNative/include/jni")
 
-    options.compilerArgs += ["-proc:none"]
+    //options.compilerArgs += ["-proc:none"]
+    options.annotationProcessorPath = configurations.annotationProcessor
 }
