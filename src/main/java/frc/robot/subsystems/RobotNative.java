@@ -67,7 +67,7 @@ public class RobotNative implements AutoCloseable {
         static {
             System.load("/usr/local/frc/third-party/libRobotNative.so");
         }
-
+        
         static native long initialize(InitInfo info);
         static native void destroy(long handle);
         static native void submitLauncherControlRequest(long handle, RobotNative.LauncherSubsystem.LauncherControlRequest request);

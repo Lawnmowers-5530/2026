@@ -177,7 +177,7 @@ model {
 
             binaries.all {
                 linker.args "-Wl,-z,now", "-Wl,-z,relro"
-                cppCompiler.args "-Wall", "-O3"
+                cppCompiler.args "-Wall", "-O3", "-I${System.getProperty('frcHome')}/jdk/include", "-I${System.getProperty('frcHome')}/jdk/include/linux"
             }
 
             targetPlatform wpi.platforms.roborio
@@ -187,11 +187,8 @@ model {
             sources {
                 cpp {
                     source {
-                        srcDir project(":").file("src/main/cpp/RobotNative")
-                        include "**/*.cpp"
-                    }
-                    exportedHeaders {
-                        srcDir project(":").file("src/main/cpp/RobotNative/include")
+                        srcDir project(":").file("src/main/cpp/RobotNative/Stub")
+                        include "Stub.cpp"
                     }
                 }
             }
