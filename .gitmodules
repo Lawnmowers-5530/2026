@@ -1,0 +1,3 @@
+[submodule "src/main/cpp/RobotNative/include/third-party/jni-bind"]
+	path = src/main/cpp/RobotNative/include/third-party/jni-bind
+	url = https://github.com/google/jni-bind

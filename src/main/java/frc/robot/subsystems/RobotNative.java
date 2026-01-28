@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.constants.LauncherConstants;
 import lombok.*;
 
 import java.lang.ref.Cleaner;
@@ -54,7 +55,7 @@ public class RobotNative implements AutoCloseable {
     }
 
     public static class InitInfo { // any otherwise needed info, cpp code reads constants.launcherconstants directly
-
+        Class<?> launcherConstants = frc.robot.constants.LauncherConstants.class;
     }
 
     public RobotNative(InitInfo info) {

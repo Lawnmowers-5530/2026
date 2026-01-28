@@ -150,7 +150,7 @@ model {
 
             binaries.all {
                 linker.args "-Wl,-z,now", "-Wl,-z,relro"
-                cppCompiler.args "-Wall", "-O3"
+                cppCompiler.args "-Wall", "-O3", "-fpermissive", "-std=gnu++20"
             }
 
             targetPlatform wpi.platforms.roborio
