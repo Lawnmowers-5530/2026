@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.LimelightHelpers;
 import frc.lib.LimelightHelpers.RawDetection;
@@ -54,13 +55,12 @@ public class LimeLight extends SubsystemBase{
         return new Translation2d(ballPosition3d.getX(), ballPosition3d.getY());
     }
     private Translation3d getBallToCamera(RawDetection data) {
-        double ballDiamterInPixels = Math.abs(data.corner0_Y - data.corner1_X);
+        double ballDiamterInPixels = Math.abs(data.corner0_X- data.corner1_X);
         double distance = kProjectionConstant/ballDiamterInPixels;
-        double xAngle = (data.txnc/kLimelightResolution.getX()) * kHorizontalMaxAngleDegrees;
-        double yAngle = (data.tync/kLimelightResolution.getY()) * kVerticalMaxAngleDegrees;
+        SmartDashboard.putNumber("Distance", distance);
+        double xAngle = data.txnc;
+        double yAngle = data.tync;
         return new Translation3d(distance, new Rotation3d(0, Math.toRadians(yAngle), Math.toRadians(xAngle)));
-
-
     }
   
 
