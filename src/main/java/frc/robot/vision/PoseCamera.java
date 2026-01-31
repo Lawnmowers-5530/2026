@@ -13,7 +13,9 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -67,35 +69,36 @@ public class PoseCamera extends SubsystemBase {
      * @param estimatedPose The estimated pose to guess standard deviations for.
      */
     public Matrix<N3, N1> getEstimationStdDevs(Pose2d estimatedPose) { // TODO: tune this - this function was pulled from photon
-        if (this.latestResult.isEmpty()) {
-            return VecBuilder.fill(100, 100, 100);
-        }
-
-        Matrix<N3, N1> estStdDevs = VecBuilder.fill(1, 1, 100);
-        List<PhotonTrackedTarget> targets = this.latestResult.get().getTargets();
-        int numTags = 0;
-        double avgDist = 0;
-        for (var tgt : targets) {
-            var tagPose = poseEstimator.getFieldTags().getTagPose(tgt.getFiducialId());
-            if (tagPose.isEmpty())
-                continue;
-            numTags++;
-            avgDist += tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
-        }
-        if (numTags == 0)
-            return estStdDevs;
-        avgDist /= numTags;
-        // Decrease std devs if multiple targets are visible
-        if (numTags > 1)
-            estStdDevs = VecBuilder.fill(0.4, 0.4, 10000);
-
-        // Increase std devs based on (average) distance
-        else if (numTags == 1 && avgDist > 4)
-            estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-        else
-            estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
-
-        return estStdDevs;
+        return MatBuilder.fill(Nat.N3(), Nat.N1(), 1.5, 1.5, 100);
+        //if (this.latestResult.isEmpty()) {
+        //    return VecBuilder.fill(100, 100, 100);
+        //}
+//
+        //Matrix<N3, N1> estStdDevs = VecBuilder.fill(1, 1, 100);
+        //List<PhotonTrackedTarget> targets = this.latestResult.get().getTargets();
+        //int numTags = 0;
+        //double avgDist = 0;
+        //for (var tgt : targets) {
+        //    var tagPose = poseEstimator.getFieldTags().getTagPose(tgt.getFiducialId());
+        //    if (tagPose.isEmpty())
+        //        continue;
+        //    numTags++;
+        //    avgDist += tagPose.get().toPose2d().getTranslation().getDistance(estimatedPose.getTranslation());
+        //}
+        //if (numTags == 0)
+        //    return estStdDevs;
+        //avgDist /= numTags;
+        //// Decrease std devs if multiple targets are visible
+        //if (numTags > 1)
+        //    estStdDevs = VecBuilder.fill(0.4, 0.4, 10000);
+//
+        //// Increase std devs based on (average) distance
+        //else if (numTags == 1 && avgDist > 4)
+        //    estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+        //else
+        //    estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
+//
+        //return estStdDevs;
     }
 
     /**
