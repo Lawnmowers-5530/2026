@@ -79,6 +79,6 @@ public class Turret extends SubsystemBase {
         // convert speed to controller velocity units (rps here as an example)
         double targetVelocity = speed; // adjust by gear ratio / sensor units as needed
         this.flywheelControl.Velocity = targetVelocity;
-        this.m_flywheel.setControl(this.flywheelControl.withVelocity(targetVelocity));
+        this.m_flywheel.setControl(this.flywheelControl.withVelocity(targetVelocity)); //TODO might need a different control mode
     }
 }
