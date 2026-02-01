@@ -5,10 +5,14 @@ import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Bindings;
 
 
-public class Intake {
+public class Intake extends SubsystemBase {
     public enum States {
         EXTENDED, TUCKED, TUCKING, EXTENDING
     }
@@ -44,41 +48,53 @@ public class Intake {
         }
         
     }
+    @Override
     public void periodic() {
-        switch (currentState) {
-            case EXTENDED: 
-                pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
-                if (Bindings.IntakeBindings.runWheelMotor.getAsBoolean()) {
-                    runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
-                }else {
-                    runMotor.setControl(new TorqueCurrentFOC(0));
-                }
-                if (Bindings.IntakeBindings.toggleIntakeExtension.getAsBoolean()) {
-                    currentState = States.TUCKING;
-                    pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.TUCKED_ENCODER_POSITION));
-                }
-                
-                break;
-            case EXTENDING:
-                if (pivotAtExtensionPosition()) {
-                    currentState = States.EXTENDED;
-                }
-                break;
-            case TUCKED:
-                if (Bindings.IntakeBindings.toggleIntakeExtension.getAsBoolean()) {
-                    pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION));
-                    currentState = States.EXTENDING;
-                }
-                break;
-            case TUCKING:
-                if (pivotAtTuckPosition()) {
-                    currentState = States.TUCKED;
-                }
-                break;
-            default:
-                break;
-            
-        }
+        
+        //TODO Telemetry or logging
+    }
+
+    public Command tuck() {
+        return Commands.either(Commands.none(), 
+        Commands.runOnce(() -> {
+            setState(States.TUCKING);
+            runMotor.set(0);
+            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.TUCKED_ENCODER_POSITION));
+        }, this)
+        .andThen(Commands.waitUntil(this::pivotAtTuckPosition))
+        .andThen(Commands.runOnce(() -> setState(States.TUCKED), this))
+        , () -> {return !canTuck();});
+    }
+    public Command runIntake() {
+        return Commands.either(Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS))), Commands.runOnce(()->runMotor.set(0)), this::canRunIntake);
+    }
+    public Command stopIntake() {
+        return Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(0)));
+    }
+    public Command extendIntake() {
+        return Commands.either(Commands.runOnce(()-> {
+            setState(States.EXTENDING);
+            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION));
+        }, this)
+        .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
+        .andThen(Commands.runOnce(()-> {
+            setState(States.EXTENDED);
+            pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
+        }, this))
+        , Commands.none(), this::canExtend);
+    }
+    private boolean canRunIntake() {
+        return currentState == States.EXTENDED;
+    }
+    private boolean canExtend() {
+        return currentState == States.TUCKED || currentState == States.TUCKING;
+    }
+    private boolean canTuck() {
+        return currentState == States.EXTENDED || currentState == States.EXTENDING;
+    }
+    
+    private void setState(States state) {
+        currentState = state;
     }
     public States getState() {
         return currentState;
