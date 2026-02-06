@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Lfrc/robot/subsystems/RobotNative/InitInfo;)J
  */
 JNIEXPORT jlong JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_initialize
-  (JNIEnv *, jclass, jobject);
+(JNIEnv *, jclass, jobject);
 
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
@@ -21,7 +21,7 @@ JNIEXPORT jlong JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_initia
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_destroy
-  (JNIEnv *, jclass, jlong);
+(JNIEnv *, jclass, jlong);
 
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
@@ -29,7 +29,7 @@ JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_destroy
  * Signature: (JLfrc/robot/subsystems/RobotNative/LauncherSubsystem/LauncherControlRequest;)V
  */
 JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_submitLauncherControlRequest
-  (JNIEnv *, jclass, jlong, jobject);
+(JNIEnv *, jclass, jlong, jobject);
 
 #ifdef __cplusplus
 }

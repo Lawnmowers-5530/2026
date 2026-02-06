@@ -3,7 +3,8 @@
 //
 #include <iostream>
 
-int main() { // stub main to satisfy the linker
+int main() {
+    // stub main to satisfy the linker
     std::cout << "U dun screwed the pooch\n";
     std::exit(-69);
 }

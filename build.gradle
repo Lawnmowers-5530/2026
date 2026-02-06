@@ -160,11 +160,13 @@ model {
             sources {
                 cpp {
                     source {
-                        srcDir project(":").file("src/main/cpp/RobotNative")
+                        srcDir project(":").file("src/main/cpp/RobotNative/src")
                         include "**/*.cpp"
                     }
                     exportedHeaders {
                         srcDir project(":").file("src/main/cpp/RobotNative/include")
+                        srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/jni.hpp/include")
+                        srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/wpilib-jni-defs") // WPILib JNI fallbacks for compile on non linux systems
                     }
                 }
             }
