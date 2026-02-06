@@ -29,8 +29,8 @@ deploy {
                 // First part is artifact name, 2nd is artifact type
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
-                frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
-                }
+                /*frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
+                }*/
 
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
                     // Enable VisualVM connection
@@ -142,7 +142,7 @@ gversion {
     indent = "  "
 }
 
-def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp // binary executable deploy job for robotnative so wpilib new commands gets deployed as well, does nothing since there is no main function
+//def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp // binary executable deploy job for robotnative so wpilib new commands gets deployed as well, does nothing since there is no main function
 
 model {
     components {
