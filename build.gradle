@@ -175,7 +175,7 @@ model {
             wpi.cpp.deps.wpilib(it)
         }
 
-        binary(NativeExecutableSpec) {
+        frcUserProgram(NativeExecutableSpec) {
 
             binaries.all {
                 linker.args "-Wl,-z,now", "-Wl,-z,relro"
@@ -184,13 +184,16 @@ model {
 
             targetPlatform wpi.platforms.roborio
 
-            baseName = "RobotNative"
+            baseName = "Stub"
 
             sources {
                 cpp {
                     source {
-                        srcDir project(":").file("src/main/cpp/RobotNative/Stub")
-                        include "Stub.cpp"
+                        srcDir project(":").file("src/main/cpp/Stub")
+                        include "**/*.cpp", "**/*.cc"
+                    }
+                    exportedHeaders {
+                        srcDir project(":").file("src/main/cpp/Stub/include")
                     }
                 }
             }
