@@ -14,10 +14,11 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.lib.BuildMetadata;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.RobotNative;
 
 public class RobotContainer {
         
@@ -54,6 +56,14 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
+    public final RobotNative robotNative = new RobotNative(
+            new RobotNative.Constants(
+                frc.robot.constants.LauncherConstants.class
+            )
+    );
+
+    public final RobotNative.LauncherFlywheelSubsystem launcherFlywheelSubsystem = robotNative.new LauncherFlywheelSubsystem();
+
     public RobotContainer() {
         autoChooser = AutoBuilder.buildAutoChooser("Tests");
         SmartDashboard.putData("Auto Mode", autoChooser);
@@ -66,7 +76,7 @@ public class RobotContainer {
             SmartDashboard.putData(metadata);
         }
 
-		FollowPathCommand.warmupCommand().schedule();
+		CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
     }
 
     private void configureBindings() {
@@ -102,6 +112,22 @@ public class RobotContainer {
         joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
+
+        joystick.rightTrigger(0.2).whileTrue( new RunCommand(
+            () -> {
+                launcherFlywheelSubsystem.setControlRequest(joystick.getRightTriggerAxis(), Revolutions.per(Minute));
+            },
+            launcherFlywheelSubsystem)
+                .withName("Run Launcher at 50%")
+        );
+
+        joystick.rightTrigger(0.2).whileFalse( new RunCommand(
+                () -> {
+                    launcherFlywheelSubsystem.setControlRequest(0, Revolutions.per(Minute));
+                },
+                launcherFlywheelSubsystem)
+                .withName("Stop Launcher")
+        );
     }
 
     public Command getAutonomousCommand() {

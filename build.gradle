@@ -195,7 +195,7 @@ model {
                 }
             }
 
-            //deployArtifact2.component = it
+            deployArtifact2.component = it
             wpi.cpp.vendor.cpp(it)
             wpi.cpp.deps.wpilib(it)
         }

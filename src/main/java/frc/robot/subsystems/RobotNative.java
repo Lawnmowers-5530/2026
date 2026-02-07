@@ -32,6 +32,8 @@ public class RobotNative implements AutoCloseable {
             this.currentControlRequest = new ControlRequest(magnitude, unit);
         }
 
+        public LauncherFlywheelSubsystem() {}
+
         @Override
         public void periodic() {
             var RPM = Units.Revolutions.per(Units.Minute).convertFrom(currentControlRequest.magnitude, currentControlRequest.unit);
@@ -39,13 +41,22 @@ public class RobotNative implements AutoCloseable {
         }
     }
 
-    public static class InitInfo {
-        Class<?> launcherConstants = frc.robot.constants.LauncherConstants.class;
+    @AllArgsConstructor
+    public static class Constants {
+        Class<?> launcherConstants;
     }
 
-    public RobotNative(InitInfo info) {
-        this.handle = Native.initialize(info);
+    public RobotNative(Constants constants) {
+        this.handle = Native.initialize(constants);
         this.handleCleanable = CLEANER.register(this, new Destroyer(handle));
+    }
+
+    public void startNotifier() {
+        Native.startNotifier();
+    }
+
+    public void stopNotifier() {
+        Native.stopNotifier();
     }
 
     // JNI native methods
@@ -54,7 +65,7 @@ public class RobotNative implements AutoCloseable {
             System.load("/usr/local/frc/third-party/libRobotNative.so");
         }
         
-        static native long initialize(InitInfo info);
+        static native long initialize(Constants info);
         static native void destroy(long handle);
         static native void startNotifier();
         static native void stopNotifier();

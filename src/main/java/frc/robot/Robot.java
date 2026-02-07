@@ -59,13 +59,16 @@ public class Robot extends TimedRobot {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
+        m_robotContainer.robotNative.startNotifier();
     }
 
     @Override
     public void teleopPeriodic() {}
 
     @Override
-    public void teleopExit() {}
+    public void teleopExit() {
+        m_robotContainer.robotNative.stopNotifier();
+    }
 
     @Override
     public void testInit() {
