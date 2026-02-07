@@ -9,19 +9,20 @@ using frc::Notifier;
 
 #include "Globals.h"
 
-class NotifierData {
+struct NotifierData {
 
 };
 
-void notifierRun() {
-
-}
+void notifierRun(NotifierData*);
 
 class NotiferHandle {
     NotifierData* data;
     Notifier notifier;
 
-    public NotiferHandle() : data(new NotifierData()), notifier(notifierRun, data) {
+public:
+    NotiferHandle():
+    data(new NotifierData()), notifier(notifierRun, data) {
+        
     }
 };
 

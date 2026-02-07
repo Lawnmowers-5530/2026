@@ -29,8 +29,8 @@ deploy {
                 // First part is artifact name, 2nd is artifact type
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
-                /*frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
-                }*/
+                frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
+                }
 
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
                     // Enable VisualVM connection
@@ -142,65 +142,65 @@ gversion {
     indent = "  "
 }
 
-//def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp // binary executable deploy job for robotnative so wpilib new commands gets deployed as well, does nothing since there is no main function
+def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp // binary executable deploy job for robotnative so wpilib new commands gets deployed as well, does nothing since there is no main function
 
-// model {
-//     components {
-//         library(JniNativeLibrarySpec) {
-//
-//             binaries.all {
-//                 linker.args "-Wl,-z,now", "-Wl,-z,relro"
-//                 cppCompiler.args "-Wall", "-O3", "-fpermissive", "-std=gnu++20"
-//             }
-//
-//             targetPlatform wpi.platforms.roborio
-//
-//             baseName = "RobotNative"
-//
-//             sources {
-//                 cpp {
-//                     source {
-//                         srcDir project(":").file("src/main/cpp/RobotNative/src")
-//                         include "**/*.cpp"
-//                     }
-//                     exportedHeaders {
-//                         srcDir project(":").file("src/main/cpp/RobotNative/include")
-//                         srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/jni.hpp/include")
-//                         srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/wpilib-jni-defs/linux") // WPILib JNI fallbacks for compile on non linux systems
-//                     }
-//                 }
-//             }
-//
-//             wpi.cpp.vendor.cpp(it)
-//             wpi.cpp.deps.wpilib(it)
-//         }
-//
-//         binary(NativeExecutableSpec) {
-//
-//             binaries.all {
-//                 linker.args "-Wl,-z,now", "-Wl,-z,relro"
-//                 cppCompiler.args "-Wall", "-O3", "-I${System.getProperty('frcHome')}/jdk/include", "-I${System.getProperty('frcHome')}/jdk/include/linux"
-//             }
-//
-//             targetPlatform wpi.platforms.roborio
-//
-//             baseName = "RobotNative"
-//
-//             sources {
-//                 cpp {
-//                     source {
-//                         srcDir project(":").file("src/main/cpp/RobotNative/Stub")
-//                         include "Stub.cpp"
-//                     }
-//                 }
-//             }
-//
-//             //deployArtifact2.component = it
-//             wpi.cpp.vendor.cpp(it)
-//             wpi.cpp.deps.wpilib(it)
-//         }
-//     }
-// }
+model {
+    components {
+        library(JniNativeLibrarySpec) {
+
+            binaries.all {
+                linker.args "-Wl,-z,now", "-Wl,-z,relro"
+                cppCompiler.args "-Wall", "-O3", "-fpermissive", "-std=gnu++20"
+            }
+
+            targetPlatform wpi.platforms.roborio
+
+            baseName = "RobotNative"
+
+            sources {
+                cpp {
+                    source {
+                        srcDir project(":").file("src/main/cpp/RobotNative/src")
+                        include "**/*.cpp"
+                    }
+                    exportedHeaders {
+                        srcDir project(":").file("src/main/cpp/RobotNative/include")
+                        srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/jni.hpp/include")
+                        srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/wpilib-jni-defs/jni/linux") // hack: JNI fallbacks for compile on non linux systems
+                    }
+                }
+            }
+
+            wpi.cpp.vendor.cpp(it)
+            wpi.cpp.deps.wpilib(it)
+        }
+
+        binary(NativeExecutableSpec) {
+
+            binaries.all {
+                linker.args "-Wl,-z,now", "-Wl,-z,relro"
+                cppCompiler.args "-Wall", "-O3", "-I${System.getProperty('frcHome')}/jdk/include", "-I${System.getProperty('frcHome')}/jdk/include/linux"
+            }
+
+            targetPlatform wpi.platforms.roborio
+
+            baseName = "RobotNative"
+
+            sources {
+                cpp {
+                    source {
+                        srcDir project(":").file("src/main/cpp/RobotNative/Stub")
+                        include "Stub.cpp"
+                    }
+                }
+            }
+
+            //deployArtifact2.component = it
+            wpi.cpp.vendor.cpp(it)
+            wpi.cpp.deps.wpilib(it)
+        }
+    }
+}
 
 task generateJniHeaders(type: JavaCompile) {
     group = "build"

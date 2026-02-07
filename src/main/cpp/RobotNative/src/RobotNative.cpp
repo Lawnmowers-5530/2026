@@ -12,9 +12,6 @@
 
 using frc::Notifier;
 
-struct NotifierData {
-};
-
 struct Handle {
     Notifier notifier;
     NotifierData *notifierData;
