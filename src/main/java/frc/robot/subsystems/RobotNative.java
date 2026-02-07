@@ -1,7 +1,8 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.units.AngularVelocityUnit;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.constants.LauncherConstants;
 import lombok.*;
 
 import java.lang.ref.Cleaner;
@@ -14,47 +15,31 @@ public class RobotNative implements AutoCloseable {
 
     @Setter
     @Getter
-    public class LauncherSubsystem implements Subsystem {
-        public enum AimMode {
-            NearestHub,
-            LHub,
-            RHub,
-            Lob
-        }
-
+    public class LauncherFlywheelSubsystem implements Subsystem {
         @Data
+        @Setter
+        @Getter
         @AllArgsConstructor
         @NoArgsConstructor
-        public class LauncherControlRequest {
-            private AimMode aimMode;
-            private boolean active;
+        public class ControlRequest {
+            private double magnitude = 0;
+            private AngularVelocityUnit unit = Units.Revolutions.per(Units.Minute);
         }
 
-        private LauncherControlRequest currentControlRequest = new LauncherControlRequest(AimMode.NearestHub, false);
+        private ControlRequest currentControlRequest = new ControlRequest();
 
-        public void setAimMode(AimMode mode) {
-            this.currentControlRequest.setAimMode(mode);
-        }
-
-        public void setActive(boolean active) {
-            this.currentControlRequest.setActive(active);
-        }
-
-        public AimMode getAimMode() {
-            return this.currentControlRequest.getAimMode();
-        }
-
-        public boolean getActive() {
-            return this.currentControlRequest.isActive();
+        public void setControlRequest(double magnitude, AngularVelocityUnit unit) {
+            this.currentControlRequest = new ControlRequest(magnitude, unit);
         }
 
         @Override
-        public void periodic() {;
-            Native.submitLauncherControlRequest(RobotNative.this.handle, this.currentControlRequest);
+        public void periodic() {
+            var RPM = Units.Revolutions.per(Units.Minute).convertFrom(currentControlRequest.magnitude, currentControlRequest.unit);
+            Native.submitLauncherControlRequest(RobotNative.this.handle, RPM);
         }
     }
 
-    public static class InitInfo { // any otherwise needed info, cpp code reads constants.launcherconstants directly
+    public static class InitInfo {
         Class<?> launcherConstants = frc.robot.constants.LauncherConstants.class;
     }
 
@@ -71,7 +56,9 @@ public class RobotNative implements AutoCloseable {
         
         static native long initialize(InitInfo info);
         static native void destroy(long handle);
-        static native void submitLauncherControlRequest(long handle, RobotNative.LauncherSubsystem.LauncherControlRequest request);
+        static native void startNotifier();
+        static native void stopNotifier();
+        static native void submitLauncherControlRequest(long handle, double request);
     }
 
     // Cleanup logic

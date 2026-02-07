@@ -6,20 +6,24 @@
 #define INC_2026_GLOBALS_H
 #include <jni/jni.hpp>
 
-static struct LauncherConstants {
+struct LauncherConstants {
     int canId;
     double kF;
     double kI;
 
-    void init(JNIEnv &env, jni::jclass &cls, jni::jobject &launcherConstantsObj) {
+    LauncherConstants(JNIEnv &env, jni::jclass &cls, jni::jobject &launcherConstantsObj) {
         auto &canIdFieldID = jni::GetFieldID(env, cls, "canId", "I");
         auto &kFFieldID = jni::GetFieldID(env, cls, "kF", "D");
         auto &kIFieldID = jni::GetFieldID(env, cls, "kI", "D");
 
-        canId = jni::GetField<int>(env, &launcherConstantsObj, canIdFieldID);
-        kF = jni::GetField<double>(env, &launcherConstantsObj, kFFieldID);
-        kI = jni::GetField<double>(env, &launcherConstantsObj, kIFieldID);
+        this->canId = jni::GetField<int>(env, &launcherConstantsObj, canIdFieldID);
+        this->kF = jni::GetField<double>(env, &launcherConstantsObj, kFFieldID);
+        this->kI = jni::GetField<double>(env, &launcherConstantsObj, kIFieldID);
     }
-} launcherConstants;
+};
 
+
+struct Constants {
+    LauncherConstants launcherConstants;
+};
 #endif //INC_2026_GLOBALS_H
