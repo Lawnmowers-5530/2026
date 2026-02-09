@@ -13,12 +13,15 @@ struct LauncherConstants {
 
     LauncherConstants(JNIEnv &env, jni::jclass &cls, jni::jobject &launcherConstantsObj) {
         auto &canIdFieldID = jni::GetFieldID(env, cls, "canId", "I");
-        auto &kFFieldID = jni::GetFieldID(env, cls, "kF", "D");
-        auto &kIFieldID = jni::GetFieldID(env, cls, "kI", "D");
+        auto &kFFieldID = jni::GetFieldID(env, cls, "kI", "D");
+        auto &kIFieldID = jni::GetFieldID(env, cls, "kA", "D");
 
         this->canId = jni::GetField<int>(env, &launcherConstantsObj, canIdFieldID);
         this->kF = jni::GetField<double>(env, &launcherConstantsObj, kFFieldID);
         this->kI = jni::GetField<double>(env, &launcherConstantsObj, kIFieldID);
+        if (jni::ExceptionCheck(env)) {
+            jni::ExceptionDescribe(env);`
+        }
     }
 };
 

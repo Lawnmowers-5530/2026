@@ -149,8 +149,8 @@ model {
         library(JniNativeLibrarySpec) {
 
             binaries.all {
-                linker.args "-Wl,-z,now", "-Wl,-z,relro"
-                cppCompiler.args "-Wall", "-O3", "-fpermissive", "-std=gnu++20"
+                linker.args "-Wl,-z,now", "-Wl,-z,relro", "-Wl,-z,noexecstack"
+                cppCompiler.args "-Wall", "-std=gnu++20"
             }
 
             targetPlatform wpi.platforms.roborio

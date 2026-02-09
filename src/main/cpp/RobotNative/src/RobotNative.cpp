@@ -4,7 +4,7 @@
 #include <jni.h>
 
 #include "RobotNative.h"
-#include "jni/frc_robot_subsystems_RobotNative_Native.h"
+#include "jni/JNI_Onload.h"
 #include "Globals.h"
 #include "Notifier.h"
 #include "Sync.h"
@@ -90,10 +90,12 @@ void RegisterNatives(JNIEnv& env) {
     );
 }
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
-    jni::JNIEnv& env = jni::GetEnv(*jvm);
-    RegisterNatives(env );
-    return JNI_VERSION_10;
-}
+extern "C" {
+    JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* jvm, void*) {
+        JNIEnv& env = jni::GetEnv(*jvm);
+        RegisterNatives(env );
+        return JNI_VERSION_10;
+    }
+};
 
 

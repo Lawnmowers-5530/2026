@@ -13,6 +13,8 @@ public class RobotNative implements AutoCloseable {
     private final long handle;
     private final Cleaner.Cleanable handleCleanable;
 
+    private final NativeInterface nativeInterface;
+
     @Setter
     @Getter
     public class LauncherFlywheelSubsystem implements Subsystem {
@@ -21,7 +23,7 @@ public class RobotNative implements AutoCloseable {
         @Getter
         @AllArgsConstructor
         @NoArgsConstructor
-        public class ControlRequest {
+        public static class ControlRequest {
             private double magnitude = 0;
             private AngularVelocityUnit unit = Units.Revolutions.per(Units.Minute);
         }
@@ -37,7 +39,7 @@ public class RobotNative implements AutoCloseable {
         @Override
         public void periodic() {
             var RPM = Units.Revolutions.per(Units.Minute).convertFrom(currentControlRequest.magnitude, currentControlRequest.unit);
-            Native.submitLauncherControlRequest(RobotNative.this.handle, RPM);
+            nativeInterface.submitLauncherControlRequest(RobotNative.this.handle, RPM);
         }
     }
 
@@ -47,43 +49,83 @@ public class RobotNative implements AutoCloseable {
     }
 
     public RobotNative(Constants constants) {
-        this.handle = Native.initialize(constants);
-        this.handleCleanable = CLEANER.register(this, new Destroyer(handle));
+        NativeInterface iface;
+        synchronized (this) {
+                // Attempt to load the native library, fallback to stub if it fails
+                try {
+                    iface = new Native();
+                } catch (UnsatisfiedLinkError e) {
+                    System.err.println("Native library failed to load, using stub: " + e.getMessage());
+                    iface = new NativeStub();
+                }
+        }
+        this.nativeInterface = iface;
+        this.handle = nativeInterface.initialize(constants);
+        this.handleCleanable = CLEANER.register(this, new Destroyer(handle, iface));
     }
 
     public void startNotifier() {
-        Native.startNotifier();
+        nativeInterface.startNotifier();
     }
 
     public void stopNotifier() {
-        Native.stopNotifier();
+        nativeInterface.stopNotifier();
     }
 
     // JNI native methods
-    private static class Native {
+    private interface NativeInterface {
+        long initialize(Constants info);
+        void destroy(long handle);
+        void startNotifier();
+        void stopNotifier();
+        void submitLauncherControlRequest(long handle, double request);
+    }
+
+    private static class Native implements NativeInterface {
         static {
-            System.load("/usr/local/frc/third-party/libRobotNative.so");
+            System.loadLibrary("/usr/local/frc/third-party/lib/libRobotNative.so");
         }
-        
-        static native long initialize(Constants info);
-        static native void destroy(long handle);
-        static native void startNotifier();
-        static native void stopNotifier();
-        static native void submitLauncherControlRequest(long handle, double request);
+
+        @Override
+        public native long initialize(Constants info);
+        @Override
+        public native void destroy(long handle);
+        @Override
+        public native void startNotifier();
+        @Override
+        public native void stopNotifier();
+        @Override
+        public native void submitLauncherControlRequest(long handle, double request);
+    }
+
+    private static class NativeStub implements NativeInterface {
+        // Stub methods, only used if load fails
+        @Override
+        public long initialize(Constants info) { return 0; }
+        @Override
+        public void destroy(long handle) {}
+        @Override
+        public void startNotifier() {}
+        @Override
+        public void stopNotifier() {}
+        @Override
+        public void submitLauncherControlRequest(long handle, double request) {}
     }
 
     // Cleanup logic
     private static class Destroyer implements Runnable {
         private final long handle;
+        private final NativeInterface nativeInterface;
 
-        Destroyer(long handle) {
+        Destroyer(long handle, NativeInterface nativeInterface) {
             this.handle = handle;
+            this.nativeInterface = nativeInterface;
         }
 
         @Override
         public void run() {
             if (handle != 0) {
-                Native.destroy(handle);
+                nativeInterface.destroy(handle);
             }
         }
     }
