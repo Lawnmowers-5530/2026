@@ -19,17 +19,21 @@ using hardware::TalonFX;
 #include <units/frequency.h>
 using units::frequency::hertz_t;
 
+#include <wpi/DataLog.h>
+
 struct NotifierData {
     struct LauncherData {
         TalonFX flywheelMotor;
         SPSCQueue<double>::SPSCReader launcherFlywheelQueueReader;
     } launcherData;
+
     NotifierData(const Constants& constants, SPSCQueue<double>& launcherFlywheelQueue):
         launcherData(
             TalonFX(constants.launcherConstants.canId),
             launcherFlywheelQueue.CreateReader()
         )
     {}
+
 };
 
 void NotifierRun(NotifierData*);
