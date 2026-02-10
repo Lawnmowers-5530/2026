@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.units.AngularVelocityUnit;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import lombok.*;
 
@@ -34,7 +35,9 @@ public class RobotNative implements AutoCloseable {
             this.currentControlRequest = new ControlRequest(magnitude, unit);
         }
 
-        public LauncherFlywheelSubsystem() {}
+        public LauncherFlywheelSubsystem() {
+            CommandScheduler.getInstance().registerSubsystem(this);
+        }
 
         @Override
         public void periodic() {
@@ -65,25 +68,25 @@ public class RobotNative implements AutoCloseable {
     }
 
     public void startNotifier() {
-        nativeInterface.startNotifier();
+        nativeInterface.startNotifier(handle);
     }
 
     public void stopNotifier() {
-        nativeInterface.stopNotifier();
+        nativeInterface.stopNotifier(handle);
     }
 
     // JNI native methods
     private interface NativeInterface {
         long initialize(Constants info);
         void destroy(long handle);
-        void startNotifier();
-        void stopNotifier();
+        void startNotifier(long handle);
+        void stopNotifier(long handle);
         void submitLauncherControlRequest(long handle, double request);
     }
 
-    private static class Native implements NativeInterface {
+    public static class Native implements NativeInterface {
         static {
-            System.loadLibrary("/usr/local/frc/third-party/lib/libRobotNative.so");
+            System.loadLibrary("RobotNative");
         }
 
         @Override
@@ -91,9 +94,9 @@ public class RobotNative implements AutoCloseable {
         @Override
         public native void destroy(long handle);
         @Override
-        public native void startNotifier();
+        public native void startNotifier(long handle);
         @Override
-        public native void stopNotifier();
+        public native void stopNotifier(long handle);
         @Override
         public native void submitLauncherControlRequest(long handle, double request);
     }
@@ -105,9 +108,9 @@ public class RobotNative implements AutoCloseable {
         @Override
         public void destroy(long handle) {}
         @Override
-        public void startNotifier() {}
+        public void startNotifier(long handle) {}
         @Override
-        public void stopNotifier() {}
+        public void stopNotifier(long handle) {}
         @Override
         public void submitLauncherControlRequest(long handle, double request) {}
     }

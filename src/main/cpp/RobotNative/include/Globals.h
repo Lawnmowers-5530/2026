@@ -11,17 +11,14 @@ struct LauncherConstants {
     double kF;
     double kI;
 
-    LauncherConstants(JNIEnv &env, jni::jclass &cls, jni::jobject &launcherConstantsObj) {
-        auto &canIdFieldID = jni::GetFieldID(env, cls, "canId", "I");
-        auto &kFFieldID = jni::GetFieldID(env, cls, "kI", "D");
-        auto &kIFieldID = jni::GetFieldID(env, cls, "kA", "D");
+    LauncherConstants(JNIEnv &env, jni::jclass &launcherConstantsObj) {
+        auto &canIdFieldID = jni::GetStaticFieldID(env, launcherConstantsObj, "canId", "I");
+        auto &kFFieldID = jni::GetStaticFieldID(env, launcherConstantsObj, "kI", "D");
+        auto &kIFieldID = jni::GetStaticFieldID(env, launcherConstantsObj, "kA", "D");
 
-        this->canId = jni::GetField<int>(env, &launcherConstantsObj, canIdFieldID);
-        this->kF = jni::GetField<double>(env, &launcherConstantsObj, kFFieldID);
-        this->kI = jni::GetField<double>(env, &launcherConstantsObj, kIFieldID);
-        if (jni::ExceptionCheck(env)) {
-            jni::ExceptionDescribe(env);`
-        }
+        this->canId = jni::GetStaticField<int>(env, launcherConstantsObj, canIdFieldID);
+        this->kI = jni::GetStaticField<double>(env, launcherConstantsObj,kIFieldID);
+        this->kF = jni::GetStaticField<double>(env, launcherConstantsObj, kFFieldID);
     }
 };
 

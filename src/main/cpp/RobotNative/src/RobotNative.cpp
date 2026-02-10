@@ -4,7 +4,6 @@
 #include <jni.h>
 
 #include "RobotNative.h"
-#include "jni/JNI_Onload.h"
 #include "Globals.h"
 #include "Notifier.h"
 #include "Sync.h"
@@ -13,11 +12,13 @@
 #include <frc/Notifier.h>
 #include <jni/jni.hpp>
 #include <jni/class.hpp>
+
+#include <iostream>
 #include <memory>
 
 class ConstantsJNI {
 public:
-    static constexpr auto Name() { return "frc/robot/subsystems/RobotNative$InitInfo"; }
+    static constexpr auto Name() { return "frc/robot/subsystems/RobotNative$Constants"; }
 
     class Fields {
         Fields(JNIEnv& env, jni::Object<ConstantsJNI>& initInfoObj):
@@ -51,10 +52,10 @@ JNICALL jlong Initialize (
     auto& cls = jni::Class<ConstantsJNI>::Singleton(env);
     auto constantsObj = jni::Object<ConstantsJNI>(_constantsObj);
 
-    auto launcherConstantsObj = ConstantsJNI::Fields::getLauncherConstants(env, constantsObj);
-    auto& launcherConstantsClass = jni::GetObjectClass(env, *launcherConstantsObj);
+    auto launcherConstantsClass = ConstantsJNI::Fields::getLauncherConstants(env, constantsObj);
+
     Constants constants = {
-         LauncherConstants{env, launcherConstantsClass, *launcherConstantsObj}
+         LauncherConstants{env, *launcherConstantsClass}
     };
     auto handle = std::make_unique<NotifierHandle>(constants, 200_Hz);
 
@@ -66,12 +67,15 @@ JNICALL void Destroy (JNIEnv* _env, jni::jclass*, jlong _handle) {
     delete handle;
 }
 
-JNICALL void StartNotifier (JNIEnv* _env, jni::jclass*) {
+JNICALL void StartNotifier (JNIEnv* _env, jni::jclass*, jlong _handle) {
+    auto* handle = reinterpret_cast<NotifierHandle*>(_handle);
+    handle->startNotifier();
 
 }
 
-JNICALL void StopNotifier (JNIEnv* _env, jni::jclass*) {
-
+JNICALL void StopNotifier (JNIEnv* _env, jni::jclass*, jlong _handle) {
+    auto* handle = reinterpret_cast<NotifierHandle*>(_handle);
+    handle->stopNotifier();
 }
 
 JNICALL void SubmitLauncherControlRequest (JNIEnv* _env, jni::jclass*, jlong _handle, jdouble rpm) {
@@ -80,22 +84,30 @@ JNICALL void SubmitLauncherControlRequest (JNIEnv* _env, jni::jclass*, jlong _ha
 }
 
 void RegisterNatives(JNIEnv& env) {
+    std::cerr << "Sanity Check" << "\n";
     jni::RegisterNatives(
         env,
-        jni::FindClass(env, "frc/Robot/subsystems/RobotNative$Native"),
-        jni::MakeNativeMethod<decltype(&Initialize), &Initialize> ("initialize", "(Lfrc/robot/subsystems/RobotNative/InitInfo;)J"),
+        jni::FindClass(env, "frc/robot/subsystems/RobotNative$Native"),
+        jni::MakeNativeMethod<decltype(&Initialize), &Initialize> ("initialize", "(Lfrc/robot/subsystems/RobotNative$Constants;)J"),
         jni::MakeNativeMethod<decltype(&Destroy), &Destroy> ("destroy", "(J)V"),
-        jni::MakeNativeMethod<decltype(&StartNotifier), &StartNotifier> ("startNotifier", "()V"),
-        jni::MakeNativeMethod<decltype(&StopNotifier), &StopNotifier> ("stopNotifier", "()V")
+        jni::MakeNativeMethod<decltype(&StartNotifier), &StartNotifier> ("startNotifier", "(J)V"),
+        jni::MakeNativeMethod<decltype(&StopNotifier), &StopNotifier> ("stopNotifier", "(J)V"),
+        jni::MakeNativeMethod<decltype(&SubmitLauncherControlRequest), &SubmitLauncherControlRequest> ("submitLauncherControlRequest", "(JD)V")
     );
 }
 
-extern "C" {
-    JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* jvm, void*) {
-        JNIEnv& env = jni::GetEnv(*jvm);
-        RegisterNatives(env );
-        return JNI_VERSION_10;
+
+jint JNI_OnLoad(JavaVM* jvm, void*) {
+    JNIEnv& env = jni::GetEnv(*jvm);
+    RegisterNatives(env);
+
+    while (jni::ExceptionCheck(env)) {
+        jni::ExceptionDescribe(env);
+        jni::ExceptionClear(env);
     }
-};
+
+    return JNI_VERSION_10;
+}
+
 
 

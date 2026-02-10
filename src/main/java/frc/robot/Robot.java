@@ -13,7 +13,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
-    private final RobotContainer m_robotContainer;
+    private final RobotContainerInterface m_robotContainer;
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -21,7 +21,11 @@ public class Robot extends TimedRobot {
         .withJoystickReplay();
 
     public Robot() {
-        m_robotContainer = new RobotContainer();
+        if (BuildConstants.DIRTY == 1) {
+            m_robotContainer = new DevRobotContainer();
+        } else {
+            m_robotContainer = new RobotContainer();
+        }
     }
 
     @Override
@@ -59,7 +63,7 @@ public class Robot extends TimedRobot {
         if (m_autonomousCommand != null) {
             CommandScheduler.getInstance().cancel(m_autonomousCommand);
         }
-        m_robotContainer.robotNative.startNotifier();
+        m_robotContainer.teleopInit();
     }
 
     @Override
@@ -67,7 +71,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopExit() {
-        m_robotContainer.robotNative.stopNotifier();
+        m_robotContainer.teleopExit();
     }
 
     @Override

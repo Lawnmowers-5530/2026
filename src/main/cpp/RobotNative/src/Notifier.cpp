@@ -7,6 +7,8 @@ using controls::DutyCycleOut;
 #include <units/angular_velocity.h>
 using units::angular_velocity::revolutions_per_minute_t;
 
+#include <iostream>
+
 void NotifierRun(NotifierData* data) {
     double currentControlRequest = data->launcherData.launcherFlywheelQueueReader.read();
 

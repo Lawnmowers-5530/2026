@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
  * Method:    initialize
- * Signature: (Lfrc/robot/subsystems/RobotNative/InitInfo;)J
+ * Signature: (Lfrc/robot/subsystems/RobotNative/Constants;)J
  */
 JNIEXPORT jlong JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_initialize
-  (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jobject, jobject);
 
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
@@ -21,7 +21,7 @@ JNIEXPORT jlong JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_initia
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_destroy
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
@@ -29,7 +29,7 @@ JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_destroy
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_startNotifier
-  (JNIEnv *, jclass);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_startNo
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_stopNotifier
-  (JNIEnv *, jclass);
+  (JNIEnv *, jobject);
 
 /*
  * Class:     frc_robot_subsystems_RobotNative_Native
@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_stopNot
  * Signature: (JD)V
  */
 JNIEXPORT void JNICALL Java_frc_robot_subsystems_RobotNative_00024Native_submitLauncherControlRequest
-  (JNIEnv *, jclass, jlong, jdouble);
+  (JNIEnv *, jobject, jlong, jdouble);
 
 #ifdef __cplusplus
 }
