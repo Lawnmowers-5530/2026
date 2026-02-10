@@ -17,7 +17,9 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
+import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -26,6 +28,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -145,6 +148,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             startSimThread();
         }
         configureAutoBuilder();
+        super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
     }
 
     /**
@@ -171,6 +175,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             startSimThread();
         }
         configureAutoBuilder();
+        super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
     }
 
     /**
@@ -212,6 +217,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             startSimThread();
         }
         configureAutoBuilder();
+        super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
     }
 
     /**
@@ -300,6 +306,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
         for (var estimatePose : this.cameraManager.getEstimatedPoses()) {
             this.addVisionMeasurement(estimatePose);
+            SmartDashboard.putString("visionStdDevs", estimatePose.getSecond().toString());
         }
     }
 
