@@ -2,12 +2,6 @@ package frc.robot.subsystems.Indexer;
 
 import java.util.Optional;
 
-import javax.crypto.Cipher;
-
-import com.ctre.phoenix6.controls.TorqueCurrentFOC;
-import com.ctre.phoenix6.hardware.TalonFX;
-
-import au.grapplerobotics.LaserCan;
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
