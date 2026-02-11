@@ -28,10 +28,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.Controller;
 import frc.robot.subsystems.RobotNative;
+import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Indexer.Indexer;
+
 import org.photonvision.PhotonCamera;
 
 public class RobotContainer implements RobotContainerInterface {
+
+        public class Subsystems {
+                public CommandSwerveDrivetrain drivetrain;
+                public Controller controller;
+                public Turret turret;
+                public Indexer indexer;
+        }
         
     private final SendableChooser<Command> autoChooser;
 
