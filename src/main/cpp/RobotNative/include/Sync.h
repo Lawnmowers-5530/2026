@@ -13,9 +13,9 @@ private:
     };
 
     alignas(std::hardware_destructive_interference_size) PaddedT buf[2];
-    std::atomic_int head{0};
+    alignas(std::hardware_destructive_interference_size) std::atomic_int head{0};
 
-    std::atomic_bool created {false};
+    alignas(std::hardware_destructive_interference_size) std::atomic_bool created {false};
 public:
     struct SPSCReader {
         friend struct SPSCQueue;

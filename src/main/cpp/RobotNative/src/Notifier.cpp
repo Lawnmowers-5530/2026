@@ -7,19 +7,30 @@ using controls::DutyCycleOut;
 #include <units/angular_velocity.h>
 using units::angular_velocity::revolutions_per_minute_t;
 
-#include <iostream>
-
 #include <frc/DataLogManager.h>
+#include "subsystems/LauncherFlywheelSubsystem.h"
 
-#include "TBHController.h"
+#include <wpi/DataLog.h>
+
+NotifierData::NotifierData(const Constants &constants, SPSCQueue<double> &launcherFlywheelQueue) :
+    launcherFlywheelSubsystem {
+        constants.launcherConstants,
+        launcherFlywheelQueue
+    },
+    scheduler(
+        CommandScheduler::GetInstance()
+    )
+{}
+
+NotifierHandle::NotifierHandle(const Constants &constants, hertz_t frequency):
+        launcherFlywheelQueue(SPSCQueue<double>()),
+        data(new NotifierData(constants, launcherFlywheelQueue)),
+        notifier(NotifierRun, data),
+        periodMs(frequency)
+{}
 
 void NotifierRun(NotifierData* data) {
-    double currentControlRequest = data->launcherData.launcherFlywheelQueueReader.read();
-
-    DutyCycleOut controlRequest = DutyCycleOut{currentControlRequest};
-    controlRequest.EnableFOC = true;
-
-    data->launcherData.flywheelMotor.SetControl(controlRequest);
+    data->scheduler.Run();
 }
 
 void NotifierHandle::startNotifier() {
@@ -29,6 +40,10 @@ void NotifierHandle::startNotifier() {
 
 void NotifierHandle::stopNotifier() {
     this->notifier.Stop();
-    this->data->launcherData.flywheelMotor.StopMotor();
+    this->data->launcherFlywheelSubsystem.flywheelMotor.StopMotor();
     frc::DataLogManager::GetLog().Flush();
+}
+
+void NotifierHandle::submitLauncherControlRequest(double controlRequest) {
+    this->launcherFlywheelQueue.write(controlRequest);
 }

@@ -11,29 +11,27 @@ using frc::Notifier;
 #include <ctre/phoenix6/TalonFX.hpp>
 namespace hardware = ctre::phoenix6::hardware;
 using hardware::TalonFX;
+#include <ctre/phoenix6/StatusSignal.hpp>
+using ctre::phoenix6::StatusSignal;
 
 #include "Sync.h"
-
 #include "Globals.h"
+#include "TBHController.h"
+
+#include "subsystems/LauncherFlywheelSubsystem.h"
 
 #include <units/frequency.h>
 using units::frequency::hertz_t;
 
-#include <wpi/DataLog.h>
+#include <frc2/command/CommandScheduler.h>
+using frc2::CommandScheduler;
+
 
 struct NotifierData {
-    struct LauncherData {
-        TalonFX flywheelMotor;
-        SPSCQueue<double>::SPSCReader launcherFlywheelQueueReader;
-    } launcherData;
+    LauncherFlywheelSubsystem launcherFlywheelSubsystem;
+    CommandScheduler& scheduler;
 
-    NotifierData(const Constants& constants, SPSCQueue<double>& launcherFlywheelQueue):
-        launcherData(
-            TalonFX(constants.launcherConstants.canId),
-            launcherFlywheelQueue.CreateReader()
-        )
-    {}
-
+    NotifierData(const Constants& constants, SPSCQueue<double>& launcherFlywheelQueue);
 };
 
 void NotifierRun(NotifierData*);
@@ -44,23 +42,11 @@ struct NotifierHandle {
     Notifier notifier;
     hertz_t periodMs;
 
-public:
-    NotifierHandle(const Constants& constants, hertz_t frequency):
-        launcherFlywheelQueue(SPSCQueue<double>()),
-        data(new NotifierData(constants, launcherFlywheelQueue)),
-        notifier(NotifierRun, data),
-        periodMs(frequency) {
+    NotifierHandle(const Constants& constants, hertz_t frequency);
 
-    }
-
-    void submitLauncherControlRequest(double controlRequest) {
-        launcherFlywheelQueue.write(controlRequest);
-    }
-
+    void submitLauncherControlRequest(double controlRequest);
     void startNotifier();
     void stopNotifier();
 };
-
-
 
 #endif //INC_2026_NOTIFIER_H

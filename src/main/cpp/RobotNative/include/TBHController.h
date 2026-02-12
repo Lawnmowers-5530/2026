@@ -23,6 +23,7 @@ struct TBHController {
     coulombs_per_rad_t kI;
     ampere_t output, tbh;
 
+
     TBHController(const coulombs_per_rad_t kI):
         target(0),
         lastError(0),
@@ -31,17 +32,21 @@ struct TBHController {
         tbh(0)
     {}
 
-    ampere_t Update() {
-        auto error = target - output;
+    ampere_t Calculate(radians_per_second_t currentVelocity) {
+        auto error = target - currentVelocity;
         output += kI * error;
 
-        if (std::signbit((double) error) != std::signbit(lastError)) {
-            output = tbh;
+        if (std::signbit(error.value()) != std::signbit(lastError.value())) {
+            output = 0.5 * (output + tbh);
             tbh = output;
         }
 
         lastError = error;
         return output;
+    }
+
+    void setTarget(radians_per_second_t target) {
+        this->target = target;
     }
 };
 
