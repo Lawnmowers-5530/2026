@@ -1,0 +1,49 @@
+# Base style
+BasedOnStyle: LLVM
+
+# -------------------------
+# General indentation rules
+# -------------------------
+IndentWidth: 4
+ContinuationIndentWidth: 4
+ColumnLimit: 80
+
+# -------------------------
+# Function & method calls
+# -------------------------
+BinPackParameters: false            # One parameter per line if needed
+BinPackArguments: false
+ExperimentalAutoDetectBinPacking: true # One argument per line if needed
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+AlignAfterOpenBracket: DontAlign    # Stops deep alignment
+
+# -------------------------
+# Constructor initializers
+# -------------------------
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerIndentWidth: 4
+PackConstructorInitializers: Never
+
+# -------------------------
+# Braces
+# -------------------------
+BreakBeforeBraces: Attach           # Opening brace on same line
+Cpp11BracedListStyle: true
+
+# -------------------------
+# Alignment rules
+# -------------------------
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignConsecutiveMacros: false
+AlignOperands: false
+AlignTrailingComments: false
+BreakBeforeBinaryOperators: None   # Prevent dot-staircasing in chained calls
+
+# -------------------------
+# Misc
+# -------------------------
+PenaltyBreakBeforeFirstCallParameter: 0
+SpacesInConditionalStatement: true
+SpacesInParentheses: true

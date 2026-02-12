@@ -7,34 +7,41 @@ using controls::DutyCycleOut;
 #include <units/angular_velocity.h>
 using units::angular_velocity::revolutions_per_minute_t;
 
-#include <frc/DataLogManager.h>
 #include "subsystems/LauncherFlywheelSubsystem.h"
+#include <frc/DataLogManager.h>
 
 #include <wpi/DataLog.h>
 
-NotifierData::NotifierData(const Constants &constants, SPSCQueue<double> &launcherFlywheelQueue) :
-    launcherFlywheelSubsystem {
-        constants.launcherConstants,
-        launcherFlywheelQueue
-    },
-    scheduler(
-        CommandScheduler::GetInstance()
-    )
-{}
-
-NotifierHandle::NotifierHandle(const Constants &constants, hertz_t frequency):
-        launcherFlywheelQueue(SPSCQueue<double>()),
-        data(new NotifierData(constants, launcherFlywheelQueue)),
-        notifier(NotifierRun, data),
-        periodMs(frequency)
-{}
-
-void NotifierRun(NotifierData* data) {
-    data->scheduler.Run();
+NotifierData::NotifierData( const Constants &constants,
+    SPSCQueue<double> &launcherFlywheelQueue ) :
+    launcherFlywheelSubsystem{ constants.launcherConstants,
+        launcherFlywheelQueue },
+    scheduler( CommandScheduler::GetInstance() ),
+    controller( CommandXboxController{ 0 } ) {
+    controller.A().WhileTrue(
+        launcherFlywheelSubsystem.sysIdRoutine.Dynamic( frc2::sysid::kForward )
+        );
+    controller.B().WhileTrue( launcherFlywheelSubsystem.sysIdRoutine.Dynamic(
+        frc2::sysid::kReverse ) );
+    controller.X().WhileTrue(
+        launcherFlywheelSubsystem.sysIdRoutine.Quasistatic(
+            frc2::sysid::kForward ) );
+    controller.Y().WhileTrue(
+        launcherFlywheelSubsystem.sysIdRoutine.Quasistatic(
+            frc2::sysid::kReverse ) );
 }
 
+NotifierHandle::NotifierHandle( const Constants &constants,
+    const hertz_t frequency ) :
+    launcherFlywheelQueue( SPSCQueue<double>() ),
+    data( new NotifierData( constants, launcherFlywheelQueue ) ),
+    notifier( NotifierRun, data ),
+    periodMs( frequency ) {}
+
+void NotifierRun( const NotifierData *data ) { data->scheduler.Run(); }
+
 void NotifierHandle::startNotifier() {
-    this->notifier.StartPeriodic(this->periodMs);
+    this->notifier.StartPeriodic( this->periodMs );
     frc::DataLogManager::Start();
 }
 
@@ -44,6 +51,6 @@ void NotifierHandle::stopNotifier() {
     frc::DataLogManager::GetLog().Flush();
 }
 
-void NotifierHandle::submitLauncherControlRequest(double controlRequest) {
-    this->launcherFlywheelQueue.write(controlRequest);
+void NotifierHandle::submitLauncherControlRequest( double controlRequest ) {
+    this->launcherFlywheelQueue.write( controlRequest );
 }

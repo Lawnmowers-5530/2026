@@ -26,15 +26,18 @@ using units::frequency::hertz_t;
 #include <frc2/command/CommandScheduler.h>
 using frc2::CommandScheduler;
 
+#include <frc2/command/button/CommandXboxController.h>
+using frc2::CommandXboxController;
 
 struct NotifierData {
     LauncherFlywheelSubsystem launcherFlywheelSubsystem;
     CommandScheduler& scheduler;
+    CommandXboxController controller;
 
     NotifierData(const Constants& constants, SPSCQueue<double>& launcherFlywheelQueue);
 };
 
-void NotifierRun(NotifierData*);
+void NotifierRun(const NotifierData*);
 
 struct NotifierHandle {
     SPSCQueue<double> launcherFlywheelQueue;
