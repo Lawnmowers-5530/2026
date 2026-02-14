@@ -23,6 +23,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 //TODO: consider vSLAMming every pose camera for more data and fusing in a kalman filter setup
+
 /**
  * Class to manage all cameras designated to robot pose estimation. Each camera
  * has its own pose estimator and returns its own pose along with a std devs to
@@ -32,29 +33,30 @@ public class PoseCamera extends SubsystemBase {
     private PhotonCamera camera;
     private PhotonPoseEstimator poseEstimator;
     private Optional<PhotonPipelineResult> latestResult = Optional.empty();
-    
+
     public PoseCamera(String cameraName, Transform3d cameraPosition) {
         camera = new PhotonCamera(cameraName);
-        poseEstimator = new PhotonPoseEstimator(AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded), //TODO dont forget about this line
+        /*poseEstimator = new PhotonPoseEstimator(AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded), //TODO dont forget about this line
                 PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, cameraPosition); // Setting to use all available tags and do
-                                                                            // the math on coprocessor
-        poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY); // Switching to lowest ambiguity pose
-                                                                                  // strategy when only one tag is
-                                                                                  // visible
+                                                                            the math on coprocessor*/
+        // photon switched to "Use individual estimation methods instead" for multi tag estimation, so we have to do it ourselves
+        poseEstimator = new PhotonPoseEstimator(AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded), cameraPosition);
+
+        // poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY); // Apparently "Use individual estimation methods instead"
     }
-    
+
 
     /**
      * Returns an {@link EstimatedRobotPose} if camera pipeline has a new result
      * with apriltag targets
-     * 
+     *
      * @return An {@link Optional}
      */
     public Optional<EstimatedRobotPose> getPoseEstimate() {
-        if (this.latestResult.isEmpty()) {
+        if (this.latestResult.isEmpty() || this.latestResult.get().multitagResult.isEmpty()) {
             return Optional.empty();
         } else {
-            return poseEstimator.update(this.latestResult.get());
+            return poseEstimator.estimateCoprocMultiTagPose(this.latestResult.get());
         }
     }
 
@@ -102,7 +104,7 @@ public class PoseCamera extends SubsystemBase {
 
     /**
      * Returns the apriltag id of the primary target in the camera view
-     * 
+     *
      * @return The apriltag id of the primary target in the camera view
      */
     public int getPrimaryTagId() {
@@ -116,19 +118,17 @@ public class PoseCamera extends SubsystemBase {
     public Optional<PhotonTrackedTarget> getPrimaryTrackedTarget() {
         if (latestResult.isEmpty()) {
             return Optional.empty();
-        } 
-        if (!hasTargets())
-        {
-            return Optional.empty();
         }
-        else {
+        if (!hasTargets()) {
+            return Optional.empty();
+        } else {
             return Optional.of(latestResult.get().getBestTarget());
         }
     }
 
     /**
      * Returns the yaw value of the primary tag in the camera view
-     * 
+     *
      * @return The yaw value of the primary tag in the camera view
      */
     public double getPrimaryTagYaw() {
