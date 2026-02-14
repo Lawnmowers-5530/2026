@@ -193,3 +193,4 @@ src/main/java/frc/robot/generated/BuildConstants.java
 
 #for development temporary bindings only
 src/main/java/frc/robot/container/DevRobotContainer.java
+src/main/java/frc/robot/container/DevBindings.java
