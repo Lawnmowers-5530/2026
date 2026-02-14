@@ -13,7 +13,7 @@ import frc.robot.container.DevRobotContainer;
 
 public class Robot extends TimedRobot {
 
-    public class RobotContainer extends frc.robot.container.DevRobotContainer{};
+    public static class RobotContainer extends frc.robot.container.DevRobotContainer{};
     
     private Command m_autonomousCommand;
 
