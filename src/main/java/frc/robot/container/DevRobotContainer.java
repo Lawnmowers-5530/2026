@@ -27,12 +27,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Bindings;
 import frc.robot.Telemetry;
+import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Controller;
-import frc.robot.subsystems.RobotNative;
-import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.*;
 import frc.robot.subsystems.Indexer.Indexer;
 
 import org.photonvision.PhotonCamera;
@@ -40,16 +38,11 @@ import org.photonvision.PhotonCamera;
 public class DevRobotContainer {
 
         public class Subsystems {
-                public CommandSwerveDrivetrain drivetrain;
-                public Controller controller;
-                public Turret turret;
-                public Indexer indexer;
+                public LauncherFlywheel launcherFlywheel;
         }
 
         Subsystems subsystems;
-        Bindings bindings;
-
-        private final SendableChooser<Command> autoChooser;
+        DevBindings bindings;
 
         BuildMetadata metadata = new BuildMetadata();
 
@@ -59,55 +52,8 @@ public class DevRobotContainer {
 
         public DevRobotContainer() {
                 subsystems = new Subsystems();
-                this.subsystems.drivetrain = TunerConstants.createDrivetrain();
-               // bindings = new Bindings(this.subsystems);
-
-                autoChooser = AutoBuilder.buildAutoChooser("Tests");
-                SmartDashboard.putData("Auto Mode", autoChooser);
-
-                configureBindings();
-
-                // #region Smart Dashboard Programming Related
-                if (_programmingDashboard) {
-                        SmartDashboard.putData(metadata);
-                }
-
-                CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
-        }
-
-        private void configureBindings() {
-
-                this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
-
-                // Idle while the robot is disabled. This ensures the configured
-                // neutral mode is applied to the drive motors while disabled.
-                final var idle = new SwerveRequest.Idle();
-                RobotModeTriggers.disabled().whileTrue(
-                                this.subsystems.drivetrain.applyRequest(() -> idle).ignoringDisable(true));
-
-                // Run SysId routines when holding back/start and X/Y.
-                // Note that each routine should be run exactly once in a single log.
-                // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-                // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-                // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-                // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-                this.subsystems.drivetrain.registerTelemetry(logger::telemeterize);
-
-        }
-
-        public Command getAutonomousCommand() {
-                // Simple drive forward auton
-                final var idle = new SwerveRequest.Idle();
-                return Commands.sequence(
-                                // Reset our field centric heading to match the robot
-                                // facing away from our alliance station wall (0 deg).
-                                this.subsystems.drivetrain.runOnce(
-                                                () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                                // Then run selected auton
-                                autoChooser.getSelected(),
-                                // Finally idle for the rest of auton
-                                this.subsystems.drivetrain.applyRequest(() -> idle));
+                subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
+                bindings = new DevBindings(subsystems);
         }
 
         public void teleopInit() {
