@@ -4,36 +4,12 @@
 
 package frc.robot.container;
 
-import static edu.wpi.first.units.Units.*;
-
-import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
-import com.ctre.phoenix6.swerve.SwerveRequest;
-
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.FollowPathCommand;
-
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-
 import frc.lib.BuildMetadata;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Bindings;
 import frc.robot.Telemetry;
 import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
-import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.*;
-import frc.robot.subsystems.Indexer.Indexer;
-
-import org.photonvision.PhotonCamera;
 
 public class DevRobotContainer {
 
@@ -54,6 +30,11 @@ public class DevRobotContainer {
                 subsystems = new Subsystems();
                 subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
                 bindings = new DevBindings(subsystems);
+        }
+
+        public Command getAutonomousCommand() {
+                // An example command will be run in autonomous
+                return null;
         }
 
         public void teleopInit() {
