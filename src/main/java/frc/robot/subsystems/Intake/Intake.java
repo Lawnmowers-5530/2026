@@ -11,19 +11,19 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
 public class Intake extends SubsystemBase {
-    public enum States {
+    public enum State {
         EXTENDED, TUCKED, TUCKING, EXTENDING
     }
 
-    private States currentState = States.TUCKED;
-    
+    private State currentState = State.TUCKED;
+
     private TalonFX pivotMotor;
     private TalonFX runMotor;
 
-    
+
     private static boolean exists = false;
     public static Intake instance;
-    
+
     public Intake() {
         if (Intake.exists) {
             System.err.println("Creating more than one intake. Please fix broken code");
@@ -32,59 +32,63 @@ public class Intake extends SubsystemBase {
             Intake.exists = true;
             pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT);
             runMotor = new TalonFX(IntakeConstants.RUN_MOTOR_PORT);
-            
+
         }
-        
+
     }
     @Override
     public void periodic() {
-        
+
         //TODO Telemetry or logging
     }
 
     public Command tuck() {
-        return Commands.either(Commands.none(), 
+        return
         Commands.runOnce(() -> {
-            setState(States.TUCKING);
+            if (!canTuck()) return;
+            this.currentState = State.TUCKING;
             runMotor.set(0);
             pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.TUCKED_ENCODER_POSITION));
         }, this)
         .andThen(Commands.waitUntil(this::pivotAtTuckPosition))
-        .andThen(Commands.runOnce(() -> setState(States.TUCKED), this))
-        , () -> {return !canTuck();});
+        .andThen(Commands.runOnce(() -> this.currentState = State.TUCKED, this));
     }
     public Command runIntake() {
-        return Commands.either(Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS))), Commands.runOnce(()->runMotor.set(0)), this::canRunIntake);
+        return Commands.runOnce(()-> {
+            if (canRunIntake()) {
+                runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
+            } else {
+                runMotor.setControl(new TorqueCurrentFOC(0));
+            }
+        }
+        );
     }
     public Command stopIntake() {
         return Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(0)));
     }
     public Command extendIntake() {
         return Commands.either(Commands.runOnce(()-> {
-            setState(States.EXTENDING);
+            this.currentState = State.EXTENDING;
             pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION));
         }, this)
         .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
         .andThen(Commands.runOnce(()-> {
-            setState(States.EXTENDED);
+            this.currentState = State.EXTENDED;
             pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
         }, this))
         , Commands.none(), this::canExtend);
     }
     private boolean canRunIntake() {
-        return currentState == States.EXTENDED;
+        return currentState == State.EXTENDED;
     }
     private boolean canExtend() {
-        return currentState == States.TUCKED || currentState == States.TUCKING;
+        return currentState == State.TUCKED || currentState == State.TUCKING;
     }
     private boolean canTuck() {
-        return currentState == States.EXTENDED || currentState == States.EXTENDING;
+        return currentState == State.EXTENDED || currentState == State.EXTENDING;
     }
-    
-    private void setState(States state) {
-        currentState = state;
-    }
-    public States getState() {
+
+    public State getState() {
         return currentState;
     }
     //TODO: replace lt and gt with near for better results
@@ -94,8 +98,8 @@ public class Intake extends SubsystemBase {
     private boolean pivotAtExtensionPosition() {
         return pivotMotor.getPosition().getValue().gt(Angle.ofBaseUnits(IntakeConstants.EXTENDED_ENCODER_POSITION , Degree.getBaseUnit()));
     }
-    
-    
+
+
 
 
 
