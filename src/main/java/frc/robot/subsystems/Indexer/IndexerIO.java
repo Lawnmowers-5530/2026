@@ -6,9 +6,9 @@ public interface IndexerIO {
     
     
     
-    public void setKickerTorqueCurrent(double amps);
+    public void setKickerVoltage(double amps);
 
-    public void setSpindexerTorqueCurrent(double amps);
+    public void setSpindexerVoltage(double amps);
 
     public Measurement getSpindexerLaserCANMeasurement();
 

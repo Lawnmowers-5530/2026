@@ -1,6 +1,7 @@
 package frc.robot.subsystems.Indexer;
 
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import au.grapplerobotics.LaserCan;
@@ -14,23 +15,23 @@ public class IndexerIOReal implements IndexerIO {
     LaserCan kickerLaserCAN;
 
     public IndexerIOReal() {
-        spindexerMotor = new TalonFX(IndexerConstants.SPINDEXER_MOTOR_PORT);
-        spindexerLaserCAN = new LaserCan(IndexerConstants.SPINDEXER_LASERCAN_PORT);
-        kickerLaserCAN = new LaserCan(IndexerConstants.KICKER_LASERCAN_PORT);
-        kickerMotor = new TalonFX(IndexerConstants.KICKER_MOTOR_PORT);
+        spindexerMotor = new TalonFX(IndexerConstants.SPINDEXER_MOTOR_PORT, "canivore");
+       // spindexerLaserCAN = new LaserCan(IndexerConstants.SPINDEXER_LASERCAN_PORT);
+      //  kickerLaserCAN = new LaserCan(IndexerConstants.KICKER_LASERCAN_PORT);
+         kickerMotor = new TalonFX(IndexerConstants.KICKER_MOTOR_PORT, "canivore");
 
-        spindexerMotor.getConfigurator().apply(IndexerConstants.spindexerConfiguration);
-        kickerMotor.getConfigurator().apply(IndexerConstants.kickeConfiguration);
+       // spindexerMotor.getConfigurator().apply(IndexerConstants.spindexerConfiguration);
+        //kickerMotor.getConfigurator().apply(IndexerConstants.kickeConfiguration);
     }
 
     @Override
-    public void setKickerTorqueCurrent(double amps) {
-        kickerMotor.setControl(new TorqueCurrentFOC(amps));
+    public void setKickerVoltage(double amps) {
+        kickerMotor.setControl(new VoltageOut(amps).withEnableFOC(true));
     }
 
     @Override
-    public void setSpindexerTorqueCurrent(double amps) {
-        spindexerMotor.setControl(new TorqueCurrentFOC(amps));
+    public void setSpindexerVoltage(double amps) {
+        spindexerMotor.setControl(new VoltageOut(amps).withEnableFOC(true));
     }
 
     @Override
