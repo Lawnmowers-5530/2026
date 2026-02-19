@@ -8,13 +8,12 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 public final class Bindings {
 
     RobotContainer.Subsystems subsystems;
-    Controller controller = new Controller();
 
     public Bindings(RobotContainer.Subsystems subsystems) {
         this.subsystems = subsystems;
         drivetrain = this.new Drivetrain();
 
-        Controller.zeroGyro.onTrue(this.drivetrain.zeroGyro());
+        Controller.getInstance().zeroGyro.onTrue(this.drivetrain.zeroGyro());
     }
 
     Drivetrain drivetrain;
