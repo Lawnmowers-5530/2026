@@ -8,15 +8,17 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import frc.robot.constants.SpindexerConstants;
+
 public class Spindexer extends SubsystemBase{
-    TalonFX spindexer = new TalonFX(26, "canivore");
-    TalonFX kicker = new TalonFX(27, "canivore");
+    TalonFX spindexer = new TalonFX(SpindexerConstants.SPINDEXER_MOTOR_PORT, "canivore");
+    TalonFX kicker = new TalonFX(SpindexerConstants.KICKER_MOTOR_PORT, "canivore");
 
     TalonFXConfiguration spindexerConfig = new TalonFXConfiguration();
     TalonFXConfiguration kickerConfig = new TalonFXConfiguration();
 
-    DutyCycleOut spindexerControl = new DutyCycleOut(0.5);
-    DutyCycleOut kickerControl = new DutyCycleOut(1);
+    DutyCycleOut spindexerControl = new DutyCycleOut(0);
+    DutyCycleOut kickerControl = new DutyCycleOut(0);
 
 
 
@@ -28,7 +30,8 @@ public class Spindexer extends SubsystemBase{
     };
 
     public void spinKick() {
-        spindexerControl.Output = 0.5;
+        spindexerControl.Output = SpindexerConstants.spindexerForwardSpeed;
+        kickerControl.Output = SpindexerConstants.kickerForwardSpeed;
         this.spindexer.setControl(spindexerControl);
         this.kicker.setControl(kickerControl);
     }
@@ -38,11 +41,22 @@ public class Spindexer extends SubsystemBase{
         this.kicker.stopMotor();
     }
 
+    public void reverse() {
+        spindexerControl.Output = SpindexerConstants.spindexerReverseSpeed;
+        kickerControl.Output = SpindexerConstants.kickerReverseSpeed;
+        this.spindexer.setControl(spindexerControl);
+        this.kicker.setControl(kickerControl);
+    }
+
     public Command spinKickCommand() {
         return Commands.runOnce(() -> {this.spinKick();}, this);
     }
 
-    public Command stopSpinKickCommand() {
+    public Command stopCommand() {
         return Commands.runOnce(() -> {this.stopSpinKick();});
+    }
+
+    public Command reverseCommand() {
+        return Commands.runOnce(() -> {this.reverse();}, this);
     }
 }

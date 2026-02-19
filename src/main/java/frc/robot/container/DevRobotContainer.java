@@ -51,7 +51,7 @@ public class DevRobotContainer {
                 this.subsystems.controller.getDriveController().b().onTrue(subsystems.intake.stopIntake());
 
                 this.subsystems.controller.getDriveController().rightBumper().onTrue(this.subsystems.spindexer.spinKickCommand());
-                this.subsystems.controller.getDriveController().leftBumper().onTrue(this.subsystems.spindexer.stopSpinKickCommand());
+                this.subsystems.controller.getDriveController().leftBumper().onTrue(this.subsystems.spindexer.stopCommand());
 
                 Controller.zeroGyro.onTrue(this.subsystems.drivetrain.runOnce(
                                 () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)));
