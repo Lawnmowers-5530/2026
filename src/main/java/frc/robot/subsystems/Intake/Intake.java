@@ -1,18 +1,20 @@
 package frc.robot.subsystems.Intake;
 
-import static edu.wpi.first.units.Units.Degree;
-import static edu.wpi.first.units.Units.Rotation;
-
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
-import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -20,6 +22,10 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.constants.IntakeConstants;
+
+import static edu.wpi.first.units.Units.*;
 
 public class Intake extends SubsystemBase {
     public enum State {
@@ -33,6 +39,14 @@ public class Intake extends SubsystemBase {
 
     private static boolean exists = false;
     public static Intake instance;
+
+    private SysIdRoutine sysIdRoutine;
+
+    VoltageOut sysIdControlRequest;
+    PositionVoltage controlRequest;
+    StatusSignal<Voltage> motorVoltageSignal;
+    StatusSignal<Angle> positionSignal;
+    StatusSignal<AngularVelocity> velocitySignal;
 
     public Intake() {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -66,6 +80,33 @@ public class Intake extends SubsystemBase {
 
             pivotMotor.getConfigurator().apply(pivotMotorConfig);
 
+            this.motorVoltageSignal = pivotMotor.getMotorVoltage();
+            this.positionSignal = pivotMotor.getPosition();
+            this.velocitySignal = pivotMotor.getVelocity();
+
+            if (IntakeConstants.sysIdMode) {
+                this.motorVoltageSignal.setUpdateFrequency(1000);
+                this.positionSignal.setUpdateFrequency(1000);
+                this.velocitySignal.setUpdateFrequency(1000);
+            }
+
+            pivotMotor.optimizeBusUtilization();
+
+            SysIdRoutine.Mechanism mechanism = new SysIdRoutine.Mechanism(
+                    this::sysIdVoltageDrive,
+                    null,
+                    this,
+                    "Intake"
+            );
+
+            SysIdRoutine.Config config = new SysIdRoutine.Config(
+                    Volts.per(Second).of(IntakeConstants.sysIdRampRate),
+                    Volts.of(IntakeConstants.sysIdStepVoltage),
+                    Seconds.of(IntakeConstants.sysIdTimeout),
+                    (SysIdRoutineLog.State state) -> SignalLogger.writeString("state", state.toString())
+            );
+
+            this.sysIdRoutine = new SysIdRoutine(config, mechanism);
         }
 
     }
@@ -150,6 +191,18 @@ public class Intake extends SubsystemBase {
 
     public void zeroPivot() {
         this.pivotMotor.setPosition(0);
+    }
+
+    public void sysIdVoltageDrive(Voltage voltage) {
+        this.sysIdControlRequest = sysIdControlRequest.withOutput(voltage);
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return sysIdRoutine.dynamic(direction);
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return sysIdRoutine.quasistatic(direction);
     }
 
 }

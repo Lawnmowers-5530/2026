@@ -1,6 +1,10 @@
 # This gitignore has been specially created by the WPILib team.
 # If you remove items from this file, intellisense might break.
 
+#for development temporary bindings only
+src/main/java/frc/robot/container/DevRobotContainer.java
+src/main/java/frc/robot/container/DevBindings.java
+
 ### C++ ###
 # Prerequisites
 *.d
@@ -190,7 +194,3 @@ src/main/java/frc/robot/generated/BuildConstants.java
 
 #intellij config
 .idea
-
-#for development temporary bindings only
-src/main/java/frc/robot/container/DevRobotContainer.java
-src/main/java/frc/robot/container/DevBindings.java
