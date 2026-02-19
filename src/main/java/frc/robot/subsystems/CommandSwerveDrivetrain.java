@@ -390,8 +390,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     public Command driveCommand() {
         final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                .withDeadband(SwerveConstants.MaxSpeed * 0.1)
-                .withRotationalDeadband(SwerveConstants.MaxAngularRate * 0.1) // Add a 10% deadband
+                .withDeadband(SwerveConstants.MaxSpeed * 0.05)
+                .withRotationalDeadband(SwerveConstants.MaxAngularRate * 0.05)
                 .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
         return this.applyRequest(() -> drive
                 .withVelocityX(Controller.driveVector.get().get(0) * SwerveConstants.MaxSpeed) // Drive forward with

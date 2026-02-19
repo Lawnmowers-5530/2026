@@ -64,21 +64,21 @@ public class Turret extends SubsystemBase {
         torqueCurrentConfigFlywheel.PeakReverseTorqueCurrent = -500;
         torqueCurrentConfigFlywheel.TorqueNeutralDeadband = 0;
 
-        this.m_yaw = new TalonFX(21);
+        this.m_yaw = new TalonFX(21, "canivore");
         this.m_yaw.getConfigurator().apply(yawConfig);
         this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
         this.m_yaw.setControl(yawControl);
 
         pitchConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-        this.m_pitch = new TalonFX(22);
+        this.m_pitch = new TalonFX(22, "canivore");
         this.m_pitch.getConfigurator().apply(pitchConfig);
         this.pitchControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
         this.m_pitch.setControl(pitchControl);
 
         pitchConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-        this.m_flywheel = new TalonFX(23);
+        this.m_flywheel = new TalonFX(23, "canivore");
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
         this.flywheelControl = new VelocityTorqueCurrentFOC(0).withSlot(0);
         this.m_flywheel.setControl(flywheelControl);

@@ -31,9 +31,7 @@ public class RobotContainer {
 
         public class Subsystems {
                 public CommandSwerveDrivetrain drivetrain;
-                public Controller controller;
-                public Turret turret;
-                public Indexer indexer;
+                public Controller controller = new Controller();
         }
 
         Subsystems subsystems;
@@ -89,15 +87,8 @@ public class RobotContainer {
         public Command getAutonomousCommand() {
                 // Simple drive forward auton
                 final var idle = new SwerveRequest.Idle();
-                return Commands.sequence(
-                                // Reset our field centric heading to match the robot
-                                // facing away from our alliance station wall (0 deg).
-                                this.subsystems.drivetrain.runOnce(
-                                                () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)),
-                                // Then run selected auton
-                                autoChooser.getSelected(),
-                                // Finally idle for the rest of auton
-                                this.subsystems.drivetrain.applyRequest(() -> idle));
+                return autoChooser.getSelected().andThen(
+                                this.subsystems.drivetrain.applyRequest(() -> idle).ignoringDisable(true));
         }
 
         public void teleopInit() {
