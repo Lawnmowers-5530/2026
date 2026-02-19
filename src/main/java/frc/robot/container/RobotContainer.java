@@ -24,7 +24,6 @@ public class RobotContainer {
                 public Intake intake;
                 public Spindexer spindexer;
                 public CommandSwerveDrivetrain drivetrain;
-                public Controller controller;
         }
 
         Subsystems subsystems;
@@ -38,22 +37,21 @@ public class RobotContainer {
         public RobotContainer() {
                 this.subsystems = new Subsystems();
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
-                this.subsystems.controller = new Controller();
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
                 this.subsystems.intake = new Intake();
                 this.subsystems.spindexer = new Spindexer();
 
                 this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
 
-                                this.subsystems.controller.getDriveController().y().onTrue(subsystems.intake.extendIntake());
-                this.subsystems.controller.getDriveController().a().onTrue(subsystems.intake.tuck());
-                this.subsystems.controller.getDriveController().x().onTrue(subsystems.intake.runIntake());
-                this.subsystems.controller.getDriveController().b().onTrue(subsystems.intake.stopIntake());
+                Controller.getInstance().getDriveController().y().onTrue(subsystems.intake.extendIntake());
+                Controller.getInstance().getDriveController().a().onTrue(subsystems.intake.tuck());
+                Controller.getInstance().getDriveController().x().onTrue(subsystems.intake.runIntake());
+                Controller.getInstance().getDriveController().b().onTrue(subsystems.intake.stopIntake());
 
-                this.subsystems.controller.getDriveController().rightBumper().onTrue(this.subsystems.spindexer.spinKickCommand());
-                this.subsystems.controller.getDriveController().leftBumper().onTrue(this.subsystems.spindexer.stopCommand());
+                Controller.getInstance().getDriveController().rightBumper().onTrue(this.subsystems.spindexer.spinKickCommand());
+                Controller.getInstance().getDriveController().leftBumper().onTrue(this.subsystems.spindexer.stopCommand());
 
-                Controller.zeroGyro.onTrue(this.subsystems.drivetrain.runOnce(
+                Controller.getInstance().zeroGyro.onTrue(this.subsystems.drivetrain.runOnce(
                                 () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)));
         }
 

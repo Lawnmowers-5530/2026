@@ -394,11 +394,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 .withRotationalDeadband(SwerveConstants.MaxAngularRate * 0.1) // Add a 10% deadband
                 .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
         return this.applyRequest(() -> drive
-                .withVelocityX(Controller.driveVector.get().get(0) * SwerveConstants.MaxSpeed) // Drive forward with
+                .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.MaxSpeed) // Drive forward with
                                                                                                 // negative Y (forward)
-                .withVelocityY(Controller.driveVector.get().get(1) * SwerveConstants.MaxSpeed) // Drive left with
+                .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.MaxSpeed) // Drive left with
                                                                                                 // negative X (left)
-                .withRotationalRate(Controller.driveRotation.get() * SwerveConstants.MaxAngularRate) // Drive
+                .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.MaxAngularRate) // Drive
                                                                                                      // counterclockwise
                                                                                                      // with
         // negative X (left)

@@ -15,12 +15,25 @@ public class Controller {
     public CommandXboxController secondaryController;
     public CommandXboxController switches;
 
-    public static Supplier<Vector<N2>> driveVector;
-    public static Supplier<Double> driveRotation;
-    public static Trigger slowMode;
-    public static Trigger zeroGyro;
+    public Supplier<Vector<N2>> driveVector;
+    public Supplier<Double> driveRotation;
+    public Trigger slowMode;
+    public Trigger zeroGyro;
+    public Trigger runIntake;
+    public Trigger reverseIntake;
+    public Trigger extendIntake;
+    public Trigger tuckIntake;
 
-    public Controller() {
+    private static Controller instance;
+
+    public static Controller getInstance() {
+        if (instance == null) {
+            instance = new Controller();
+        }
+        return instance;
+    }
+
+    private Controller() {
         this.driverController = new CommandXboxController(0);
         
         driveVector = () -> VecBuilder.fill(-this.driverController.getLeftY(), -this.driverController.getLeftX());

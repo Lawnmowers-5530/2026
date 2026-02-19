@@ -24,7 +24,6 @@ public class DevRobotContainer {
                 public Intake intake;
                 public Spindexer spindexer;
                 public CommandSwerveDrivetrain drivetrain;
-                public Controller controller;
         }
 
         Subsystems subsystems;
@@ -38,7 +37,6 @@ public class DevRobotContainer {
         public DevRobotContainer() {
                 this.subsystems = new Subsystems();
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
-                this.subsystems.controller = new Controller();
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
                 this.subsystems.intake = new Intake();
                 this.subsystems.spindexer = new Spindexer();
