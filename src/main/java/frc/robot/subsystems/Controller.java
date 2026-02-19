@@ -35,6 +35,7 @@ public class Controller {
 
     private Controller() {
         this.driverController = new CommandXboxController(0);
+        this.secondaryController = new CommandXboxController(1);
         
         driveVector = () -> VecBuilder.fill(-this.driverController.getLeftY(), -this.driverController.getLeftX());
         driveRotation = () -> -this.driverController.getRightX();
@@ -67,5 +68,9 @@ public class Controller {
 
     public CommandXboxController getDriveController() {
         return this.driverController;
+    }
+
+    public CommandXboxController getSecondaryController() {
+        return this.secondaryController;
     }
 }

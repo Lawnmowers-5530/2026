@@ -8,6 +8,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
@@ -74,32 +75,35 @@ public class Intake extends SubsystemBase {
     public void periodic() {
         SmartDashboard.putString("Intake State", this.currentState.toString());
         SmartDashboard.putString("Pivot pos", this.pivotMotor.getPosition().toString());
+        SmartDashboard.putString("Target", this.pivotMotor.getAppliedControl().getControlInfo().toString());
+        SmartDashboard.putBoolean("pivotAtExtensionPosition", this.pivotAtExtensionPosition());
+        SmartDashboard.putNumber("applied output", this.pivotMotor.get());
         // TODO Telemetry or logging
     }
 
     public Command tuck() {
-        if (canTuck()) {
-            return new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
-                    Commands.runOnce(() -> {
-                        this.currentState = State.TUCKING;
-                        runMotor.set(0);
-                        pivotMotor.setControl(new MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
-                    }, this))
-                    .andThen(Commands.runOnce(() -> {this.currentState = State.TUCKED;}, this));
-        } else {
-            return new InstantCommand();
-        }
+        return Commands.either(
+                new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
+                        Commands.runOnce(() -> {
+                            this.currentState = State.TUCKING;
+                            runMotor.set(0);
+                            pivotMotor.setControl(
+                                    new VoltageOut(-12));// new
+                                                         // MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
+                        }, this))
+                        .andThen(Commands.runOnce(() -> {
+                            this.currentState = State.TUCKED;
+                        }, this)),
+                new InstantCommand(), this::canTuck);
     }
 
     public Command runIntake() {
-        if(this.canRunIntake()) {
-            return Commands.runOnce(() -> {
-                //runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
-                runMotor.set(1);
-            }, this);
-        } else {
-            return new InstantCommand();
-        }
+        return Commands.either(
+                Commands.runOnce(() -> {
+                    // runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
+                    runMotor.set(1);
+                }, this),
+                this.stopIntake(), this::canRunIntake);
     }
 
     public Command stopIntake() {
@@ -109,19 +113,19 @@ public class Intake extends SubsystemBase {
     }
 
     public Command extendIntake() {
-        if (this.canExtend()) {
-            return new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
-                    Commands.runOnce(() -> {
-                        this.currentState = State.EXTENDING;
-                        pivotMotor.setControl(new MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
-                    }, this))
-                    .andThen(Commands.runOnce(() -> {
-                        this.currentState = State.EXTENDED;
-                        pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
-                    }, this));
-        } else {
-            return new InstantCommand();
-        }
+
+        return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
+                Commands.runOnce(() -> {
+                    this.currentState = State.EXTENDING;
+                    pivotMotor
+                            .setControl(new VoltageOut(3));// new
+                                                           // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
+                }, this))
+                .andThen(Commands.runOnce(() -> {
+                    this.currentState = State.EXTENDED;
+                    pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
+                }, this)),
+                new InstantCommand(), this::canExtend);
     }
 
     private boolean canRunIntake() {
