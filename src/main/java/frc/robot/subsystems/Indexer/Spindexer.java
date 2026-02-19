@@ -1,6 +1,7 @@
 package frc.robot.subsystems.Indexer;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -14,21 +15,27 @@ public class Spindexer extends SubsystemBase{
     TalonFXConfiguration spindexerConfig = new TalonFXConfiguration();
     TalonFXConfiguration kickerConfig = new TalonFXConfiguration();
 
+    DutyCycleOut spindexerControl = new DutyCycleOut(0.5);
+    DutyCycleOut kickerControl = new DutyCycleOut(1);
+
+
 
     public Spindexer() {
-
         this.spindexer.getConfigurator().apply(spindexerConfig);
         this.kicker.getConfigurator().apply(kickerConfig);
+        spindexerControl.EnableFOC = true;
+        kickerControl.EnableFOC = true;
     };
 
     public void spinKick() {
-        this.spindexer.set(0.5);
-        this.kicker.set(1);
+        spindexerControl.Output = 0.5;
+        this.spindexer.setControl(spindexerControl);
+        this.kicker.setControl(kickerControl);
     }
 
     public void stopSpinKick() {
-        this.spindexer.set(0);
-        this.kicker.set(0);
+        this.spindexer.stopMotor();
+        this.kicker.stopMotor();
     }
 
     public Command spinKickCommand() {
