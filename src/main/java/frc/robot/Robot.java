@@ -17,7 +17,7 @@ public class Robot extends TimedRobot {
     
     private Command m_autonomousCommand;
 
-    private final RobotContainer m_robotContainer;
+    private final DevRobotContainer m_robotContainer;
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -67,7 +67,9 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic() {
+        m_robotContainer.teleopPeriodic();
+    }
 
     @Override
     public void teleopExit() {

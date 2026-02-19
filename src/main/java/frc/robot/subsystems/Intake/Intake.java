@@ -1,14 +1,25 @@
 package frc.robot.subsystems.Intake;
 
 import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.Rotation;
+
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 public class Intake extends SubsystemBase {
     public enum State {
@@ -20,70 +31,107 @@ public class Intake extends SubsystemBase {
     private TalonFX pivotMotor;
     private TalonFX runMotor;
 
-
     private static boolean exists = false;
     public static Intake instance;
 
     public Intake() {
+        CommandScheduler.getInstance().registerSubsystem(this);
         if (Intake.exists) {
             System.err.println("Creating more than one intake. Please fix broken code");
-        }else {
+        } else {
             instance = this;
             Intake.exists = true;
-            pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT);
-            runMotor = new TalonFX(IntakeConstants.RUN_MOTOR_PORT);
+            pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT, "canivore");
+            runMotor = new TalonFX(IntakeConstants.RUN_MOTOR_PORT, "canivore");
+            TalonFXConfiguration runMotorConfig = new TalonFXConfiguration();
+            TorqueCurrentConfigs torqueCurrentConfig = new TorqueCurrentConfigs();
+            runMotorConfig = runMotorConfig.withTorqueCurrent(torqueCurrentConfig);
+            runMotor.getConfigurator().apply(runMotorConfig);
+            TalonFXConfiguration pivotMotorConfig = new TalonFXConfiguration();
+            var slot0PivotConfig = pivotMotorConfig.Slot0;
+            slot0PivotConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
+            slot0PivotConfig.kV = 1; // A velocity target of 1 rps results in 0.12 V output
+            slot0PivotConfig.kA = 1; // An acceleration of 1 rps/s requires 0.01 V output
+            slot0PivotConfig.kP = 7; // A position error of 2.5 rotations results in 12 V output
+            slot0PivotConfig.kI = 0.2; // no output for integrated error
+            slot0PivotConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
+            slot0PivotConfig.GravityType = GravityTypeValue.Arm_Cosine;
+            slot0PivotConfig.GravityArmPositionOffset = 0.1;
+            slot0PivotConfig.kG = 3;
+
+            var motionMagicConfigPivot = pivotMotorConfig.MotionMagic;
+            motionMagicConfigPivot.MotionMagicCruiseVelocity = 1; // Target cruise velocity of 80 rps
+            motionMagicConfigPivot.MotionMagicAcceleration = 1; // Target acceleration of 160 rps/s (0.5 seconds)
+            motionMagicConfigPivot.MotionMagicJerk = 4; // Target jerk of 1600 rps/s/s (0.1 seconds)
+
+            pivotMotor.getConfigurator().apply(pivotMotorConfig);
 
         }
 
     }
+
     @Override
     public void periodic() {
-
-        //TODO Telemetry or logging
+        SmartDashboard.putString("Intake State", this.currentState.toString());
+        SmartDashboard.putString("Pivot pos", this.pivotMotor.getPosition().toString());
+        // TODO Telemetry or logging
     }
 
     public Command tuck() {
-        return
-        Commands.runOnce(() -> {
-            if (!canTuck()) return;
-            this.currentState = State.TUCKING;
-            runMotor.set(0);
-            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.TUCKED_ENCODER_POSITION));
-        }, this)
-        .andThen(Commands.waitUntil(this::pivotAtTuckPosition))
-        .andThen(Commands.runOnce(() -> this.currentState = State.TUCKED, this));
-    }
-    public Command runIntake() {
-        return Commands.runOnce(()-> {
-            if (canRunIntake()) {
-                runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
-            } else {
-                runMotor.setControl(new TorqueCurrentFOC(0));
-            }
+        if (canTuck()) {
+            return new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
+                    Commands.runOnce(() -> {
+                        this.currentState = State.TUCKING;
+                        runMotor.set(0);
+                        pivotMotor.setControl(new MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
+                    }, this))
+                    .andThen(Commands.runOnce(() -> {this.currentState = State.TUCKED;}, this));
+        } else {
+            return new InstantCommand();
         }
-        );
     }
+
+    public Command runIntake() {
+        if(this.canRunIntake()) {
+            return Commands.runOnce(() -> {
+                //runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
+                runMotor.set(1);
+            }, this);
+        } else {
+            return new InstantCommand();
+        }
+    }
+
     public Command stopIntake() {
-        return Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(0)));
+        return Commands.runOnce(() -> {
+            runMotor.setControl(new TorqueCurrentFOC(0));
+        });
     }
+
     public Command extendIntake() {
-        return Commands.either(Commands.runOnce(()-> {
-            this.currentState = State.EXTENDING;
-            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION));
-        }, this)
-        .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-        .andThen(Commands.runOnce(()-> {
-            this.currentState = State.EXTENDED;
-            pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
-        }, this))
-        , Commands.none(), this::canExtend);
+        if (this.canExtend()) {
+            return new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
+                    Commands.runOnce(() -> {
+                        this.currentState = State.EXTENDING;
+                        pivotMotor.setControl(new MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
+                    }, this))
+                    .andThen(Commands.runOnce(() -> {
+                        this.currentState = State.EXTENDED;
+                        pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
+                    }, this));
+        } else {
+            return new InstantCommand();
+        }
     }
+
     private boolean canRunIntake() {
         return currentState == State.EXTENDED;
     }
+
     private boolean canExtend() {
         return currentState == State.TUCKED || currentState == State.TUCKING;
     }
+
     private boolean canTuck() {
         return currentState == State.EXTENDED || currentState == State.EXTENDING;
     }
@@ -91,16 +139,17 @@ public class Intake extends SubsystemBase {
     public State getState() {
         return currentState;
     }
-    //TODO: replace lt and gt with near for better results
+
     private boolean pivotAtTuckPosition() {
-        return pivotMotor.getPosition().getValue().lt(Angle.ofBaseUnits(IntakeConstants.TUCKED_ENCODER_POSITION , Degree.getBaseUnit()));
+        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.TUCKED_ENCODER_POSITION) <= 0.1;
     }
+
     private boolean pivotAtExtensionPosition() {
-        return pivotMotor.getPosition().getValue().gt(Angle.ofBaseUnits(IntakeConstants.EXTENDED_ENCODER_POSITION , Degree.getBaseUnit()));
+        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.EXTENDED_ENCODER_POSITION) <= 0.1;
     }
 
-
-
-
+    public void zeroPivot() {
+        this.pivotMotor.setPosition(0);
+    }
 
 }

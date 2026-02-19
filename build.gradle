@@ -1,9 +1,6 @@
 plugins {
-    id "cpp"
     id "java"
     id "edu.wpi.first.GradleRIO" version "2026.2.1"
-    id "edu.wpi.first.GradleJni" version "1.2.0"
-    id "com.peterabeles.gversion" version "1.10"
 }
 
 java {
@@ -29,17 +26,7 @@ deploy {
                 // First part is artifact name, 2nd is artifact type
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
-                frcCpp(getArtifactTypeClass('FRCNativeArtifact')) {
-                }
-
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
-                    // Enable VisualVM connection
-                    jvmArgs.add("-Dcom.sun.management.jmxremote=true")
-                    jvmArgs.add("-Dcom.sun.management.jmxremote.port=1198")
-                    jvmArgs.add("-Dcom.sun.management.jmxremote.local.only=false")
-                    jvmArgs.add("-Dcom.sun.management.jmxremote.ssl=false")
-                    jvmArgs.add("-Dcom.sun.management.jmxremote.authenticate=false")
-                    jvmArgs.add("-Djava.rmi.server.hostname=10.55.30.2") // Replace TE.AM with team number
                 }
 
                 // Static files artifact
@@ -47,13 +34,7 @@ deploy {
                     files = project.fileTree('src/main/deploy')
                     directory = '/home/lvuser/deploy'
                     deleteOldFiles = false // Change to true to delete files on roboRIO that no
-                    // longer exist in deploy directory of this project
-                }
-
-                frcStaticFileDeploy(getArtifactTypeClass('FileTreeArtifact')) {
-                    files = project.fileTree('build/libs/library/shared/release')
-                    directory = '/usr/local/frc/third-party/lib'
-                    deleteOldFiles = false
+                                           // longer exist in deploy directory of this project
                 }
             }
         }
@@ -72,7 +53,6 @@ def includeDesktopSupport = true
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 5.
 dependencies {
-
     annotationProcessor wpi.java.deps.wpilibAnnotations()
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
@@ -93,12 +73,6 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    compileOnly 'org.projectlombok:lombok:1.18.42'
-    annotationProcessor 'org.projectlombok:lombok:1.18.42'
-
-    testCompileOnly 'org.projectlombok:lombok:1.18.42'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
 }
 
 test {
@@ -130,91 +104,4 @@ wpi.java.configureTestTasks(test)
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
-}
-
-project.compileJava.dependsOn(createVersionFile)
-gversion {
-    srcDir = "src/main/java/"
-    classPackage = "frc.robot.generated"
-    className = "BuildConstants"
-    dateFormat = "yyyy-MM-dd HH:mm:ss z"
-    timeZone = "America/Detroit"
-    indent = "  "
-}
-
-def deployArtifact2 = deploy.targets.roborio.artifacts.frcCpp // binary executable deploy job for robotnative so wpilib new commands gets deployed as well, does nothing since there is no main function
-
-model {
-    components {
-        library(JniNativeLibrarySpec) {
-
-            binaries.all {
-                linker.args "-Wl,-z,now", "-Wl,-z,relro", "-Wl,-z,noexecstack"
-                cppCompiler.args "-Wall", "-std=gnu++20"
-            }
-
-            targetPlatform wpi.platforms.roborio
-
-            baseName = "RobotNative"
-
-            sources {
-                cpp {
-                    source {
-                        srcDir project(":").file("src/main/cpp/RobotNative/src")
-                        include "**/*.cpp"
-                    }
-                    exportedHeaders {
-                        srcDir project(":").file("src/main/cpp/RobotNative/include")
-                        srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/jni.hpp/include")
-                        srcDir project(":").file("src/main/cpp/RobotNative/include/third-party/wpilib-jni-defs/jni/linux") // hack: JNI fallbacks for compile on non linux systems
-                    }
-                }
-            }
-
-            wpi.cpp.vendor.cpp(it)
-            wpi.cpp.deps.wpilib(it)
-        }
-
-        frcUserProgram(NativeExecutableSpec) {
-
-            binaries.all {
-                linker.args "-Wl,-z,now", "-Wl,-z,relro"
-                cppCompiler.args "-Wall", "-O3", "-I${System.getProperty('frcHome')}/jdk/include", "-I${System.getProperty('frcHome')}/jdk/include/linux"
-            }
-
-            targetPlatform wpi.platforms.roborio
-
-            baseName = "Stub"
-
-            sources {
-                cpp {
-                    source {
-                        srcDir project(":").file("src/main/cpp/Stub")
-                        include "**/*.cpp", "**/*.cc"
-                    }
-                    exportedHeaders {
-                        srcDir project(":").file("src/main/cpp/Stub/include")
-                    }
-                }
-            }
-
-            deployArtifact2.component = it
-            wpi.cpp.vendor.cpp(it)
-            wpi.cpp.deps.wpilib(it)
-        }
-    }
-}
-
-task generateJniHeaders(type: JavaCompile) {
-    group = "build"
-    description = "Generate jni headers"
-
-    source = sourceSets.main.java
-    classpath = sourceSets.main.compileClasspath
-
-    destinationDirectory = file("${buildDir}/jni-temp")
-    options.headerOutputDirectory = file("src/main/cpp/RobotNative/include/jni")
-
-    //options.compilerArgs += ["-proc:none"]
-    options.annotationProcessorPath = configurations.annotationProcessor
 }
