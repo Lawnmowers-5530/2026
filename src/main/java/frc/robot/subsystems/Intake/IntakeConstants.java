@@ -6,7 +6,7 @@ public class IntakeConstants {
     public static final int PIVOT_MOTOR_PORT = 24;
     public static final int RUN_MOTOR_PORT = 25;
 
-    public static final double RUN_MOTOR_AMPS = 26;
+    public static final double RUN_MOTOR_AMPS = 15;
 
 
     public static final double EXTENDED_ENCODER_POSITION = 0.94;

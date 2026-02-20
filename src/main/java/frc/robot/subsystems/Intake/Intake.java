@@ -101,7 +101,7 @@ public class Intake extends SubsystemBase {
         return Commands.either(
                 Commands.runOnce(() -> {
                     // runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
-                    runMotor.set(1);
+                    runMotor.set(0.45);
                 }, this),
                 this.stopIntake(), this::canRunIntake);
     }

@@ -12,7 +12,7 @@ public class LauncherConstants { //TODO: fill in constants
     public static final double kI = 0.0;
     public static final double kD = 0.00;
     public static final double motorToYawRot = 8;
-    public static final double motorToPitchRot = 17;
+    public static final double motorToPitchRot = 17 * 0.75;
     public static final double motorToFlywheelRot = 1;
     public static final double sysIdRampRate = 1.0; // Volts per second
     public static final double sysIdDynamicStepVoltage = 0.0; // Volts

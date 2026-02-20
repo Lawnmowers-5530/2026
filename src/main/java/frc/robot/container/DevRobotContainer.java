@@ -4,7 +4,10 @@
 
 package frc.robot.container;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -35,7 +38,13 @@ public class DevRobotContainer {
 
         private final Telemetry logger = new Telemetry(SwerveConstants.MaxSpeed);
 
+        private double pitchsp;
+
+        private double yawsp;
+
         public DevRobotContainer() {
+                this.pitchsp = 0;
+                this.yawsp = 0;
                 this.subsystems = new Subsystems();
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
@@ -51,8 +60,10 @@ public class DevRobotContainer {
 
                 Controller.getInstance().getDriveController().rightBumper().onTrue(this.subsystems.spindexer.spinKickCommand());
                 Controller.getInstance().getDriveController().leftBumper().onTrue(this.subsystems.spindexer.stopCommand());
+                Controller.getInstance().getDriveController().povUp().onTrue(this.subsystems.turret.setFlywheelSpeedCommand(0));
+                Controller.getInstance().getDriveController().povRight().onTrue(this.subsystems.turret.setFlywheelSpeedCommand(60));
 
-                Controller.getInstance().getDriveController().povRight().onTrue(this.subsystems.turret.setFlywheelSpeedCommand(6));
+                Controller.getInstance().getDriveController().povDown().onTrue(new InstantCommand(() -> {this.subsystems.drivetrain.resetPose(new Pose2d());}, this.subsystems.drivetrain));
 
                 Controller.getInstance().zeroGyro.onTrue(this.subsystems.drivetrain.runOnce(
                                 () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)));
@@ -65,14 +76,28 @@ public class DevRobotContainer {
 
         public void teleopInit() {
                 this.subsystems.intake.zeroPivot();
+                this.subsystems.turret.zeroPitch();
                 // Any teleop-specific initialization code can go here.
         }
 
         public void teleopPeriodic() {
+                this.pitchsp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getLeftY(), 0.08) * 5;
+                this.subsystems.turret.setPitch(Rotation2d.fromDegrees(this.pitchsp));
+
+                this.yawsp += Controller.getInstance().getSecondaryController().getRightX() * 0.01;
+                this.subsystems.turret.setYaw(Rotation2d.fromRotations(this.yawsp));
+                SmartDashboard.putNumber("yawsp", yawsp);
+                SmartDashboard.putString("current pose", this.subsystems.drivetrain.getState().Pose.toString());
+
+
 
         }
 
         public void teleopExit() {
                 // Any teleop-specific cleanup code can go here.
+        }
+
+        private Rotation2d getPitchSp() {
+                return Rotation2d.fromDegrees(this.pitchsp);
         }
 }
