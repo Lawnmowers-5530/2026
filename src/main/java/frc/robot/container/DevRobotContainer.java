@@ -46,11 +46,8 @@ public class DevRobotContainer {
 
         private double pitchsp;
 
-        private double yawsp;
-
         public DevRobotContainer() {
                 this.pitchsp = 0;
-                this.yawsp = 0;
                 this.subsystems = new Subsystems();
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
@@ -109,11 +106,8 @@ public class DevRobotContainer {
                                 0.08) * 5;
                 this.subsystems.turret.setPitch(Rotation2d.fromDegrees(this.pitchsp));
 
-                this.yawsp += Controller.getInstance().getSecondaryController().getRightX() * 0.01;
-                this.subsystems.turret.setYaw(Rotation2d.fromRotations(this.yawsp));
-                SmartDashboard.putNumber("yawsp", yawsp);
-                SmartDashboard.putString("current pose", this.subsystems.drivetrain.getState().Pose.toString());
-
+                Rotation2d angle = Rotation2d.fromRadians(Math.acos(this.subsystems.drivetrain.getState().Pose.getTranslation().dot(LauncherConstants.blueTargetPose)/(LauncherConstants.blueTargetPose.getNorm()*this.subsystems.drivetrain.getState().Pose.getTranslation().getNorm()))).minus(LauncherConstants.dragChainZeroAngle);
+                this.subsystems.turret.setYaw(angle);
         }
 
         public void teleopExit() {

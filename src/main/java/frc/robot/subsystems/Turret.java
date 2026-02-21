@@ -31,6 +31,8 @@ public class Turret extends SubsystemBase {
     private TorqueCurrentFOC flywheelControl;
 
     public Turret() {
+        CommandScheduler.getInstance().registerSubsystem(this);
+
         var slot0yawConfig = yawConfig.Slot0;
         slot0yawConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
         slot0yawConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
@@ -136,6 +138,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void periodic() {
+        
         SmartDashboard.putString("pitch request", this.pitchControl.getControlInfo().toString());
     }
 }
