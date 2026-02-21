@@ -12,6 +12,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -45,9 +46,11 @@ public class DevRobotContainer {
         private final Telemetry logger = new Telemetry(SwerveConstants.MaxSpeed);
 
         private double pitchsp;
+        private double yawsp;
 
         public DevRobotContainer() {
                 this.pitchsp = 0;
+                this.yawsp = 0;
                 this.subsystems = new Subsystems();
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
@@ -88,6 +91,8 @@ public class DevRobotContainer {
 
                 Controller.getInstance().zeroGyro.onTrue(this.subsystems.drivetrain.runOnce(
                                 () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)));
+
+                Controller.getInstance().getSecondaryController().x().onTrue(new InstantCommand(() -> {this.subsystems.turret.zeroYaw();}, this.subsystems.turret));
         }
 
         public Command getAutonomousCommand() {
@@ -98,6 +103,7 @@ public class DevRobotContainer {
         public void teleopInit() {
                 this.subsystems.intake.zeroPivot();
                 this.subsystems.turret.zeroPitch();
+                SmartDashboard.putNumber("shooter speed", 0);
                 // Any teleop-specific initialization code can go here.
         }
 
@@ -106,8 +112,19 @@ public class DevRobotContainer {
                                 0.08) * 5;
                 this.subsystems.turret.setPitch(Rotation2d.fromDegrees(this.pitchsp));
 
-                Rotation2d angle = Rotation2d.fromRadians(Math.acos(this.subsystems.drivetrain.getState().Pose.getTranslation().dot(LauncherConstants.blueTargetPose)/(LauncherConstants.blueTargetPose.getNorm()*this.subsystems.drivetrain.getState().Pose.getTranslation().getNorm()))).minus(LauncherConstants.dragChainZeroAngle);
+                this.yawsp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getRightX(),
+                                0.08) * 0.5;
+                
+                this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("shooter speed", 0));
+                
+                SmartDashboard.putString("pose", this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
+                //this.subsystems.turret.setYaw(angle);
+                Rotation2d angle = LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
                 this.subsystems.turret.setYaw(angle);
+                SmartDashboard.putNumber("actualSp", this.yawsp);
+                SmartDashboard.putNumber("targetAngle", angle.getDegrees());
+
+
         }
 
         public void teleopExit() {
