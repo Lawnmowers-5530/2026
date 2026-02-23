@@ -9,6 +9,7 @@ import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.mechanisms.swerve.LegacySwerveRequest.SwerveDriveBrake;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
@@ -22,19 +23,28 @@ import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.DistanceUnit;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Robot;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.vision.PoseCameraManager;
@@ -47,6 +57,11 @@ import frc.robot.vision.PoseCameraManager;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
+
+    
+    //Confidence in our pose estimate. If we slip, 
+    private Vector<N2> previousAcceleration;
+    private Vector<N2> previousJoystickInput;
 
     private final PoseCameraManager cameraManager = new PoseCameraManager(this);
     private static final double kSimLoopPeriod = 0.004; // 4 ms
@@ -296,6 +311,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * This ensures driving behavior doesn't change until an explicit disable event
          * occurs during testing.
          */
+        
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(
@@ -307,8 +323,33 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
         for (var estimatePose : this.cameraManager.getEstimatedPoses()) {
             this.addVisionMeasurement(estimatePose);
+            
             SmartDashboard.putString("visionStdDevs", estimatePose.getSecond().toString());
         }
+        
+        Vector<N2> accelerationVector = new Translation2d(getPigeon2().getAccelerationX().getValue().in(MetersPerSecondPerSecond), getPigeon2().getAccelerationY().getValue().in(MetersPerSecondPerSecond)).rotateBy(Rotation2d.fromDegrees(getPigeon2().getYaw().getValue().in(Degree))).toVector();
+        Vector<N2> joystickInput = Controller.getInstance().driveVector.get();
+        if (previousAcceleration != null) {
+
+            //Wrap these two booleans in debouncers. Can be used to check if our odometry is reliable.
+
+            //Uses imu and joystick data to determine if a collision has occurred
+            
+            Vector<N2> robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.kDefaultPeriod);
+            Vector<N2> commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.kDefaultPeriod).times(SwerveConstants.MaxSpeed);
+          
+            boolean collisionOcurred = Math.pow(robotJerk.get(1),2) + Math.pow(robotJerk.get(2), 2) > Math.pow(SwerveConstants.CollisionOccurredJerkThreshold, 2) * Math.pow(commandedJerk.get(1),2) + Math.pow(commandedJerk.get(2), 2);
+            SmartDashboard.putBoolean("SwerveDrivetrain/CollisionOccurred", collisionOcurred);
+
+            //Get's if the drivetrain is skidding
+            double ratio = getSkiddingRatio(this.getState().ModuleStates, this.getKinematics());
+            SmartDashboard.putBoolean("SwerveDrivetrain/Skidding", ratio > 1.05);
+        }
+        previousAcceleration = accelerationVector;
+        previousJoystickInput = joystickInput;
+
+        
+        
     }
 
     private void startSimThread() {
@@ -404,4 +445,40 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         // negative X (left)
         );
     }
+     /**
+     * the method comes from 1690's <a href="https://youtu.be/N6ogT5DjGOk?feature=shared&t=1674">online software session</a>
+     * gets the skidding ratio from the latest , that can be used to determine how much the chassis is skidding
+     * the skidding ratio is defined as the  ratio between the maximum and minimum magnitude of the "translational" part of the speed of the modules
+     * 
+     * @param swerveStatesMeasured the swerve states measured from the modules
+     * @param swerveDriveKinematics the kinematics
+     * @return the skidding ratio, maximum/minimum, ranges from [1,INFINITY)
+     * */
+    private static double getSkiddingRatio(SwerveModuleState[] swerveStatesMeasured, SwerveDriveKinematics swerveDriveKinematics) {
+        final double angularVelocityOmegaMeasured = swerveDriveKinematics.toChassisSpeeds(swerveStatesMeasured).omegaRadiansPerSecond;
+        final SwerveModuleState[] swerveStatesRotationalPart = swerveDriveKinematics.toSwerveModuleStates(new ChassisSpeeds(0, 0, angularVelocityOmegaMeasured));
+        final double[] swerveStatesTranslationalPartMagnitudes = new double[swerveStatesMeasured.length];
+
+        for (int i =0; i < swerveStatesMeasured.length; i++) {
+            final Translation2d swerveStateMeasuredAsVector = convertSwerveStateToVelocityVector(swerveStatesMeasured[i]),
+                    swerveStatesRotationalPartAsVector = convertSwerveStateToVelocityVector(swerveStatesRotationalPart[i]),
+                    swerveStatesTranslationalPartAsVector = swerveStateMeasuredAsVector.minus(swerveStatesRotationalPartAsVector);
+            swerveStatesTranslationalPartMagnitudes[i] = swerveStatesTranslationalPartAsVector.getNorm();
+        }
+
+        double maximumTranslationalSpeed = 0, minimumTranslationalSpeed = Double.POSITIVE_INFINITY;
+        for (double translationalSpeed:swerveStatesTranslationalPartMagnitudes) {
+            maximumTranslationalSpeed = Math.max(maximumTranslationalSpeed, translationalSpeed);
+            minimumTranslationalSpeed = Math.min(minimumTranslationalSpeed, translationalSpeed);
+        }
+
+        return maximumTranslationalSpeed / minimumTranslationalSpeed;
+    }
+
+    private static Translation2d convertSwerveStateToVelocityVector(SwerveModuleState swerveModuleState) {
+        return new Translation2d(swerveModuleState.speedMetersPerSecond, swerveModuleState.angle);
+    }
+
+   
+    
 }
