@@ -24,6 +24,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.estimator.KalmanFilter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -62,7 +63,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     //Confidence in our pose estimate. If we slip, 
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
-
+   
     private final PoseCameraManager cameraManager = new PoseCameraManager(this);
     private static final double kSimLoopPeriod = 0.004; // 4 ms
     private Notifier m_simNotifier = null;
@@ -327,7 +328,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             SmartDashboard.putString("visionStdDevs", estimatePose.getSecond().toString());
         }
         
-        Vector<N2> accelerationVector = new Translation2d(getPigeon2().getAccelerationX().getValue().in(MetersPerSecondPerSecond), getPigeon2().getAccelerationY().getValue().in(MetersPerSecondPerSecond)).rotateBy(Rotation2d.fromDegrees(getPigeon2().getYaw().getValue().in(Degree))).toVector();
+        Vector<N2> accelerationVector = new Translation2d(getPigeon2().getAccelerationX().getValue().in(MetersPerSecondPerSecond), getPigeon2().getAccelerationY().getValue().in(MetersPerSecondPerSecond)).toVector();
         Vector<N2> joystickInput = Controller.getInstance().driveVector.get();
         if (previousAcceleration != null) {
 
@@ -337,8 +338,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             
             Vector<N2> robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.kDefaultPeriod);
             Vector<N2> commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.kDefaultPeriod).times(SwerveConstants.MaxSpeed);
-          
-            boolean collisionOcurred = Math.pow(robotJerk.get(1),2) + Math.pow(robotJerk.get(2), 2) > Math.pow(SwerveConstants.CollisionOccurredJerkThreshold, 2) * Math.pow(commandedJerk.get(1),2) + Math.pow(commandedJerk.get(2), 2);
+            SmartDashboard.putNumber("Jerk Magnitude",new Translation2d(robotJerk).getSquaredNorm());
+            SmartDashboard.putNumber("acceleration", new Translation2d(accelerationVector).getSquaredNorm());
+            boolean collisionOcurred = new Translation2d(robotJerk).getSquaredNorm() > 25;
             SmartDashboard.putBoolean("SwerveDrivetrain/CollisionOccurred", collisionOcurred);
 
             //Get's if the drivetrain is skidding

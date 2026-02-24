@@ -4,6 +4,10 @@
 
 package frc.robot.container;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import java.util.function.Supplier;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathConstraints;
@@ -13,6 +17,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -36,6 +41,7 @@ public class DevRobotContainer {
                 public CommandSwerveDrivetrain drivetrain;
                 public Turret turret;
         }
+        Supplier<LinearVelocity> robotVelocitySupplier;
 
         Subsystems subsystems;
 
@@ -49,17 +55,26 @@ public class DevRobotContainer {
         private double yawsp;
 
         public DevRobotContainer() {
+
                 this.pitchsp = 0;
                 this.yawsp = 0;
                 this.subsystems = new Subsystems();
+               
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
-                this.subsystems.intake = new Intake();
+                robotVelocitySupplier = new Supplier<LinearVelocity>() {
+                        @Override
+                        public LinearVelocity get() {
+                                return LinearVelocity.ofBaseUnits(-subsystems.drivetrain.getState().Speeds.vxMetersPerSecond, MetersPerSecond);
+                        }
+                 };
+                this.subsystems.intake = new Intake(robotVelocitySupplier);
+                
                 this.subsystems.spindexer = new Spindexer();
                 this.subsystems.turret = new Turret();
 
                 this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
-                Controller.getInstance().getDriveController().y().onTrue(subsystems.intake.extendIntake());
+                Controller.getInstance().getDriveController().y().onTrue(subsystems.intake.applyTorqueDownward());
                 Controller.getInstance().getDriveController().a().onTrue(subsystems.intake.tuck());
                 Controller.getInstance().getDriveController().x().onTrue(subsystems.intake.runIntake());
                 Controller.getInstance().getDriveController().b().onTrue(subsystems.intake.stopIntake());
@@ -93,6 +108,8 @@ public class DevRobotContainer {
                                 () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)));
 
                 Controller.getInstance().getSecondaryController().x().onTrue(new InstantCommand(() -> {this.subsystems.turret.zeroYaw();}, this.subsystems.turret));
+
+                 
         }
 
         public Command getAutonomousCommand() {

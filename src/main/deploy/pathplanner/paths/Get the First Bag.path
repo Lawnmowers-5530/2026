@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.1589982110912342,
-        "y": 4.108014311270125
+        "x": 0.4586922467341189,
+        "y": 0.6351929111168022
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.603059033989268,
-        "y": 3.1507155635062603
+        "x": 1.2756399428771221,
+        "y": 1.4067353556974638
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 0.9685688729874773,
-        "y": 3.9295348837209296
+        "x": 2.4638623847336065,
+        "y": 2.5873266201331955
       },
       "prevControl": {
-        "x": -0.7026475849731666,
-        "y": 5.113989266547406
+        "x": 1.865478280342253,
+        "y": 2.008431360733063
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,13 +42,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -90.0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Steal from the Hoomans",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": -90.0
   },
   "useDefaultConstraints": true
 }

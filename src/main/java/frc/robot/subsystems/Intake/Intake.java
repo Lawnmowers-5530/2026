@@ -1,7 +1,10 @@
 package frc.robot.subsystems.Intake;
 
 import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotation;
+
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -12,7 +15,9 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -20,6 +25,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.constants.SwerveConstants;
+
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 public class Intake extends SubsystemBase {
@@ -34,12 +41,14 @@ public class Intake extends SubsystemBase {
 
     private static boolean exists = false;
     public static Intake instance;
+    private Supplier<LinearVelocity> robotVelocity;
 
-    public Intake() {
+    public Intake(Supplier<LinearVelocity> robotVelocity) {
         CommandScheduler.getInstance().registerSubsystem(this);
         if (Intake.exists) {
             System.err.println("Creating more than one intake. Please fix broken code");
         } else {
+            this.robotVelocity = robotVelocity;
             instance = this;
             Intake.exists = true;
             pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT, "canivore");
@@ -99,17 +108,29 @@ public class Intake extends SubsystemBase {
 
     public Command runIntake() {
         return Commands.either(
-                Commands.runOnce(() -> {
+                Commands.run(() -> {
+                    SmartDashboard.putNumber("Intake speed", runMotor.get());
                     // runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
-                    runMotor.set(0.45);
+                    runMotor.setControl(new VoltageOut(7));
+
                 }, this),
-                this.stopIntake(), this::canRunIntake);
+                this.stopIntake(), ()-> {return true;});
     }
 
     public Command stopIntake() {
         return Commands.runOnce(() -> {
             runMotor.setControl(new TorqueCurrentFOC(0));
         });
+    }
+    @Deprecated
+    /**
+     * DO NOT CALL THIS IN PRODUCTION CODE
+     * 
+     */
+    public Command applyTorqueDownward() {
+        return Commands.runOnce(() -> {
+            pivotMotor.setControl(new TorqueCurrentFOC(15));
+        }, this);
     }
 
     public Command extendIntake() {

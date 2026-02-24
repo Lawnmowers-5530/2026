@@ -4,7 +4,10 @@
 
 package frc.robot.container;
 
+import java.util.function.Supplier;
+
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -19,7 +22,7 @@ import frc.robot.subsystems.Indexer.Spindexer;
 import frc.robot.subsystems.Intake.Intake;
 
 public class RobotContainer {
-
+        private Supplier<LinearVelocity> robotVelocity;
         public class Subsystems {
                 public Intake intake;
                 public Spindexer spindexer;
@@ -38,7 +41,7 @@ public class RobotContainer {
                 this.subsystems = new Subsystems();
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
                 subsystems.drivetrain = TunerConstants.createDrivetrain();
-                this.subsystems.intake = new Intake();
+                this.subsystems.intake = new Intake(robotVelocity);
                 this.subsystems.spindexer = new Spindexer();
 
                 this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
@@ -66,7 +69,7 @@ public class RobotContainer {
         }
 
         public void teleopPeriodic() {
-
+                
         }
 
         public void teleopExit() {

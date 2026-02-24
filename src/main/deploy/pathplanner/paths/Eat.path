@@ -1,0 +1,120 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 4.432,
+        "y": 7.235648453509221
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 5.208820780997046,
+        "y": 7.168815173390389
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 7.658,
+        "y": 6.818
+      },
+      "prevControl": {
+        "x": 6.569615105695669,
+        "y": 7.906252174138805
+      },
+      "nextControl": {
+        "x": 8.796287900632205,
+        "y": 5.679850904821067
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 7.809906346055328,
+        "y": 1.8985199474897536
+      },
+      "prevControl": {
+        "x": 8.479476362215456,
+        "y": 2.939210994719441
+      },
+      "nextControl": {
+        "x": 7.18360181803408,
+        "y": 0.92507505088427
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 4.573560971119365,
+        "y": 0.5159925717213105
+      },
+      "prevControl": {
+        "x": 5.6331220869791405,
+        "y": 0.5172184595459492
+      },
+      "nextControl": {
+        "x": 3.7241006019467218,
+        "y": 0.5150097656249987
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 2.500717613345287,
+        "y": 2.0233363217213105
+      },
+      "prevControl": {
+        "x": 2.493978371542008,
+        "y": 1.0414077308529703
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": null
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 1.45,
+      "rotationDegrees": 90.0
+    }
+  ],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Extend And Run Intake",
+      "waypointRelativePos": 0.5,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "Tuck",
+      "waypointRelativePos": 1.9430252878289465,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 5.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 3.0,
+    "rotation": 90.62035735373001
+  },
+  "reversed": false,
+  "folder": "The Big Dumper",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 90.0
+  },
+  "useDefaultConstraints": true
+}
