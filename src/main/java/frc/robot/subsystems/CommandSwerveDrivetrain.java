@@ -38,17 +38,19 @@ import edu.wpi.first.units.DistanceUnit;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Robot;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
-import frc.robot.vision.PoseCameraManager;
+import frc.robot.vision.Vision;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -59,12 +61,7 @@ import frc.robot.vision.PoseCameraManager;
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
 
-    
-    //Confidence in our pose estimate. If we slip, 
-    private Vector<N2> previousAcceleration;
-    private Vector<N2> previousJoystickInput;
-   
-    private final PoseCameraManager cameraManager = new PoseCameraManager(this);
+    private final Vision vision = new Vision(this::addVisionMeasurement);
     private static final double kSimLoopPeriod = 0.004; // 4 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
@@ -166,6 +163,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
         configureAutoBuilder();
         super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
+        CommandScheduler.getInstance().registerSubsystem(this);
     }
 
     /**
@@ -193,6 +191,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
         configureAutoBuilder();
         super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
+        CommandScheduler.getInstance().registerSubsystem(this);
     }
 
     /**
@@ -235,6 +234,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
         configureAutoBuilder();
         super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
+        CommandScheduler.getInstance().registerSubsystem(this);
     }
 
     /**
@@ -414,9 +414,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     /**
      * Custom consumer to use {@link EstimatedRobotPose} pair.
      */
-    public void addVisionMeasurement(Pair<EstimatedRobotPose, Matrix<N3, N1>> estimatePair) {
-        super.addVisionMeasurement(estimatePair.getFirst().estimatedPose.toPose2d(),
-                estimatePair.getFirst().timestampSeconds, estimatePair.getSecond());
+    public void addVisionMeasurement(EstimatedRobotPose estimatedRobotPose, Matrix<N3, N1> estimateStdDevs) {
+        System.out.println("consumer running");
+        System.out.println("consumer input: "+ estimatedRobotPose.estimatedPose.toString());
+        System.out.println("potential time differential: " + estimatedRobotPose.timestampSeconds + ", " + Utils.getCurrentTimeSeconds() + ", " + Utils.fpgaToCurrentTime(estimatedRobotPose.timestampSeconds));
+        super.addVisionMeasurement(estimatedRobotPose.estimatedPose.toPose2d(),
+                Utils.fpgaToCurrentTime(estimatedRobotPose.timestampSeconds), estimateStdDevs);
     }
 
     /**
