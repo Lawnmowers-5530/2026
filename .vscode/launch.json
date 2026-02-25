@@ -6,6 +6,20 @@
   "configurations": [
     {
       "type": "java",
+      "name": "Test",
+      "request": "launch",
+      "mainClass": "frc.lib.Test",
+      "projectName": "2026"
+    },
+    {
+      "type": "java",
+      "name": "LauncherConstants",
+      "request": "launch",
+      "mainClass": "frc.robot.constants.LauncherConstants",
+      "projectName": "2026"
+    },
+    {
+      "type": "java",
       "name": "Main",
       "request": "launch",
       "mainClass": "frc.robot.Main",
