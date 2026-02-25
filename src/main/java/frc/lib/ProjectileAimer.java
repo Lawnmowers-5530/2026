@@ -2,6 +2,7 @@ package frc.lib;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
@@ -114,22 +115,25 @@ public class ProjectileAimer {
         return newDir.scale(speed);
     }
 
-    public static void main(String[] args) {
-        ProjectileAimer aimer = new ProjectileAimer(
-            VecBuilder.fill(0, 0, 0, 3, 3, 20),
-            VecBuilder.fill(2, 2, 2),
-            VecBuilder.fill(0, 0)
-        );
-        long t0 = System.nanoTime();
-        System.out.println(aimer.loop());
-        long t1 = System.nanoTime();
-
-        System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
-
-        Matrix<N1, N1> test = VecBuilder.fill(5);
-        Matrix<N1, N1> test2 = test.copy();
-        test2.set(0, 0, 10);
-        System.out.println(test);
+    //public static void main(String[] args) {
+    //    ProjectileAimer aimer = new ProjectileAimer(
+    //        VecBuilder.fill(0, 0, 0, 3, 3, 20),
+    //        VecBuilder.fill(2, 2, 2),
+    //        VecBuilder.fill(0, 0)
+    //    );
+    //    long t0 = System.nanoTime();
+    //    System.out.println(aimer.loop());
+    //    long t1 = System.nanoTime();
+//
+    //    System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
+//
+    //    Matrix<N1, N1> test = VecBuilder.fill(5);
+    //    Matrix<N1, N1> test2 = test.copy();
+    //    test2.set(0, 0, 10);
+    //    System.out.println(test);
+    //}
+    public static double findv0(double r, Rotation2d angle, double h) {
+        return Math.sqrt(9.81 * Math.pow(r, 2))/(2 * Math.pow(Math.cos(angle.getRadians()), 2)*(r*Math.tan(angle.getRadians())+h));
     }
 }
 
