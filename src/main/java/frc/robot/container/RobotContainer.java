@@ -31,7 +31,6 @@ public class RobotContainer {
 
         public class Subsystems {
                 public CommandSwerveDrivetrain drivetrain;
-                public Controller controller = new Controller();
         }
 
         Subsystems subsystems;
@@ -48,7 +47,6 @@ public class RobotContainer {
         public RobotContainer() {
                 subsystems = new Subsystems();
                 this.subsystems.drivetrain = TunerConstants.createDrivetrain();
-                bindings = new Bindings(this.subsystems);
 
                 autoChooser = AutoBuilder.buildAutoChooser("Tests");
                 SmartDashboard.putData("Auto Mode", autoChooser);
@@ -64,8 +62,6 @@ public class RobotContainer {
         }
 
         private void configureBindings() {
-
-                this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.

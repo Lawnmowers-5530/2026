@@ -31,7 +31,6 @@ import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Controller;
-import frc.robot.subsystems.RobotNative;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Indexer.Indexer;
 
@@ -76,8 +75,6 @@ public class DevRobotContainer {
         }
 
         private void configureBindings() {
-
-                this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
 
                 // Idle while the robot is disabled. This ensures the configured
                 // neutral mode is applied to the drive motors while disabled.

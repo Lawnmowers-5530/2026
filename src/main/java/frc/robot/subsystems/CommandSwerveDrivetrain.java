@@ -29,6 +29,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
@@ -309,6 +310,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+        //Shuffleboard.getTab("SmartDashboard").add("currentPose", this.getState().Pose.toString());
+        System.out.println("curr pose: "+ this.getState().Pose.toString());
     }
 
     private void startSimThread() {
@@ -372,8 +375,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * Custom consumer to use {@link EstimatedRobotPose} pair.
      */
     public void addVisionMeasurement(EstimatedRobotPose estimatedRobotPose, Matrix<N3, N1> estimateStdDevs) {
+        System.out.println("consumer running");
+        System.out.println("consumer input: "+ estimatedRobotPose.estimatedPose.toString());
+        System.out.println("potential time differential: " + estimatedRobotPose.timestampSeconds + ", " + Utils.getCurrentTimeSeconds() + ", " + Utils.fpgaToCurrentTime(estimatedRobotPose.timestampSeconds));
         super.addVisionMeasurement(estimatedRobotPose.estimatedPose.toPose2d(),
-                estimatedRobotPose.timestampSeconds, estimateStdDevs);
+                Utils.fpgaToCurrentTime(estimatedRobotPose.timestampSeconds), estimateStdDevs);
     }
 
     /**
@@ -386,22 +392,5 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     @Override
     public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
-    }
-
-    public Command driveCommand() {
-        final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                .withDeadband(SwerveConstants.MaxSpeed * 0.05)
-                .withRotationalDeadband(SwerveConstants.MaxAngularRate * 0.05)
-                .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-        return this.applyRequest(() -> drive
-                .withVelocityX(Controller.driveVector.get().get(0) * SwerveConstants.MaxSpeed) // Drive forward with
-                                                                                                // negative Y (forward)
-                .withVelocityY(Controller.driveVector.get().get(1) * SwerveConstants.MaxSpeed) // Drive left with
-                                                                                                // negative X (left)
-                .withRotationalRate(Controller.driveRotation.get() * SwerveConstants.MaxAngularRate) // Drive
-                                                                                                     // counterclockwise
-                                                                                                     // with
-        // negative X (left)
-        );
     }
 }

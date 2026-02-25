@@ -26,10 +26,13 @@ package frc.robot.vision;
 
 import static frc.robot.constants.VisionConstants.*;
 
+import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -70,15 +73,20 @@ public class Vision extends SubsystemBase{
                     visionEst = photonEstimator.estimateLowestAmbiguityPose(result);
                 }
                 updateEstimationStdDevs(visionEst, result.getTargets());
+            if(visionEst.isPresent()) {
+                //System.out.println("direct vision est: " + visionEst.get().estimatedPose.toString());
+            }
+            //System.out.println("std devs: " + curStdDevs.toString());
 
                 visionEst.ifPresent(
                         est -> {
                             // Change our trust in the measurement based on the tags we can see
                             var estStdDevs = getEstimationStdDevs();
 
-                            estConsumer.accept(est, estStdDevs);
+                            estConsumer.accept(est, MatBuilder.fill(Nat.N3(), Nat.N1(), 0.001, 0.001, 0.1)); //estStdDevs);
                         });
             }
+
         }
     }
 
