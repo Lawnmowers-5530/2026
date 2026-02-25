@@ -5,6 +5,7 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
@@ -28,7 +29,9 @@ public class Turret extends SubsystemBase {
 
     private TalonFX m_flywheel;
     private TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
-    private TorqueCurrentFOC flywheelControl;
+    private VelocityVoltage flywheelControl;
+
+
 
     public Turret() {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -90,7 +93,7 @@ public class Turret extends SubsystemBase {
 
         this.m_flywheel = new TalonFX(23, "canivore");
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
-        this.flywheelControl = new TorqueCurrentFOC(0);
+        this.flywheelControl = new VelocityVoltage(0);
         this.m_flywheel.setControl(flywheelControl);
     }
 
@@ -119,7 +122,7 @@ public class Turret extends SubsystemBase {
         
         //this.m_flywheel.setControl(this.flywheelControl.withVelocity(targetVelocity));
         //this.m_flywheel.setControl(velocityRequest);
-        this.flywheelControl.Output = targetVelocity;
+        this.flywheelControl.Velocity = targetVelocity;
         this.m_flywheel.setControl(this.flywheelControl);
     }
 
