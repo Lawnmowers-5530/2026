@@ -3,12 +3,12 @@ package frc.robot.subsystems.Indexer;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 
 public class IndexerConstants {
-    public static int KICKER_MOTOR_PORT = 0;
-    public static int SPINDEXER_MOTOR_PORT = 0;
+    public static int KICKER_MOTOR_PORT = 27;
+    public static int SPINDEXER_MOTOR_PORT = 26;
     public static int SPINDEXER_LASERCAN_PORT = 0;
     
-    public static double SPINDEXER_RUN_CURRENT = 30;
-    public static double KICKER_RUN_CURRENT = 30;
+    public static double SPINDEXER_RUN_CURRENT = 4; //volts
+    public static double KICKER_RUN_CURRENT = 8; //volts
     
     public static int KICKER_LASERCAN_PORT = 0;
     

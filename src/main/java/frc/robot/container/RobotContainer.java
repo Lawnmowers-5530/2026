@@ -4,39 +4,32 @@
 
 package frc.robot.container;
 
-import com.ctre.phoenix6.swerve.SwerveRequest;
-
-import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.FollowPathCommand;
+import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.BuildMetadata;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.Bindings;
 import frc.robot.Telemetry;
+import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Controller;
-import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.*;
 import frc.robot.subsystems.Indexer.Indexer;
+import frc.robot.subsystems.Indexer.Spindexer;
+import frc.robot.subsystems.Intake.Intake;
 
 public class RobotContainer {
-
+        private Supplier<LinearVelocity> robotVelocity;
         public class Subsystems {
+                public Intake intake;
+                public Spindexer spindexer;
                 public CommandSwerveDrivetrain drivetrain;
         }
 
         Subsystems subsystems;
-        Bindings bindings;
-
-        private final SendableChooser<Command> autoChooser;
 
         BuildMetadata metadata = new BuildMetadata();
 
@@ -45,53 +38,38 @@ public class RobotContainer {
         private final Telemetry logger = new Telemetry(SwerveConstants.MaxSpeed);
 
         public RobotContainer() {
-                subsystems = new Subsystems();
-                this.subsystems.drivetrain = TunerConstants.createDrivetrain();
+                this.subsystems = new Subsystems();
+                // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
+                subsystems.drivetrain = TunerConstants.createDrivetrain();
+                this.subsystems.intake = new Intake(robotVelocity);
+                this.subsystems.spindexer = new Spindexer();
 
-                autoChooser = AutoBuilder.buildAutoChooser("Tests");
-                SmartDashboard.putData("Auto Mode", autoChooser);
+                this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
 
-                configureBindings();
+                Controller.getInstance().getDriveController().y().onTrue(subsystems.intake.extendIntake());
+                Controller.getInstance().getDriveController().a().onTrue(subsystems.intake.tuck());
+                Controller.getInstance().getDriveController().x().onTrue(subsystems.intake.runIntake());
+                Controller.getInstance().getDriveController().b().onTrue(subsystems.intake.stopIntake());
 
-                // #region Smart Dashboard Programming Related
-                if (_programmingDashboard) {
-                        SmartDashboard.putData(metadata);
-                }
+                Controller.getInstance().getDriveController().rightBumper().onTrue(this.subsystems.spindexer.spinKickCommand());
+                Controller.getInstance().getDriveController().leftBumper().onTrue(this.subsystems.spindexer.stopCommand());
 
-                CommandScheduler.getInstance().schedule(FollowPathCommand.warmupCommand());
-        }
-
-        private void configureBindings() {
-
-                // Idle while the robot is disabled. This ensures the configured
-                // neutral mode is applied to the drive motors while disabled.
-                final var idle = new SwerveRequest.Idle();
-                RobotModeTriggers.disabled().whileTrue(
-                                this.subsystems.drivetrain.applyRequest(() -> idle).ignoringDisable(true));
-
-                // Run SysId routines when holding back/start and X/Y.
-                // Note that each routine should be run exactly once in a single log.
-                // joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-                // joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-                // joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-                // joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
-
-                this.subsystems.drivetrain.registerTelemetry(logger::telemeterize);
-
+                Controller.getInstance().zeroGyro.onTrue(this.subsystems.drivetrain.runOnce(
+                                () -> this.subsystems.drivetrain.seedFieldCentric(Rotation2d.kZero)));
         }
 
         public Command getAutonomousCommand() {
-                // Simple drive forward auton
-                final var idle = new SwerveRequest.Idle();
-                return autoChooser.getSelected().andThen(
-                                this.subsystems.drivetrain.applyRequest(() -> idle).ignoringDisable(true));
+                // An example command will be run in autonomous
+                return null;
         }
 
         public void teleopInit() {
+                this.subsystems.intake.zeroPivot();
                 // Any teleop-specific initialization code can go here.
         }
 
         public void teleopPeriodic() {
+                
         }
 
         public void teleopExit() {

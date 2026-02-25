@@ -7,13 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Test path 1"
+            "pathName": "Eat"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "Shoot Simple"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": null,
+  "folder": "The Big Dumper",
   "choreoAuto": false
 }

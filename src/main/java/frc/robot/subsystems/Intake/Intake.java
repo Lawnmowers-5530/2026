@@ -1,104 +1,180 @@
 package frc.robot.subsystems.Intake;
 
 import static edu.wpi.first.units.Units.Degree;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Rotation;
+
+import java.util.function.Supplier;
+
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Bindings;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.constants.SwerveConstants;
+
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 public class Intake extends SubsystemBase {
-    public enum States {
+    public enum State {
         EXTENDED, TUCKED, TUCKING, EXTENDING
     }
 
-    private States currentState = States.TUCKED;
-    
+    private State currentState = State.TUCKED;
+
     private TalonFX pivotMotor;
     private TalonFX runMotor;
 
-    
     private static boolean exists = false;
     public static Intake instance;
-    
-    public Intake() {
+    private Supplier<LinearVelocity> robotVelocity;
+
+    public Intake(Supplier<LinearVelocity> robotVelocity) {
+        CommandScheduler.getInstance().registerSubsystem(this);
         if (Intake.exists) {
             System.err.println("Creating more than one intake. Please fix broken code");
-        }else {
+        } else {
+            this.robotVelocity = robotVelocity;
             instance = this;
             Intake.exists = true;
-            pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT);
-            runMotor = new TalonFX(IntakeConstants.RUN_MOTOR_PORT);
-            
+            pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT, "canivore");
+            runMotor = new TalonFX(IntakeConstants.RUN_MOTOR_PORT, "canivore");
+            TalonFXConfiguration runMotorConfig = new TalonFXConfiguration();
+            TorqueCurrentConfigs torqueCurrentConfig = new TorqueCurrentConfigs();
+            runMotorConfig = runMotorConfig.withTorqueCurrent(torqueCurrentConfig);
+            runMotor.getConfigurator().apply(runMotorConfig);
+            TalonFXConfiguration pivotMotorConfig = new TalonFXConfiguration();
+            var slot0PivotConfig = pivotMotorConfig.Slot0;
+            slot0PivotConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
+            slot0PivotConfig.kV = 1; // A velocity target of 1 rps results in 0.12 V output
+            slot0PivotConfig.kA = 1; // An acceleration of 1 rps/s requires 0.01 V output
+            slot0PivotConfig.kP = 7; // A position error of 2.5 rotations results in 12 V output
+            slot0PivotConfig.kI = 0.2; // no output for integrated error
+            slot0PivotConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
+            slot0PivotConfig.GravityType = GravityTypeValue.Arm_Cosine;
+            slot0PivotConfig.GravityArmPositionOffset = 0.1;
+            slot0PivotConfig.kG = 3;
+
+            var motionMagicConfigPivot = pivotMotorConfig.MotionMagic;
+            motionMagicConfigPivot.MotionMagicCruiseVelocity = 1; // Target cruise velocity of 80 rps
+            motionMagicConfigPivot.MotionMagicAcceleration = 1; // Target acceleration of 160 rps/s (0.5 seconds)
+            motionMagicConfigPivot.MotionMagicJerk = 4; // Target jerk of 1600 rps/s/s (0.1 seconds)
+
+            pivotMotor.getConfigurator().apply(pivotMotorConfig);
+
         }
-        
+
     }
+
     @Override
     public void periodic() {
-        
-        //TODO Telemetry or logging
+        SmartDashboard.putString("Intake State", this.currentState.toString());
+        SmartDashboard.putString("Pivot pos", this.pivotMotor.getPosition().toString());
+        SmartDashboard.putString("Target", this.pivotMotor.getAppliedControl().getControlInfo().toString());
+        SmartDashboard.putBoolean("pivotAtExtensionPosition", this.pivotAtExtensionPosition());
+        SmartDashboard.putNumber("applied output", this.pivotMotor.get());
+        // TODO Telemetry or logging
     }
 
     public Command tuck() {
-        return Commands.either(Commands.none(), 
-        Commands.runOnce(() -> {
-            setState(States.TUCKING);
-            runMotor.set(0);
-            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.TUCKED_ENCODER_POSITION));
-        }, this)
-        .andThen(Commands.waitUntil(this::pivotAtTuckPosition))
-        .andThen(Commands.runOnce(() -> setState(States.TUCKED), this))
-        , () -> {return !canTuck();});
+        return Commands.either(
+                new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
+                        Commands.runOnce(() -> {
+                            this.currentState = State.TUCKING;
+                            runMotor.set(0);
+                            pivotMotor.setControl(
+                                    new VoltageOut(-12));// new
+                                                         // MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
+                        }, this))
+                        .andThen(Commands.runOnce(() -> {
+                            this.currentState = State.TUCKED;
+                        }, this)),
+                new InstantCommand(), this::canTuck);
     }
+
     public Command runIntake() {
-        return Commands.either(Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS))), Commands.runOnce(()->runMotor.set(0)), this::canRunIntake);
+        return Commands.either(
+                Commands.run(() -> {
+                    SmartDashboard.putNumber("Intake speed", runMotor.get());
+                    // runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
+                    runMotor.setControl(new VoltageOut(7));
+
+                }, this),
+                this.stopIntake(), ()-> {return true;});
     }
+
     public Command stopIntake() {
-        return Commands.runOnce(()->runMotor.setControl(new TorqueCurrentFOC(0)));
+        return Commands.runOnce(() -> {
+            runMotor.setControl(new TorqueCurrentFOC(0));
+        });
     }
+    @Deprecated
+    /**
+     * DO NOT CALL THIS IN PRODUCTION CODE
+     * 
+     */
+    public Command applyTorqueDownward() {
+        return Commands.runOnce(() -> {
+            pivotMotor.setControl(new TorqueCurrentFOC(15));
+        }, this);
+    }
+
     public Command extendIntake() {
-        return Commands.either(Commands.runOnce(()-> {
-            setState(States.EXTENDING);
-            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION));
-        }, this)
-        .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-        .andThen(Commands.runOnce(()-> {
-            setState(States.EXTENDED);
-            pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
-        }, this))
-        , Commands.none(), this::canExtend);
+
+        return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
+                Commands.runOnce(() -> {
+                    this.currentState = State.EXTENDING;
+                    pivotMotor
+                            .setControl(new VoltageOut(3));// new
+                                                           // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
+                }, this))
+                .andThen(Commands.runOnce(() -> {
+                    this.currentState = State.EXTENDED;
+                    pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
+                }, this)),
+                new InstantCommand(), this::canExtend);
     }
+
     private boolean canRunIntake() {
-        return currentState == States.EXTENDED;
+        return currentState == State.EXTENDED;
     }
+
     private boolean canExtend() {
-        return currentState == States.TUCKED || currentState == States.TUCKING;
+        return currentState == State.TUCKED || currentState == State.TUCKING;
     }
+
     private boolean canTuck() {
-        return currentState == States.EXTENDED || currentState == States.EXTENDING;
+        return currentState == State.EXTENDED || currentState == State.EXTENDING;
     }
-    
-    private void setState(States state) {
-        currentState = state;
-    }
-    public States getState() {
+
+    public State getState() {
         return currentState;
     }
-    //TODO: replace lt and gt with near for better results
+
     private boolean pivotAtTuckPosition() {
-        return pivotMotor.getPosition().getValue().lt(Angle.ofBaseUnits(IntakeConstants.TUCKED_ENCODER_POSITION , Degree.getBaseUnit()));
+        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.TUCKED_ENCODER_POSITION) <= 0.1;
     }
+
     private boolean pivotAtExtensionPosition() {
-        return pivotMotor.getPosition().getValue().gt(Angle.ofBaseUnits(IntakeConstants.EXTENDED_ENCODER_POSITION , Degree.getBaseUnit()));
+        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.EXTENDED_ENCODER_POSITION) <= 0.1;
     }
-    
-    
 
-
+    public void zeroPivot() {
+        this.pivotMotor.setPosition(0);
+    }
 
 }

@@ -1,6 +1,7 @@
 package frc.robot.subsystems.Indexer;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
 import edu.wpi.first.math.filter.Debouncer;
@@ -37,11 +38,9 @@ public class Indexer extends SubsystemBase{
         }else {
             exists = true;
             instance = this;
-            if (Robot.isReal()) {
-                io = new IndexerIOReal();
-            }else {
-                io = new IndexerIOSim();
-            }
+  
+             io = new IndexerIOReal();
+            
 
             spindexerJamDebouncer = new Debouncer(IndexerConstants.SPINDEXER_JAM_TIME_THRESHOLD, DebounceType.kRising);
             kickerNotSeeingBallsDebouncer = new Debouncer(IndexerConstants.KICKER_NOT_SEEING_BALLS_TIME, DebounceType.kFalling);
@@ -52,27 +51,35 @@ public class Indexer extends SubsystemBase{
     }
     public Command feedShooter() {
         return Commands.runOnce(() -> {
-            io.setSpindexerTorqueCurrent(IndexerConstants.SPINDEXER_RUN_CURRENT);
-            io.setKickerTorqueCurrent(IndexerConstants.KICKER_RUN_CURRENT);
+            io.setSpindexerVoltage(IndexerConstants.SPINDEXER_RUN_CURRENT);
+            io.setKickerVoltage(IndexerConstants.KICKER_RUN_CURRENT);
         }, this).andThen(Commands.waitUntil(this::detectJamOrEmpty))
         .andThen(Commands.either(stopIndexer(), unjam(), () -> {return currentState == States.Empty;}))
         ;
     }
     public Command stopIndexer() {
         return Commands.runOnce(() -> {
-            io.setSpindexerTorqueCurrent(0);
-            io.setKickerTorqueCurrent(0);
+            io.setSpindexerVoltage(0);
+            io.setKickerVoltage(0);
             setState(States.Idle);
         }, this);
     }
     public Command unjam() {
         return Commands.runOnce(()-> {
-            io.setSpindexerTorqueCurrent(-IndexerConstants.SPINDEXER_RUN_CURRENT);
+            io.setSpindexerVoltage(-IndexerConstants.SPINDEXER_RUN_CURRENT);
 
         }).andThen(Commands.waitSeconds(0.2))
         .andThen(feedShooter());
     }
-    
+    public Command feedStupidly() {
+        return Commands.run(()->{
+            io.setKickerVoltage(IndexerConstants.KICKER_RUN_CURRENT);
+            io.setSpindexerVoltage(IndexerConstants.SPINDEXER_RUN_CURRENT);
+        }, this).finallyDo(()->{
+            io.setKickerVoltage(0);
+            io.setSpindexerVoltage(0);
+        });
+    }
 
     public States getState() {
         return currentState;

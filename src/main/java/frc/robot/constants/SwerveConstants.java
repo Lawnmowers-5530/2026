@@ -11,4 +11,5 @@ public class SwerveConstants {
                                                                                         // speed
     public static final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
                                                                                       // max angular velocity
+        public static final double CollisionOccurredJerkThreshold = 0.3;
 }

@@ -2,8 +2,16 @@
   "robotWidth": 0.9,
   "robotLength": 0.9,
   "holonomicMode": true,
-  "pathFolders": [],
-  "autoFolders": [],
+  "pathFolders": [
+    "The Big Dumper",
+    "Snowblow",
+    "Steal from the Hoomans",
+    "The Selfish Passer"
+  ],
+  "autoFolders": [
+    "The Big Dumper",
+    "Steal from the Hoomans"
+  ],
   "defaultMaxVel": 5.0,
   "defaultMaxAccel": 4.0,
   "defaultMaxAngVel": 540.0,
@@ -12,7 +20,7 @@
   "robotMass": 35.0,
   "robotMOI": 6.883,
   "robotTrackwidth": 0.546,
-  "driveWheelRadius": 0.0508,
+  "driveWheelRadius": 0.05,
   "driveGearing": 5.143,
   "maxDriveSpeed": 5.45,
   "driveMotorType": "krakenX60FOC",
@@ -28,5 +36,7 @@
   "brModuleY": -0.231,
   "bumperOffsetX": 0.0,
   "bumperOffsetY": 0.0,
-  "robotFeatures": []
+  "robotFeatures": [
+    "{\"name\":\"Rectangle\",\"type\":\"rounded_rect\",\"data\":{\"center\":{\"x\":-0.6,\"y\":0.0},\"size\":{\"width\":0.7,\"length\":0.3048},\"borderRadius\":0.05,\"strokeWidth\":0.02,\"filled\":true}}"
+  ]
 }
