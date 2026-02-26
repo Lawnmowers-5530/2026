@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
@@ -36,6 +38,11 @@ public class Turret extends SubsystemBase {
         public String toString() {
             return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)", 
                 yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
+        }
+
+        public TurretState rotateBy(Rotation2d rotation) {
+            this.yaw = this.yaw.plus(rotation);
+            return this;
         }
     }
 
@@ -169,8 +176,9 @@ public class Turret extends SubsystemBase {
         return new InstantCommand(() -> {this.setPitch(angle);}, this);
     }
 
-    public Command setTurretStateCommand(TurretState state) {
-        return new RunCommand(() -> {this.setTurretState(state);}, this);
+    public Command setTurretStateCommand(Supplier<TurretState> state) {
+        SmartDashboard.putString("goalTurretState", state.get().toString());
+        return new RunCommand(() -> {this.setTurretState(state.get());}, this);
     }
 
     public void periodic() {

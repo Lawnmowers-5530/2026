@@ -83,8 +83,12 @@ public class DevRobotContainer {
                 return null;
         }
 
+        public void robotInit() {
+                this.subsystems.drivetrain.resetPose(new Pose2d(0.417, 7.596, Rotation2d.kZero));
+                //this.subsystems.turret.zeroYaw();
+        }
+
         public void teleopInit() {
-                this.subsystems.turret.zeroPitch();
         }
 
         public void teleopPeriodic() {
