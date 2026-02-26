@@ -9,6 +9,7 @@ import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.Interpolator;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.math.util.Units;
+import frc.lib.ProjectileAimer;
 
 public class LauncherConstants { //TODO: fill in constants
     public static final CANBus canBus = new CANBus("canivore", "logs/launcherFlywheel");
@@ -29,10 +30,14 @@ public class LauncherConstants { //TODO: fill in constants
     public static final Rotation2d dragChainZeroAngle = Rotation2d.fromDegrees(315);
     public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(5), Units.inchesToMeters(-6));
     public static final double launcherHeight = 0.3;
-    public static final InterpolatingTreeMap<Double, Double> RPMtoVelocity =
+    public static InterpolatingTreeMap<Double, Double> VelocityToRPS =
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Interpolator.forDouble());
      static {
-        RPMtoVelocity.put(1.0, 1.0);
+        VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(27), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 25.0);
+        VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(89), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 40.0);
+        VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(128), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 50.0);
+        VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(156), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 55.0);
+
 
         //add more here
     }
