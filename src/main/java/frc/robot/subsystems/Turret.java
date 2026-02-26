@@ -44,7 +44,7 @@ public class Turret extends SubsystemBase {
 
         var motionMagicConfigYaw = yawConfig.MotionMagic;
         motionMagicConfigYaw.MotionMagicCruiseVelocity = 16; // Target cruise velocity of 80 rps
-        motionMagicConfigYaw.MotionMagicAcceleration = 400; // Target acceleration of 160 rps/s (0.5 seconds)
+        motionMagicConfigYaw.MotionMagicAcceleration = 40; // Target acceleration of 160 rps/s (0.5 seconds)
         motionMagicConfigYaw.MotionMagicJerk = 2000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
         var slot0pitchConfig = pitchConfig.Slot0;
@@ -115,11 +115,8 @@ public class Turret extends SubsystemBase {
         if(speed == 0) {
             targetVelocity = 0;
         }
-        //this.m_flywheel.setControl(this.flywheelControl.withVelocity(targetVelocity));
-        //this.m_flywheel.setControl(velocityRequest);
         this.flywheelControl.Velocity = targetVelocity;
         this.m_flywheel.setControl(this.flywheelControl);
-        SmartDashboard.putNumber("targetVelocity", targetVelocity);
     }
 
     public void zeroYaw() {
@@ -145,7 +142,5 @@ public class Turret extends SubsystemBase {
     }
 
     public void periodic() {
-        SmartDashboard.putString("yawPosActual", this.m_yaw.getPosition().getValue().toShortString());
-        SmartDashboard.putString("pitch request", this.pitchControl.getControlInfo().toString());
     }
 }

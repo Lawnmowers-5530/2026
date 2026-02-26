@@ -33,6 +33,7 @@ public class LauncherConstants { //TODO: fill in constants
     public static InterpolatingTreeMap<Double, Double> VelocityToRPS =
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Interpolator.forDouble());
      static {
+        VelocityToRPS.put(0.0,0.0);
         VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(27), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 25.0);
         VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(89), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 40.0);
         VelocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(128), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)), 50.0);

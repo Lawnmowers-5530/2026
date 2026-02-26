@@ -141,9 +141,6 @@ public class DevRobotContainer {
                 //this.subsystems.turret.setYaw(angle);
                 Rotation2d angle = LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
                 this.subsystems.turret.setYaw(angle);
-                SmartDashboard.putNumber("actualSp", this.yawsp);
-                SmartDashboard.putNumber("targetAngle", angle.getDegrees());
-
 
         }
 
