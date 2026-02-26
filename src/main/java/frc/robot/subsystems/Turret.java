@@ -71,9 +71,9 @@ public class Turret extends SubsystemBase {
         slot0pitchConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
         slot0pitchConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
         slot0pitchConfig.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-        slot0pitchConfig.kP = 4.8; // A position error of 2.5 rotations results in 12 V output
+        slot0pitchConfig.kP = 6; // A position error of 2.5 rotations results in 12 V output
         slot0pitchConfig.kI = 0; // no output for integrated error
-        slot0pitchConfig.kD = 0.1; // A velocity error of 1 rps results in 0.1 V output
+        slot0pitchConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
 
         var motionMagicConfigpitch = pitchConfig.MotionMagic;
         motionMagicConfigpitch.MotionMagicCruiseVelocity = 16; // Target cruise velocity of 80 rps
@@ -95,7 +95,7 @@ public class Turret extends SubsystemBase {
         this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
         this.m_yaw.setControl(yawControl);
 
-        pitchConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive; //TODO ensure correct direction
+        pitchConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; //TODO ensure correct direction
 
         this.m_pitch = new TalonFX(22, "canivore");
         this.m_pitch.getConfigurator().apply(pitchConfig);
@@ -124,6 +124,8 @@ public class Turret extends SubsystemBase {
 
     public void setPitch(Rotation2d pos) {
         pos = pos.minus(LauncherConstants.pitchZeroAngle);
+        SmartDashboard.putNumber("pospreclamp", pos.getDegrees());
+        pos = Rotation2d.fromDegrees(MathUtil.clamp(pos.getDegrees(), -19, 0));
         double targetPosition = pos.getRotations() * LauncherConstants.motorToPitchRot;
         this.pitchControl.Position = targetPosition;
         this.m_pitch.setControl(this.pitchControl);
@@ -172,5 +174,6 @@ public class Turret extends SubsystemBase {
     }
 
     public void periodic() {
+        SmartDashboard.putNumber("pitch encoder value", this.m_pitch.getPosition().getValueAsDouble());
     }
 }

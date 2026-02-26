@@ -55,13 +55,9 @@ public class DevRobotContainer {
 
         private final Telemetry logger = new Telemetry(SwerveConstants.MaxSpeed);
 
-        private double pitchsp;
-        private double yawsp;
+        private double pitchSp;
 
         public DevRobotContainer() {
-
-                this.pitchsp = 0;
-                this.yawsp = 0;
                 this.subsystems = new Subsystems();
                
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
@@ -75,6 +71,8 @@ public class DevRobotContainer {
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
                 this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
+                this.pitchSp = 0;
+
                 Controller.getInstance().getDriveController().leftBumper().onTrue(this.bindings.intake.collect());
                 Controller.getInstance().getDriveController().rightBumper().toggleOnTrue(this.subsystems.spindexer.spinKickCommand());
                 Controller.getInstance().getDriveController().a().onTrue(this.bindings.drivetrain.zeroGyro());
@@ -86,11 +84,15 @@ public class DevRobotContainer {
         }
 
         public void teleopInit() {
-
+                this.subsystems.turret.zeroPitch();
         }
 
         public void teleopPeriodic() {
                 SmartDashboard.putString("pose", this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
+                pitchSp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getLeftY(), 0.07);
+                SmartDashboard.putNumber("pitchSp", pitchSp);
+                //this.subsystems.turret.setYaw(Rotation2d.fromDegrees(pitchSp));
+
                 //Rotation2d angle = LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
 
         }

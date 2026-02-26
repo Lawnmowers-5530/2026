@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.subsystems.Controller;
@@ -83,6 +84,7 @@ public final class Bindings {
         Command autoAim() {
             Translation3d target = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose : LauncherConstants.blueTargetPose;
             frc.robot.subsystems.Turret.TurretState goalTurretState = ProjectileAimer.parabolicTurretState(target, subsystems.drivetrain.getState().Pose.getTranslation(), subsystems.drivetrain.getState().Speeds);
+            SmartDashboard.putString("goalTurretState", goalTurretState.toString());
             return subsystems.turret.setTurretStateCommand(goalTurretState);
         }
     }
