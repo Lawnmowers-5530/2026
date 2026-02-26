@@ -6,8 +6,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
+import edu.wpi.first.wpilibj2.command.Command.InterruptionBehavior;
 import frc.robot.constants.SpindexerConstants;
 
 public class Spindexer extends SubsystemBase{
@@ -49,7 +50,7 @@ public class Spindexer extends SubsystemBase{
     }
 
     public Command spinKickCommand() {
-        return Commands.runOnce(() -> {this.spinKick();}, this);
+        return new RunCommand(() -> {this.spinKick();}, this).finallyDo(() -> {this.stopSpinKick();});
     }
 
     public Command stopCommand() {
@@ -57,6 +58,6 @@ public class Spindexer extends SubsystemBase{
     }
 
     public Command reverseCommand() {
-        return Commands.runOnce(() -> {this.reverse();}, this);
+        return new RunCommand(() -> {this.reverse();}, this).finallyDo(() -> {this.stopSpinKick();});
     }
 }

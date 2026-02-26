@@ -2,12 +2,20 @@ package frc.lib;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N6;
 import frc.lib.ShotCalculatorSim;
+import frc.robot.subsystems.Turret;
 
 public class ProjectileAimer {
     private final ShotCalculatorSim shotCalculator;
@@ -135,6 +143,67 @@ public class ProjectileAimer {
     public static double findv0(double r, Rotation2d angle, double h) {
         return Math.sqrt(9.81 * Math.pow(r, 2))/(2 * Math.pow(Math.cos(angle.getRadians()), 2)*(r*Math.tan(angle.getRadians())+h));
     }
+
+public static Turret.TurretState parabolicTurretState(Translation3d target, Translation2d robotTranslation, ChassisSpeeds robotVelocity) {
+    // 1. Constants
+    final double g = 9.80665; // Gravity m/s^2
+    // Constraint: Vertical velocity at target (dz/dt). 
+    // Usually negative for a "descending" hit (swish).
+    final double dz_dt_constraint = -2.0; 
+
+
+
+    // 2. Calculate Displacements
+    Translation3d relativeTranslation = target.minus(new Translation3d(robotTranslation.getX(), robotTranslation.getY(), 0));
+    double dx = relativeTranslation.getX();
+    double dy = relativeTranslation.getY();
+    double dz = relativeTranslation.getZ();
+    double horizontalDist = Math.hypot(dx, dy);
+
+    // 3. Solve for Time of Flight (t)
+    // Formula derived from: dz = (v_zt + g*t)*t - 0.5*g*t^2  =>  0.5*g*t^2 + v_zt*t - dz = 0
+    // Quadratic formula: t = [-v_zt + sqrt(v_zt^2 - 4(0.5g)(-dz))] / (2 * 0.5g)
+    double discriminant = Math.pow(dz_dt_constraint, 2) + 2 * g * dz;
+    
+    if (discriminant < 0) {
+        // Target is physically unreachable with the given dz/dt constraint
+        return new Turret.TurretState(new Rotation2d(), new Rotation2d(), 0); 
+    }
+
+    double t = (-dz_dt_constraint + Math.sqrt(discriminant)) / g;
+
+    // 4. Calculate Required World Velocity Components
+    double vx_world = dx / t;
+    double vy_world = dy / t;
+    double vz_initial = dz_dt_constraint + g * t;
+
+    // 5. Compensate for Robot Velocity
+    // Robot velocity is Vector<N2> (x, y). Subtract it from world velocity 
+    // to get the velocity the shooter needs to generate.
+    double vx_shooter = vx_world - robotVelocity.vxMetersPerSecond;
+    double vy_shooter = vy_world - robotVelocity.vyMetersPerSecond;
+    double vz_shooter = vz_initial; // Assuming robot vertical velocity is 0
+
+    // 6. Convert to Spherical Coordinates (Yaw, Pitch, Magnitude)
+    double horizontalVelocityShooter = Math.hypot(vx_shooter, vy_shooter);
+    
+    Rotation2d yaw = new Rotation2d(vx_shooter, vy_shooter);
+    Rotation2d pitch = new Rotation2d(horizontalVelocityShooter, vz_shooter);
+    double exitVelocity = Math.sqrt(Math.pow(horizontalVelocityShooter, 2) + Math.pow(vz_shooter, 2));
+
+    return new Turret.TurretState(yaw, pitch, exitVelocity);
+}
+
+public static void main(String[] args) {
+    Translation3d target = new Translation3d(2, 2, 2);
+    Translation2d robotPose = new Translation2d(0, 0);
+    ChassisSpeeds robotVelocity = new ChassisSpeeds(0, 0, 0);
+    long t0 = System.nanoTime();
+    Turret.TurretState state = parabolicTurretState(target, robotPose, robotVelocity);
+    long t1 = System.nanoTime();
+    System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
+    System.out.println(state.toString());
+}
 }
 
 //TODO remove matrices and replace args for construction with vectors that are wayyyy easier to make

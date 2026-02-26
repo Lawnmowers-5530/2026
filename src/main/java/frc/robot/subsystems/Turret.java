@@ -15,10 +15,30 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.LauncherConstants;
 
 public class Turret extends SubsystemBase {
+
+    public static class TurretState {
+        public Rotation2d yaw;
+        public Rotation2d pitch;
+        public double flywheelSpeed;
+
+        public TurretState(Rotation2d yaw, Rotation2d pitch, double flywheelSpeed) {
+            this.yaw = yaw;
+            this.pitch = pitch;
+            this.flywheelSpeed = flywheelSpeed;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)", 
+                yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
+        }
+    }
+
     private TalonFX m_yaw;
     private TalonFXConfiguration yawConfig = new TalonFXConfiguration();
     private MotionMagicVoltage yawControl;
@@ -75,7 +95,7 @@ public class Turret extends SubsystemBase {
         this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
         this.m_yaw.setControl(yawControl);
 
-        pitchConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+        pitchConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive; //TODO ensure correct direction
 
         this.m_pitch = new TalonFX(22, "canivore");
         this.m_pitch.getConfigurator().apply(pitchConfig);
@@ -103,7 +123,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void setPitch(Rotation2d pos) {
-        // convert angle to controller position units (radians here as an example)
+        pos = pos.minus(LauncherConstants.pitchZeroAngle);
         double targetPosition = pos.getRotations() * LauncherConstants.motorToPitchRot;
         this.pitchControl.Position = targetPosition;
         this.m_pitch.setControl(this.pitchControl);
@@ -117,6 +137,12 @@ public class Turret extends SubsystemBase {
         }
         this.flywheelControl.Velocity = targetVelocity;
         this.m_flywheel.setControl(this.flywheelControl);
+    }
+
+    public void setTurretState(TurretState state) {
+        this.setYaw(state.yaw);
+        this.setPitch(state.pitch);
+        this.setFlywheelSpeed(state.flywheelSpeed);
     }
 
     public void zeroYaw() {
@@ -139,6 +165,10 @@ public class Turret extends SubsystemBase {
 
     public Command setPitchCommand(Rotation2d angle) {
         return new InstantCommand(() -> {this.setPitch(angle);}, this);
+    }
+
+    public Command setTurretStateCommand(TurretState state) {
+        return new RunCommand(() -> {this.setTurretState(state);}, this);
     }
 
     public void periodic() {

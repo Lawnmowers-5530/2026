@@ -430,27 +430,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
     }
 
-    public Command driveCommand() {
-        final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                .withDeadband(SwerveConstants.MaxSpeed * 0.1)
-                .withRotationalDeadband(SwerveConstants.MaxAngularRate * 0.1) // Add a 10% deadband
-                .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
-        return this.applyRequest(() -> drive
-                .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.MaxSpeed) // Drive
-                                                                                                             // forward
-                                                                                                             // with
-                // negative Y (forward)
-                .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.MaxSpeed) // Drive
-                                                                                                             // left
-                                                                                                             // with
-                // negative X (left)
-                .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.MaxAngularRate) // Drive
-        // counterclockwise
-        // with
-        // negative X (left)
-        );
-    }
-
     /**
      * the method comes from 1690's
      * <a href="https://youtu.be/N6ogT5DjGOk?feature=shared&t=1674">online software

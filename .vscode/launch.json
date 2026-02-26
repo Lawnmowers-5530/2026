@@ -6,6 +6,13 @@
   "configurations": [
     {
       "type": "java",
+      "name": "ProjectileAimer",
+      "request": "launch",
+      "mainClass": "frc.lib.ProjectileAimer",
+      "projectName": "2026-code"
+    },
+    {
+      "type": "java",
       "name": "Test",
       "request": "launch",
       "mainClass": "frc.lib.Test",

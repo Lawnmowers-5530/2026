@@ -44,7 +44,7 @@ public class RobotContainer {
                 this.subsystems.intake = new Intake(robotVelocity);
                 this.subsystems.spindexer = new Spindexer();
 
-                this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
+                //this.subsystems.drivetrain.setDefaultCommand(this.subsystems.drivetrain.driveCommand());
 
                 Controller.getInstance().getDriveController().y().onTrue(subsystems.intake.extendIntake());
                 Controller.getInstance().getDriveController().a().onTrue(subsystems.intake.tuck());
