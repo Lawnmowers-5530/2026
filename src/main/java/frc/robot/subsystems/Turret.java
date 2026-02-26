@@ -5,6 +5,7 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VelocityDutyCycle;
 import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
@@ -28,7 +29,7 @@ public class Turret extends SubsystemBase {
 
     private TalonFX m_flywheel;
     private TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
-    private TorqueCurrentFOC flywheelControl;
+    private VelocityVoltage flywheelControl;
 
     public Turret() {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -67,11 +68,6 @@ public class Turret extends SubsystemBase {
         slot0flywheelConfig.kI = 0; // no output for integrated error
         slot0flywheelConfig.kD = 0; // A velocity error of 1 rps results in 0.05 V output
 
-        var torqueCurrentConfigFlywheel = flywheelConfig.TorqueCurrent;
-        torqueCurrentConfigFlywheel.PeakForwardTorqueCurrent = 500;
-        torqueCurrentConfigFlywheel.PeakReverseTorqueCurrent = -500;
-        torqueCurrentConfigFlywheel.TorqueNeutralDeadband = 0;
-
         yawConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
         this.m_yaw = new TalonFX(21, "canivore");
@@ -90,7 +86,7 @@ public class Turret extends SubsystemBase {
 
         this.m_flywheel = new TalonFX(23, "canivore");
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
-        this.flywheelControl = new TorqueCurrentFOC(0);
+        this.flywheelControl = new VelocityVoltage(0);
         this.m_flywheel.setControl(flywheelControl);
     }
 
@@ -121,7 +117,7 @@ public class Turret extends SubsystemBase {
         }
         //this.m_flywheel.setControl(this.flywheelControl.withVelocity(targetVelocity));
         //this.m_flywheel.setControl(velocityRequest);
-        this.flywheelControl.Output = speed;//targetVelocity;
+        this.flywheelControl.Velocity = targetVelocity;
         this.m_flywheel.setControl(this.flywheelControl);
         SmartDashboard.putNumber("targetVelocity", targetVelocity);
     }
