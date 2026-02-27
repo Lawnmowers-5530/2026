@@ -3,9 +3,13 @@ package frc.robot.container;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -82,9 +86,21 @@ public final class Bindings {
 
     final class Turret {
         Command autoAim() {
-            Translation3d target = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose : LauncherConstants.blueTargetPose;
-            
-            return subsystems.turret.setTurretStateCommand(()-> {return ProjectileAimer.parabolicTurretState(target, subsystems.drivetrain.getState().Pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(subsystems.drivetrain.getState().Pose.getRotation())), subsystems.drivetrain.getState().Speeds).rotateBy(subsystems.drivetrain.getRotation3d().toRotation2d().times(-1));});
+            Translation3d target = DriverStation.getAlliance().isPresent()
+                    && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose
+                            : LauncherConstants.blueTargetPose;
+
+            return subsystems.turret.setTurretStateCommand(() -> {
+                Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
+                Translation2d turretPos = subsystems.drivetrain.getState().Pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(rot));
+                Rotation2d theta = turretPos.getAngle().plus(Rotation2d.fromDegrees(90));
+                double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * LauncherConstants.distFromCenter.getNorm();
+                Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos(), r * theta.getSin());
+                return ProjectileAimer.parabolicTurretState(target,
+                        turretPos,
+                        turretVel)
+                        .rotateBy(rot.times(-1)); //Add in robot rotation
+            });
         };
     }
 }

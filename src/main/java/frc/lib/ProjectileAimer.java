@@ -144,7 +144,7 @@ public class ProjectileAimer {
         return Math.sqrt(9.81 * Math.pow(r, 2))/(2 * Math.pow(Math.cos(angle.getRadians()), 2)*(r*Math.tan(angle.getRadians())+h));
     }
 
-public static Turret.TurretState parabolicTurretState(Translation3d target, Translation2d robotTranslation, ChassisSpeeds robotVelocity) {
+public static Turret.TurretState parabolicTurretState(Translation3d target, Translation2d robotTranslation, Vector<N2> turretVelocity) {
     // 1. Constants
     final double g = 9.80665; // Gravity m/s^2
     // Constraint: Vertical velocity at target (dz/dt). 
@@ -180,8 +180,8 @@ public static Turret.TurretState parabolicTurretState(Translation3d target, Tran
     // 5. Compensate for Robot Velocity
     // Robot velocity is Vector<N2> (x, y). Subtract it from world velocity 
     // to get the velocity the shooter needs to generate.
-    double vx_shooter = vx_world - robotVelocity.vxMetersPerSecond;
-    double vy_shooter = vy_world - robotVelocity.vyMetersPerSecond;
+    double vx_shooter = vx_world - turretVelocity.get(0);
+    double vy_shooter = vy_world - turretVelocity.get(1);
     double vz_shooter = vz_initial; // Assuming robot vertical velocity is 0
 
     // 6. Convert to Spherical Coordinates (Yaw, Pitch, Magnitude)
@@ -197,9 +197,9 @@ public static Turret.TurretState parabolicTurretState(Translation3d target, Tran
 public static void main(String[] args) {
     Translation3d target = new Translation3d(2, 2, 2);
     Translation2d robotPose = new Translation2d(0, 0);
-    ChassisSpeeds robotVelocity = new ChassisSpeeds(0, 0, 0);
+    Vector<N2> turretVelocity = VecBuilder.fill(0, 0);
     long t0 = System.nanoTime();
-    Turret.TurretState state = parabolicTurretState(target, robotPose, robotVelocity);
+    Turret.TurretState state = parabolicTurretState(target, robotPose, turretVelocity);
     long t1 = System.nanoTime();
     System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
     System.out.println(state.toString());
