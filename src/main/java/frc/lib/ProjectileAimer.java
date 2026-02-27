@@ -144,12 +144,50 @@ public class ProjectileAimer {
         return Math.sqrt(9.81 * Math.pow(r, 2))/(2 * Math.pow(Math.cos(angle.getRadians()), 2)*(r*Math.tan(angle.getRadians())+h));
     }
 
-public static Turret.TurretState parabolicTurretState(Translation3d target, Translation2d robotTranslation, Vector<N2> turretVelocity) {
+public static Turret.TurretState optimizeTurretState(
+    Translation3d target, 
+    Translation2d robotTranslation, 
+    Vector<N2> turretVelocity,
+    double maxVelocity,
+    double minPitchDegrees, // Added
+    double maxPitchDegrees
+) {
+    double bestDzDt = 0.0; 
+    double low = -15.0; // Steepest search limit
+    double high = 0.0;  // Flattest search limit
+    
+    for (int i = 0; i < 15; i++) {
+        double mid = (low + high) / 2.0;
+        Turret.TurretState state = parabolicTurretState(target, robotTranslation, turretVelocity, mid);
+        
+        double currentPitch = state.pitch.getDegrees();
+
+        // LOGIC CHECK:
+        // 1. If pitch is too LOW, we need a steeper shot (move toward 'low')
+        // 2. If pitch is too HIGH or velocity is too FAST, we need a flatter shot (move toward 'high')
+        
+        if (currentPitch < minPitchDegrees) {
+            // Shot is too flat for the hardware; try to make it steeper
+            high = mid; 
+        } else if (currentPitch > maxPitchDegrees || state.flywheelSpeed > maxVelocity) {
+            // Shot is too steep or too fast; try to make it flatter
+            low = mid;
+        } else {
+            // This dz/dt works! Save it and try to see if we can get even steeper
+            bestDzDt = mid;
+            high = mid; 
+        }
+    }
+    
+    return parabolicTurretState(target, robotTranslation, turretVelocity, bestDzDt);
+}
+
+public static Turret.TurretState parabolicTurretState(Translation3d target, Translation2d robotTranslation, Vector<N2> turretVelocity, double dzdt) {
     // 1. Constants
     final double g = 9.80665; // Gravity m/s^2
     // Constraint: Vertical velocity at target (dz/dt). 
     // Usually negative for a "descending" hit (swish).
-    final double dz_dt_constraint = -2.0; 
+    final double dz_dt_constraint = dzdt; 
 
 
 
@@ -196,10 +234,10 @@ public static Turret.TurretState parabolicTurretState(Translation3d target, Tran
 
 public static void main(String[] args) {
     Translation3d target = new Translation3d(2, 2, 2);
-    Translation2d robotPose = new Translation2d(0, 0);
-    Vector<N2> turretVelocity = VecBuilder.fill(0, 0);
+    Translation2d robotPose = new Translation2d(2, 0);
+    Vector<N2> turretVelocity = VecBuilder.fill(1, 0);
     long t0 = System.nanoTime();
-    Turret.TurretState state = parabolicTurretState(target, robotPose, turretVelocity);
+    Turret.TurretState state = optimizeTurretState(target, robotPose, turretVelocity, 10.0, 52, 71.0);
     long t1 = System.nanoTime();
     System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
     System.out.println(state.toString());

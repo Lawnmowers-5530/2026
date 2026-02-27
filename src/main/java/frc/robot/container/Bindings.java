@@ -98,7 +98,8 @@ public final class Bindings {
                 Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos(), r * theta.getSin());
                 return ProjectileAimer.parabolicTurretState(target,
                         turretPos,
-                        turretVel)
+                        turretVel,
+                        -2)
                         .rotateBy(rot.times(-1)); //Add in robot rotation
             });
         };

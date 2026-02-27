@@ -9,6 +9,13 @@
       "name": "ProjectileAimer",
       "request": "launch",
       "mainClass": "frc.lib.ProjectileAimer",
+      "projectName": "2026"
+    },
+    {
+      "type": "java",
+      "name": "ProjectileAimer",
+      "request": "launch",
+      "mainClass": "frc.lib.ProjectileAimer",
       "projectName": "2026-code"
     },
     {
