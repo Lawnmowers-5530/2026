@@ -84,8 +84,7 @@ public final class Bindings {
         Command autoAim() {
             Translation3d target = DriverStation.getAlliance().isPresent() && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose : LauncherConstants.blueTargetPose;
             
-            return subsystems.turret.setTurretStateCommand(()-> {return ProjectileAimer.parabolicTurretState(target, subsystems.drivetrain.getState().Pose.getTranslation(), subsystems.drivetrain.getState().Speeds);//.rotateBy(subsystems.drivetrain.getRotation3d().toRotation2d().times(-1));});
-        });
+            return subsystems.turret.setTurretStateCommand(()-> {return ProjectileAimer.parabolicTurretState(target, subsystems.drivetrain.getState().Pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(subsystems.drivetrain.getState().Pose.getRotation())), subsystems.drivetrain.getState().Speeds).rotateBy(subsystems.drivetrain.getRotation3d().toRotation2d().times(-1));});
+        };
     }
-}
 }
