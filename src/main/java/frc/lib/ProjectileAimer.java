@@ -146,7 +146,7 @@ public class ProjectileAimer {
 
 public static Turret.TurretState optimizeTurretState(
     Translation3d target, 
-    Translation2d robotTranslation, 
+    Vector<N2> robotTranslation, 
     Vector<N2> turretVelocity,
     double maxVelocity,
     double minPitchDegrees, // Added
@@ -182,7 +182,7 @@ public static Turret.TurretState optimizeTurretState(
     return parabolicTurretState(target, robotTranslation, turretVelocity, bestDzDt);
 }
 
-public static Turret.TurretState parabolicTurretState(Translation3d target, Translation2d robotTranslation, Vector<N2> turretVelocity, double dzdt) {
+public static Turret.TurretState parabolicTurretState(Translation3d target, Vector<N2> robotTranslation, Vector<N2> turretVelocity, double dzdt) {
     // 1. Constants
     final double g = 9.80665; // Gravity m/s^2
     // Constraint: Vertical velocity at target (dz/dt). 
@@ -192,7 +192,7 @@ public static Turret.TurretState parabolicTurretState(Translation3d target, Tran
 
 
     // 2. Calculate Displacements
-    Translation3d relativeTranslation = target.minus(new Translation3d(robotTranslation.getX(), robotTranslation.getY(), 0));
+    Translation3d relativeTranslation = target.minus(new Translation3d(robotTranslation.get(0), robotTranslation.get(1), 0));
     double dx = relativeTranslation.getX();
     double dy = relativeTranslation.getY();
     double dz = relativeTranslation.getZ();
@@ -234,7 +234,7 @@ public static Turret.TurretState parabolicTurretState(Translation3d target, Tran
 
 public static void main(String[] args) {
     Translation3d target = new Translation3d(2, 2, 2);
-    Translation2d robotPose = new Translation2d(2, 0);
+    Vector<N2> robotPose = VecBuilder.fill(2, 0);
     Vector<N2> turretVelocity = VecBuilder.fill(1, 0);
     long t0 = System.nanoTime();
     Turret.TurretState state = optimizeTurretState(target, robotPose, turretVelocity, 10.0, 52, 71.0);

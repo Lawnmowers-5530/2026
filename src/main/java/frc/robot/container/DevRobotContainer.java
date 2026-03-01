@@ -73,7 +73,7 @@ public class DevRobotContainer {
 
                 this.pitchSp = 0;
 
-                Controller.getInstance().getDriveController().leftBumper().onTrue(this.bindings.intake.collect());
+                Controller.getInstance().getDriveController().leftBumper().toggleOnTrue(this.bindings.intake.collect());
                 Controller.getInstance().getDriveController().rightBumper().toggleOnTrue(this.subsystems.spindexer.spinKickCommand());
                 Controller.getInstance().getDriveController().a().onTrue(this.bindings.drivetrain.zeroGyro());
         }

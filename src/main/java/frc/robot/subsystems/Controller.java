@@ -17,6 +17,7 @@ public class Controller {
 
     public Supplier<Vector<N2>> driveVector;
     public Supplier<Double> driveRotation;
+    public Supplier<Double> secondaryTriggerAxesSum;
     public Trigger slowMode;
     public Trigger zeroGyro;
     public Trigger runIntake;
@@ -36,13 +37,12 @@ public class Controller {
     private Controller() {
         this.driverController = new CommandXboxController(0);
         this.secondaryController = new CommandXboxController(1);
-        
+
         driveVector = () -> VecBuilder.fill(-this.driverController.getLeftY(), -this.driverController.getLeftX());
         driveRotation = () -> -this.driverController.getRightX();
-    
 
-    // driver controller 
-    
+        // driver controller
+
         driveVector = () -> {
             return VecBuilder.fill(
                     MathUtil.applyDeadband(
@@ -63,8 +63,11 @@ public class Controller {
         };
         slowMode = driverController.b();
         zeroGyro = driverController.povLeft();
+
+        secondaryTriggerAxesSum = () -> {
+            return secondaryController.getRightTriggerAxis() - secondaryController.getLeftTriggerAxis();
+        };
     }
-    
 
     public CommandXboxController getDriveController() {
         return this.driverController;
@@ -72,5 +75,9 @@ public class Controller {
 
     public CommandXboxController getSecondaryController() {
         return this.secondaryController;
+    }
+
+    public CommandXboxController getSwitches() {
+        return this.switches;
     }
 }

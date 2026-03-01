@@ -11,6 +11,7 @@ import edu.wpi.first.math.interpolation.Interpolator;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.math.util.Units;
 import frc.lib.ProjectileAimer;
+import frc.robot.subsystems.Turret.TurretState;
 
 public class LauncherConstants { //TODO: fill in constants
     public static final CANBus canBus = new CANBus("canivore", "logs/launcherFlywheel");
@@ -33,6 +34,11 @@ public class LauncherConstants { //TODO: fill in constants
     public static final Rotation2d dragChainZeroAngle = Rotation2d.fromDegrees(315);
     public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(5), Units.inchesToMeters(-6));
     public static final double launcherHeight = 0.3;
+    public static final double feedTime = 0.15; //TODO try at 0 if not working
+
+    public static final TurretState state1 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
+    public static final TurretState state2 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
+
     public static InterpolatingTreeMap<Double, Double> VelocityToRPS =
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Interpolator.forDouble());
      static {

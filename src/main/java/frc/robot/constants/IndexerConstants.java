@@ -1,4 +1,4 @@
-package frc.robot.subsystems.Indexer;
+package frc.robot.constants;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 
@@ -11,6 +11,8 @@ public class IndexerConstants {
     public static double KICKER_RUN_CURRENT = 8; //volts
     
     public static int KICKER_LASERCAN_PORT = 0;
+
+    public static double jitterTime = 0.3; //seconds
     
     ////#region JAM DETECTION
     

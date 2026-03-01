@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotation;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -24,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.SwerveConstants;
 
@@ -90,7 +92,7 @@ public class Intake extends SubsystemBase {
         // TODO Telemetry or logging
     }
 
-    public Command tuck() {
+    public Command tuckIntakeCommand() {
         return Commands.either(
                 new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
                         Commands.runOnce(() -> {
@@ -106,20 +108,28 @@ public class Intake extends SubsystemBase {
                 new InstantCommand(), this::canTuck);
     }
 
-    public Command runIntake() {
+    public void runIntake() {
+        runMotor.setControl(new VoltageOut(7));
+    }
+
+    public void stopIntake() {
+        runMotor.setControl(new TorqueCurrentFOC(0));
+    }
+
+    public Command runIntakeCommand() {
         return Commands.either(
                 Commands.run(() -> {
                     SmartDashboard.putNumber("Intake speed", runMotor.get());
                     // runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
-                    runMotor.setControl(new VoltageOut(7));
+                    this.runIntake();
 
                 }, this),
-                this.stopIntake(), ()-> {return true;});
+                this.stopIntakeCommand(), ()-> {return true;});
     }
 
-    public Command stopIntake() {
+    public Command stopIntakeCommand() {
         return Commands.runOnce(() -> {
-            runMotor.setControl(new TorqueCurrentFOC(0));
+            this.stopIntake();
         });
     }
     @Deprecated
@@ -133,7 +143,7 @@ public class Intake extends SubsystemBase {
         }, this);
     }
 
-    public Command extendIntake() {
+    public Command extendIntakeCommand() {
 
         return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
                 Commands.runOnce(() -> {
@@ -175,6 +185,12 @@ public class Intake extends SubsystemBase {
 
     public void zeroPivot() {
         this.pivotMotor.setPosition(0);
+    }
+
+    public Command manualIntakeControl(Supplier<Double> pivotSpeed) {
+        return new RunCommand(() -> {
+            this.runMotor.set(pivotSpeed.get());
+        }, this);
     }
 
 }
