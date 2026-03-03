@@ -70,7 +70,7 @@ public class RobotContainer {
                 this.bindings = new Bindings(this.subsystems);
 
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-                this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
+                //this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
                 this.pitchSp = 0;
 
@@ -88,6 +88,10 @@ public class RobotContainer {
                 Controller.getInstance().getSwitches().x().onTrue(new InstantCommand(() -> {
                         this.subsystems.drivetrain.resetPose(new Pose2d());
                 }));
+
+                //Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(() -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
+                Controller.getInstance().getSecondaryController().y().onTrue(this.subsystems.intake.extendIntakeCommand());
+                Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.tuckIntakeCommand());
         }
 
         public Command getAutonomousCommand() {
@@ -101,6 +105,9 @@ public class RobotContainer {
         }
 
         public void teleopInit() {
+                this.subsystems.intake.zeroPivot();
+                this.subsystems.turret.zeroYaw();
+                this.subsystems.turret.zeroPitch();
         }
 
         public void teleopPeriodic() {
@@ -108,6 +115,7 @@ public class RobotContainer {
                                 this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
                 pitchSp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getLeftY(), 0.07);
                 SmartDashboard.putNumber("pitchSp", pitchSp);
+                this.subsystems.turret.setYaw(Rotation2d.kZero);
                 // this.subsystems.turret.setYaw(Rotation2d.fromDegrees(pitchSp));
 
                 // Rotation2d angle =

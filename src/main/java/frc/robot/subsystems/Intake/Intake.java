@@ -64,12 +64,12 @@ public class Intake extends SubsystemBase {
             slot0PivotConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
             slot0PivotConfig.kV = 1; // A velocity target of 1 rps results in 0.12 V output
             slot0PivotConfig.kA = 1; // An acceleration of 1 rps/s requires 0.01 V output
-            slot0PivotConfig.kP = 7; // A position error of 2.5 rotations results in 12 V output
-            slot0PivotConfig.kI = 0.2; // no output for integrated error
+            slot0PivotConfig.kP = 12; // A position error of 2.5 rotations results in 12 V output
+            slot0PivotConfig.kI = 0; // no output for integrated error
             slot0PivotConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
             slot0PivotConfig.GravityType = GravityTypeValue.Arm_Cosine;
             slot0PivotConfig.GravityArmPositionOffset = 0.1;
-            slot0PivotConfig.kG = 3;
+            slot0PivotConfig.kG = 0;
 
             var motionMagicConfigPivot = pivotMotorConfig.MotionMagic;
             motionMagicConfigPivot.MotionMagicCruiseVelocity = 1; // Target cruise velocity of 80 rps
@@ -99,7 +99,7 @@ public class Intake extends SubsystemBase {
                             this.currentState = State.TUCKING;
                             runMotor.set(0);
                             pivotMotor.setControl(
-                                    new VoltageOut(-12));// new
+                                    new MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));// new
                                                          // MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
                         }, this))
                         .andThen(Commands.runOnce(() -> {
@@ -124,7 +124,9 @@ public class Intake extends SubsystemBase {
                     this.runIntake();
 
                 }, this),
-                this.stopIntakeCommand(), ()-> {return true;});
+                this.stopIntakeCommand(), () -> {
+                    return true;
+                });
     }
 
     public Command stopIntakeCommand() {
@@ -132,6 +134,7 @@ public class Intake extends SubsystemBase {
             this.stopIntake();
         });
     }
+
     @Deprecated
     /**
      * DO NOT CALL THIS IN PRODUCTION CODE
@@ -149,7 +152,7 @@ public class Intake extends SubsystemBase {
                 Commands.runOnce(() -> {
                     this.currentState = State.EXTENDING;
                     pivotMotor
-                            .setControl(new VoltageOut(3));// new
+                            .setControl(new MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));// new
                                                            // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
                 }, this))
                 .andThen(Commands.runOnce(() -> {
@@ -187,9 +190,15 @@ public class Intake extends SubsystemBase {
         this.pivotMotor.setPosition(0);
     }
 
-    public Command manualIntakeControl(Supplier<Double> pivotSpeed) {
+    public Command manualIntakeControl(Supplier<Double> runSpeed) {
         return new RunCommand(() -> {
-            this.runMotor.set(pivotSpeed.get());
+            this.runMotor.set(runSpeed.get());
+        }, this);
+    }
+
+    public Command manualPivotControl(Supplier<Double> pivotSpeed) {
+        return new RunCommand(() -> {
+            this.pivotMotor.set(pivotSpeed.get());
         }, this);
     }
 
