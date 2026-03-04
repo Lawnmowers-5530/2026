@@ -110,7 +110,7 @@ public class Turret extends SubsystemBase {
         this.m_yaw = new TalonFX(21, "canivore");
         this.m_yaw.getConfigurator().apply(yawConfig);
         this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
-        this.m_yaw.setControl(yawControl);
+        //this.m_yaw.setControl(yawControl);
 
         pitchConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; //TODO ensure correct direction
 
@@ -166,15 +166,14 @@ public class Turret extends SubsystemBase {
     public void setPitch(Rotation2d pos) {
         pos = pos.minus(LauncherConstants.pitchZeroAngle);
         SmartDashboard.putNumber("pospreclamp", pos.getDegrees());
-        pos = Rotation2d.fromDegrees(MathUtil.clamp(pos.getDegrees(), -19, 0));
-        double targetPosition = pos.getRotations() * LauncherConstants.motorToPitchRot;
+        double targetPosition = pos.getDegrees() * LauncherConstants.motorRotToPitchDeg;
         this.pitchControl.Position = targetPosition;
         this.m_pitch.setControl(this.pitchControl);
     }
 
     public void setFlywheelSpeed(double speed) {
         // convert speed to controller velocity units (rps here as an example)
-        double targetVelocity = LauncherConstants.VelocityToRPS.get(speed); // adjust by gear ratio / sensor units as needed
+        double targetVelocity = speed;//LauncherConstants.VelocityToRPS.get(speed); // adjust by gear ratio / sensor units as needed
         if(speed == 0) {
             targetVelocity = 0;
         }
@@ -186,6 +185,14 @@ public class Turret extends SubsystemBase {
         this.setYaw(state.yaw);
         this.setPitch(state.pitch);
         this.setFlywheelSpeed(state.flywheelSpeed);
+    }
+
+    public TurretState getTurretState() {
+        return new TurretState(
+            Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / LauncherConstants.motorToYawRot).minus(LauncherConstants.turretOffset),
+            Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / LauncherConstants.motorRotToPitchDeg).plus(LauncherConstants.pitchZeroAngle),
+            this.m_flywheel.getVelocity().getValueAsDouble() * LauncherConstants.motorToFlywheelRot
+        );
     }
 
     public void zeroYaw() {

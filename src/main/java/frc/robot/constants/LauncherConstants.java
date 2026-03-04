@@ -23,19 +23,18 @@ public class LauncherConstants { //TODO: fill in constants
     public static final double kI = 0.0;
     public static final double kD = 0.00;
     public static final double motorToYawRot = 8;
-    public static final double motorToPitchRot = 19*0.75;//17 * 0.75;
+    public static final double motorRotToPitchDeg = 1.4/20.0;//17 * 0.75;
     public static final Rotation2d turretOffset = Rotation2d.fromRotations(0.647).times(1.0/8.0);
-    public static final Rotation2d pitchZeroAngle = Rotation2d.fromDegrees(71);
+    public static final Rotation2d pitchZeroAngle = Rotation2d.fromDegrees(72);
     public static final double motorToFlywheelRot = 1;
     public static final double sysIdRampRate = 1.0; // Volts per second
     public static final double sysIdDynamicStepVoltage = 0.0; // Volts
     public static final double sysIdTimeout = 10.0; // Seconds
     public static final Translation3d blueTargetPose = new Translation3d(4.619, 4.027, Units.feetToMeters(6));
     public static final Translation3d redTargetPose = new Translation3d(Units.inchesToMeters(40), Units.inchesToMeters(40), Units.inchesToMeters(0)); //TODO change
-    public static final Rotation2d dragChainZeroAngle = Rotation2d.fromDegrees(315);
-    public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(5), Units.inchesToMeters(-6));
+    public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(-5), Units.inchesToMeters(-6));
     public static final double launcherHeight = 0.3;
-    public static final double feedTime = 0.15; //TODO try at 0 if not working
+    public static final double feedTime = 0.0; //TODO try at 0 if not working
 
     public static final TurretState state1 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
     public static final TurretState state2 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);

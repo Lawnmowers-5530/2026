@@ -72,7 +72,7 @@ public class RobotContainer {
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
                 //this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
-                this.pitchSp = 0;
+                this.pitchSp = 65;
 
                 Controller.getInstance().getDriveController().leftBumper()
                                 .toggleOnTrue(this.bindings.intake.toggleCollect());
@@ -92,6 +92,8 @@ public class RobotContainer {
                 //Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(() -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
                 Controller.getInstance().getSecondaryController().y().onTrue(this.subsystems.intake.extendIntakeCommand());
                 Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.tuckIntakeCommand());
+
+                // 
         }
 
         public Command getAutonomousCommand() {
@@ -108,6 +110,8 @@ public class RobotContainer {
                 this.subsystems.intake.zeroPivot();
                 this.subsystems.turret.zeroYaw();
                 this.subsystems.turret.zeroPitch();
+                SmartDashboard.putNumber("turret velo", 0);
+                this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
         }
 
         public void teleopPeriodic() {
@@ -120,7 +124,9 @@ public class RobotContainer {
                 "pose", this.subsystems.drivetrain.getState().Pose.toString()
                 );
                 //this.subsystems.turret.setYaw(Rotation2d.kZero);
-                this.subsystems.turret.setYaw(Rotation2d.fromDegrees(pitchSp));
+                //this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
+                this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret velo", 0));
+                SmartDashboard.putString("turretState", this.subsystems.turret.getTurretState().toString());
                 // Rotation2d angle =
                 // LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
 
