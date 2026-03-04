@@ -2,24 +2,29 @@ package frc.robot.subsystems;
 
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.SignalLogger;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
-import com.ctre.phoenix6.controls.TorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VelocityDutyCycle;
-import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
-import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.constants.LauncherConstants;
+
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Volts;
 
 public class Turret extends SubsystemBase {
 
@@ -57,6 +62,11 @@ public class Turret extends SubsystemBase {
     private TalonFX m_flywheel;
     private TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
     private VelocityVoltage flywheelControl;
+    private VoltageOut flywheelSysIdControl;
+    private StatusSignal<Angle> flywheelPositionSignal;
+    private StatusSignal<AngularVelocity> flywheelVelocitySignal;
+    private StatusSignal<Voltage> voltageStatusSignal;
+    private SysIdRoutine flywheelRoutine;
 
     public Turret() {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -115,6 +125,32 @@ public class Turret extends SubsystemBase {
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
         this.flywheelControl = new VelocityVoltage(0);
         this.m_flywheel.setControl(flywheelControl);
+
+        this.flywheelSysIdControl = new VoltageOut(0).withEnableFOC(true);
+        this.voltageStatusSignal = this.m_flywheel.getMotorVoltage();
+        this.flywheelPositionSignal = this.m_flywheel.getPosition();
+        this.flywheelVelocitySignal = this.m_flywheel.getVelocity();
+        this.m_flywheel.optimizeBusUtilization();
+        this.voltageStatusSignal.setUpdateFrequency(1000);
+        this.flywheelPositionSignal.setUpdateFrequency(1000);
+        this.flywheelVelocitySignal.setUpdateFrequency(1000);
+
+        SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
+                this::setVoltage,
+                null,
+                this
+        );
+
+        SysIdRoutine.Config flywheelConfig = new SysIdRoutine.Config(
+                Volts.per(Second).of(1), // 1 V/s voltage ramp
+                Volts.of(7),
+                Second.of(10),
+                (state) -> {
+                    SignalLogger.writeString("flywheelState", state.toString());
+                }
+        );
+
+        this.flywheelRoutine = new SysIdRoutine(flywheelConfig, flywheelMechanism);
     }
 
     public void setYaw(Rotation2d pos) {
@@ -183,5 +219,14 @@ public class Turret extends SubsystemBase {
 
     public void periodic() {
         SmartDashboard.putNumber("pitch encoder value", this.m_pitch.getPosition().getValueAsDouble());
+    }
+
+    public void setVoltage(Voltage voltage) {
+        this.flywheelSysIdControl = this.flywheelSysIdControl.withOutput(voltage);
+        this.m_flywheel.setControl(this.flywheelSysIdControl);
+    }
+
+    public SysIdRoutine getSysIdRoutine() {
+        return flywheelRoutine;
     }
 }
