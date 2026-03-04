@@ -115,9 +115,12 @@ public class RobotContainer {
                                 this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
                 pitchSp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getLeftY(), 0.07);
                 SmartDashboard.putNumber("pitchSp", pitchSp);
-                this.subsystems.turret.setYaw(Rotation2d.kZero);
-                // this.subsystems.turret.setYaw(Rotation2d.fromDegrees(pitchSp));
 
+                SmartDashboard.putString(
+                "pose", this.subsystems.drivetrain.getState().Pose.toString()
+                );
+                //this.subsystems.turret.setYaw(Rotation2d.kZero);
+                this.subsystems.turret.setYaw(Rotation2d.fromDegrees(pitchSp));
                 // Rotation2d angle =
                 // LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
 

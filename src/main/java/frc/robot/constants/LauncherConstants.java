@@ -24,6 +24,7 @@ public class LauncherConstants { //TODO: fill in constants
     public static final double kD = 0.00;
     public static final double motorToYawRot = 8;
     public static final double motorToPitchRot = 19*0.75;//17 * 0.75;
+    public static final Rotation2d turretOffset = Rotation2d.fromRotations(0.647).times(1.0/8.0);
     public static final Rotation2d pitchZeroAngle = Rotation2d.fromDegrees(71);
     public static final double motorToFlywheelRot = 1;
     public static final double sysIdRampRate = 1.0; // Volts per second

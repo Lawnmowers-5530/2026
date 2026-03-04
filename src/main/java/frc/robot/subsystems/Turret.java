@@ -155,12 +155,10 @@ public class Turret extends SubsystemBase {
 
     public void setYaw(Rotation2d pos) {
         // convert angle to controller position units (radians here as an example)
-        double targetPosition = pos.plus(Rotation2d.fromRotations(-3.678 / 8)).getRadians();
-        Rotation2d spModular = Rotation2d.fromRadians(MathUtil.angleModulus(targetPosition) * LauncherConstants.motorToYawRot);
+        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians())).plus(LauncherConstants.turretOffset);
 
-        this.yawControl.Position = spModular.getRotations();
+        this.yawControl.Position = targetPosition.times(LauncherConstants.motorToYawRot).getRotations();
         this.m_yaw.setControl(this.yawControl);
-        SmartDashboard.putNumber("spModular", spModular.getRotations());
 
         SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
     }
