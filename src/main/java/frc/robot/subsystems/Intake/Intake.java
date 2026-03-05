@@ -1,8 +1,11 @@
 package frc.robot.subsystems.Intake;
 
+import static edu.wpi.first.units.Units.Amp;
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotation;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -17,6 +20,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -44,12 +49,14 @@ public class Intake extends SubsystemBase {
     private static boolean exists = false;
     public static Intake instance;
     private Supplier<LinearVelocity> robotVelocity;
+    private Debouncer stalliDebouncer;
 
     public Intake(Supplier<LinearVelocity> robotVelocity) {
         CommandScheduler.getInstance().registerSubsystem(this);
         if (Intake.exists) {
             System.err.println("Creating more than one intake. Please fix broken code");
         } else {
+            stalliDebouncer = new Debouncer(0.05, DebounceType.kRising);
             this.robotVelocity = robotVelocity;
             instance = this;
             Intake.exists = true;
@@ -89,25 +96,23 @@ public class Intake extends SubsystemBase {
         SmartDashboard.putString("Target", this.pivotMotor.getAppliedControl().getControlInfo().toString());
         SmartDashboard.putBoolean("pivotAtExtensionPosition", this.pivotAtExtensionPosition());
         SmartDashboard.putNumber("applied output", this.pivotMotor.get());
+        isStalling = stalliDebouncer.calculate(stallinBallin());
         // TODO Telemetry or logging
     }
-
+    private boolean isStalling = false;
     public Command tuckIntakeCommand() {
-        return Commands.either(
-                new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
-                        Commands.runOnce(() -> {
-                            this.currentState = State.TUCKING;
-                            runMotor.set(0);
-                            pivotMotor.setControl(
-                                    new MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));// new
-                                                         // MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
-                        }, this))
-                        .andThen(Commands.runOnce(() -> {
-                            this.currentState = State.TUCKED;
-                        }, this)),
-                new InstantCommand(), this::canTuck);
+        return Commands.runOnce(()->{
+            this.currentState = State.TUCKING;
+             runMotor.set(0);
+            pivotMotor.setControl(new VoltageOut(-3));
+        }, this).andThen(Commands.waitUntil(this::isStalling)).andThen(()->{this.currentState = State.TUCKED;pivotMotor.setControl(new VoltageOut(-0.4));}, this);
     }
-
+    private boolean isStalling() {
+        return isStalling;
+    }
+    public boolean stallinBallin() {
+        return pivotMotor.getStatorCurrent().getValue().in(Amps) > 100 && Math.abs(pivotMotor.getVelocity().getValue().in(RotationsPerSecond)) < 5;
+    }
     public void runIntake() {
         runMotor.setControl(new VoltageOut(7));
     }
@@ -148,11 +153,11 @@ public class Intake extends SubsystemBase {
 
     public Command extendIntakeCommand() {
 
-        return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
+        return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::isStalling),
                 Commands.runOnce(() -> {
                     this.currentState = State.EXTENDING;
                     pivotMotor
-                            .setControl(new MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));// new
+                            .setControl(new VoltageOut(2));// new
                                                            // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
                 }, this))
                 .andThen(Commands.runOnce(() -> {

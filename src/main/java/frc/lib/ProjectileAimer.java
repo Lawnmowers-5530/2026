@@ -33,7 +33,7 @@ public class ProjectileAimer {
     private final double tMax;
     private final double dt;
 
-    private final double V = 8; //Predetermined exit velocity from shooter
+    private final double V = 8; // Predetermined exit velocity from shooter
 
     private final double maxIter;
     private final Matrix<N6, N1> guessState;
@@ -45,7 +45,7 @@ public class ProjectileAimer {
         this.m = 0.2154; // mass of projectile in kg (e.g., baseball)
         this.g = 9.81; // gravity in m/s^2
         this.rho = 1.225; // air density at sea level in kg/m^3
-        this.Cd = 0;//0.3; // drag coefficient (typical for a sphere)
+        this.Cd = 0;// 0.3; // drag coefficient (typical for a sphere)
         this.area = Math.PI * Math.pow(0.150622, 2);
         this.sMagnus = 1.0e-4; // Magnus effect coefficient (tunable)
 
@@ -76,13 +76,13 @@ public class ProjectileAimer {
             SimResult result = ShotCalculatorSim.sim(this.shotCalculator, this.tMax, this.dt, this.guessState,
                     this.targetPosition, this.robotVelocity);
 
-            Vec3 v0New = updateLaunchVelocity(new Vec3(this.guessState.get(3, 0), this.guessState.get(4, 0), this.guessState.get(5, 0)),
-             Vec3.fromVector(this.targetPosition), result, V, 0.3, Math.toRadians(2));
+            Vec3 v0New = updateLaunchVelocity(
+                    new Vec3(this.guessState.get(3, 0), this.guessState.get(4, 0), this.guessState.get(5, 0)),
+                    Vec3.fromVector(this.targetPosition), result, V, 0.3, Math.toRadians(2));
 
             this.guessState.set(3, 0, v0New.x);
             this.guessState.set(4, 0, v0New.y);
             this.guessState.set(5, 0, v0New.z);
-
 
         }
         return this.guessState;
@@ -123,125 +123,128 @@ public class ProjectileAimer {
         return newDir.scale(speed);
     }
 
-    //public static void main(String[] args) {
-    //    ProjectileAimer aimer = new ProjectileAimer(
-    //        VecBuilder.fill(0, 0, 0, 3, 3, 20),
-    //        VecBuilder.fill(2, 2, 2),
-    //        VecBuilder.fill(0, 0)
-    //    );
-    //    long t0 = System.nanoTime();
-    //    System.out.println(aimer.loop());
-    //    long t1 = System.nanoTime();
-//
-    //    System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
-//
-    //    Matrix<N1, N1> test = VecBuilder.fill(5);
-    //    Matrix<N1, N1> test2 = test.copy();
-    //    test2.set(0, 0, 10);
-    //    System.out.println(test);
-    //}
+    // public static void main(String[] args) {
+    // ProjectileAimer aimer = new ProjectileAimer(
+    // VecBuilder.fill(0, 0, 0, 3, 3, 20),
+    // VecBuilder.fill(2, 2, 2),
+    // VecBuilder.fill(0, 0)
+    // );
+    // long t0 = System.nanoTime();
+    // System.out.println(aimer.loop());
+    // long t1 = System.nanoTime();
+    //
+    // System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
+    //
+    // Matrix<N1, N1> test = VecBuilder.fill(5);
+    // Matrix<N1, N1> test2 = test.copy();
+    // test2.set(0, 0, 10);
+    // System.out.println(test);
+    // }
     public static double findv0(double r, Rotation2d angle, double h) {
-        return Math.sqrt(9.81 * Math.pow(r, 2))/(2 * Math.pow(Math.cos(angle.getRadians()), 2)*(r*Math.tan(angle.getRadians())+h));
+        return Math.sqrt(9.81 * Math.pow(r, 2))
+                / (2 * Math.pow(Math.cos(angle.getRadians()), 2) * (r * Math.tan(angle.getRadians()) + h));
     }
 
-public static Turret.TurretState optimizeTurretState(
-    Translation3d target, 
-    Vector<N2> robotTranslation, 
-    Vector<N2> turretVelocity,
-    double maxVelocity,
-    double minPitchDegrees, // Added
-    double maxPitchDegrees
-) {
-    double bestDzDt = 0.0; 
-    double low = -15.0; // Steepest search limit
-    double high = 0.0;  // Flattest search limit
-    
-    for (int i = 0; i < 15; i++) {
-        double mid = (low + high) / 2.0;
-        Turret.TurretState state = parabolicTurretState(target, robotTranslation, turretVelocity, mid);
-        
-        double currentPitch = state.pitch.getDegrees();
+    public static Turret.TurretState optimizeTurretState(
+            Translation3d target,
+            Vector<N2> robotTranslation,
+            Vector<N2> turretVelocity,
+            double maxVelocity,
+            double minPitchDegrees, // Added
+            double maxPitchDegrees) {
+        double bestDzDt = 0.0;
+        double low = -15.0; // Steepest search limit
+        double high = 0.0; // Flattest search limit
 
-        // LOGIC CHECK:
-        // 1. If pitch is too LOW, we need a steeper shot (move toward 'low')
-        // 2. If pitch is too HIGH or velocity is too FAST, we need a flatter shot (move toward 'high')
-        
-        if (currentPitch < minPitchDegrees) {
-            // Shot is too flat for the hardware; try to make it steeper
-            high = mid; 
-        } else if (currentPitch > maxPitchDegrees || state.flywheelSpeed > maxVelocity) {
-            // Shot is too steep or too fast; try to make it flatter
-            low = mid;
-        } else {
-            // This dz/dt works! Save it and try to see if we can get even steeper
-            bestDzDt = mid;
-            high = mid; 
+        for (int i = 0; i < 15; i++) {
+            double mid = (low + high) / 2.0;
+            Turret.TurretState state = parabolicTurretState(target, robotTranslation, turretVelocity, mid);
+
+            double currentPitch = state.pitch.getDegrees();
+
+            // LOGIC CHECK:
+            // 1. If pitch is too LOW, we need a steeper shot (move toward 'low')
+            // 2. If pitch is too HIGH or velocity is too FAST, we need a flatter shot (move
+            // toward 'high')
+
+            if (currentPitch < minPitchDegrees) {
+                // Shot is too flat for the hardware; try to make it steeper
+                high = mid;
+            } else if (currentPitch > maxPitchDegrees || state.flywheelSpeed > maxVelocity) {
+                // Shot is too steep or too fast; try to make it flatter
+                low = mid;
+            } else {
+                // This dz/dt works! Save it and try to see if we can get even steeper
+                bestDzDt = mid;
+                high = mid;
+            }
         }
-    }
-    
-    return parabolicTurretState(target, robotTranslation, turretVelocity, bestDzDt);
-}
 
-public static Turret.TurretState parabolicTurretState(Translation3d target, Vector<N2> robotTranslation, Vector<N2> turretVelocity, double dzdt) {
-    // 1. Constants
-    final double g = 9.80665; // Gravity m/s^2
-    // Constraint: Vertical velocity at target (dz/dt). 
-    // Usually negative for a "descending" hit (swish).
-    final double dz_dt_constraint = dzdt; 
-
-
-
-    // 2. Calculate Displacements
-    Translation3d relativeTranslation = target.minus(new Translation3d(robotTranslation.get(0), robotTranslation.get(1), 0));
-    double dx = relativeTranslation.getX();
-    double dy = relativeTranslation.getY();
-    double dz = relativeTranslation.getZ();
-    double horizontalDist = Math.hypot(dx, dy);
-
-    // 3. Solve for Time of Flight (t)
-    // Formula derived from: dz = (v_zt + g*t)*t - 0.5*g*t^2  =>  0.5*g*t^2 + v_zt*t - dz = 0
-    // Quadratic formula: t = [-v_zt + sqrt(v_zt^2 - 4(0.5g)(-dz))] / (2 * 0.5g)
-    double discriminant = Math.pow(dz_dt_constraint, 2) + 2 * g * dz;
-    
-    if (discriminant < 0) {
-        // Target is physically unreachable with the given dz/dt constraint
-        return new Turret.TurretState(new Rotation2d(), new Rotation2d(), 0); 
+        return parabolicTurretState(target, robotTranslation, turretVelocity, bestDzDt);
     }
 
-    double t = (-dz_dt_constraint + Math.sqrt(discriminant)) / g;
+    public static Turret.TurretState parabolicTurretState(Translation3d target, Vector<N2> robotTranslation,
+            Vector<N2> turretVelocity, double dzdt) {
+        // 1. Constants
+        final double g = 9.80665; // Gravity m/s^2
+        // Constraint: Vertical velocity at target (dz/dt).
+        // Usually negative for a "descending" hit (swish).
+        final double dz_dt_constraint = dzdt;
 
-    // 4. Calculate Required World Velocity Components
-    double vx_world = dx / t;
-    double vy_world = dy / t;
-    double vz_initial = dz_dt_constraint + g * t;
+        // 2. Calculate Displacements
+        Translation3d relativeTranslation = target
+                .minus(new Translation3d(robotTranslation.get(0), robotTranslation.get(1), 0));
+        double dx = relativeTranslation.getX();
+        double dy = relativeTranslation.getY();
+        double dz = relativeTranslation.getZ();
+        double horizontalDist = Math.hypot(dx, dy);
 
-    // 5. Compensate for Robot Velocity
-    // Robot velocity is Vector<N2> (x, y). Subtract it from world velocity 
-    // to get the velocity the shooter needs to generate.
-    double vx_shooter = vx_world - turretVelocity.get(0);
-    double vy_shooter = vy_world - turretVelocity.get(1);
-    double vz_shooter = vz_initial; // Assuming robot vertical velocity is 0
+        // 3. Solve for Time of Flight (t)
+        // Formula derived from: dz = (v_zt + g*t)*t - 0.5*g*t^2 => 0.5*g*t^2 + v_zt*t -
+        // dz = 0
+        // Quadratic formula: t = [-v_zt + sqrt(v_zt^2 - 4(0.5g)(-dz))] / (2 * 0.5g)
+        double discriminant = Math.pow(dz_dt_constraint, 2) + 2 * g * dz;
 
-    // 6. Convert to Spherical Coordinates (Yaw, Pitch, Magnitude)
-    double horizontalVelocityShooter = Math.hypot(vx_shooter, vy_shooter);
-    
-    Rotation2d yaw = new Rotation2d(vx_shooter, vy_shooter);
-    Rotation2d pitch = new Rotation2d(horizontalVelocityShooter, vz_shooter);
-    double exitVelocity = Math.sqrt(Math.pow(horizontalVelocityShooter, 2) + Math.pow(vz_shooter, 2));
+        if (discriminant < 0) {
+            // Target is physically unreachable with the given dz/dt constraint
+            return new Turret.TurretState(new Rotation2d(), new Rotation2d(), 0);
+        }
 
-    return new Turret.TurretState(yaw, pitch, exitVelocity);
+        double t = (-dz_dt_constraint + Math.sqrt(discriminant)) / g;
+
+        // 4. Calculate Required World Velocity Components
+        double vx_world = dx / t;
+        double vy_world = dy / t;
+        double vz_initial = dz_dt_constraint + g * t;
+
+        // 5. Compensate for Robot Velocity
+        // Robot velocity is Vector<N2> (x, y). Subtract it from world velocity
+        // to get the velocity the shooter needs to generate.
+        double vx_shooter = vx_world - turretVelocity.get(0);
+        double vy_shooter = vy_world - turretVelocity.get(1);
+        double vz_shooter = vz_initial; // Assuming robot vertical velocity is 0
+
+        // 6. Convert to Spherical Coordinates (Yaw, Pitch, Magnitude)
+        double horizontalVelocityShooter = Math.hypot(vx_shooter, vy_shooter);
+
+        Rotation2d yaw = new Rotation2d(vx_shooter, vy_shooter);
+        Rotation2d pitch = new Rotation2d(horizontalVelocityShooter, vz_shooter);
+        double exitVelocity = Math.sqrt(Math.pow(horizontalVelocityShooter, 2) + Math.pow(vz_shooter, 2));
+
+        return new Turret.TurretState(yaw, pitch, exitVelocity);
+    }
+
+    public static void main(String[] args) {
+        Translation3d target = new Translation3d(2, 2, 2);
+        Vector<N2> robotPose = VecBuilder.fill(2, 0);
+        Vector<N2> turretVelocity = VecBuilder.fill(1, 0);
+        long t0 = System.nanoTime();
+        Turret.TurretState state = optimizeTurretState(target, robotPose, turretVelocity, 10.0, 52, 71.0);
+        long t1 = System.nanoTime();
+        System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
+        System.out.println(state.toString());
+    }
 }
 
-public static void main(String[] args) {
-    Translation3d target = new Translation3d(2, 2, 2);
-    Vector<N2> robotPose = VecBuilder.fill(2, 0);
-    Vector<N2> turretVelocity = VecBuilder.fill(1, 0);
-    long t0 = System.nanoTime();
-    Turret.TurretState state = optimizeTurretState(target, robotPose, turretVelocity, 10.0, 52, 71.0);
-    long t1 = System.nanoTime();
-    System.out.printf("Time taken: %.3f ms%n", (t1 - t0) / 1e6);
-    System.out.println(state.toString());
-}
-}
-
-//TODO remove matrices and replace args for construction with vectors that are wayyyy easier to make
+// TODO remove matrices and replace args for construction with vectors that are
+// wayyyy easier to make
