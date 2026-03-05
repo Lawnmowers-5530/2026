@@ -60,7 +60,7 @@ public class RobotContainer {
         private double pitchSp;
 
         public RobotContainer() {
-                
+
                 this.subsystems = new Subsystems();
 
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
@@ -116,7 +116,7 @@ public class RobotContainer {
                 this.subsystems.intake.zeroPivot();
                 this.subsystems.turret.zeroYaw();
                 this.subsystems.turret.zeroPitch();
-                SmartDashboard.putNumber("turret velo", 0);
+                SmartDashboard.putNumber("flywheel velo", 0);
                 this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
         }
 

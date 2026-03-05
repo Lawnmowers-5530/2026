@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.HootAutoReplay;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.container.RobotContainer;
@@ -38,7 +39,11 @@ public class Robot extends TimedRobot {
     public void disabledInit() {}
 
     @Override
-    public void disabledPeriodic() {}
+    public void disabledPeriodic() {
+        //SmartDashboard.putNumber("flywheel velo", SmartDashboard.getNumber("flywheel velo", 0));
+        //double number =  SmartDashboard.getNumber("flywheel velo", 0);
+        //SmartDashboard.putNumber("applied velo", number);
+    }
 
     @Override
     public void disabledExit() {}

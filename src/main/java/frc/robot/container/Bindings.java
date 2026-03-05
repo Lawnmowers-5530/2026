@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.Controller;
+import frc.robot.subsystems.Turret.TurretState;
 import frc.lib.ProjectileAimer;
 import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
@@ -125,8 +126,11 @@ public final class Bindings {
                 Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
                 Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
                         .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector();
-                return ProjectileAimer.stupidParabolicCalc(new Translation2d(turretPos),
-                        LauncherConstants.blueTargetPose.toTranslation2d()).rotateBy(rot.times(-1)).setFlywheelSpeed(SmartDashboard.getNumber("flywheel velo", 0));
+                double number = SmartDashboard.getNumber("flywheel velo", 0); //very helpful name
+                TurretState out =  ProjectileAimer.stupidParabolicCalc(new Translation2d(turretPos),
+                        LauncherConstants.blueTargetPose.toTranslation2d()).rotateBy(rot.times(-1)).setFlywheelSpeed(number);
+                SmartDashboard.putNumber("applied velo", number);
+                return out;
             });
 
         }

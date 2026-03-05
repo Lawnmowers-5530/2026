@@ -28,7 +28,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 public class Turret extends SubsystemBase {
 
-    public static class TurretState {
+    public static class TurretState  {
         public Rotation2d yaw;
         public Rotation2d pitch;
         public double flywheelSpeed;

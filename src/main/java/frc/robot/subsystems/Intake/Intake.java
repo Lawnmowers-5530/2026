@@ -94,12 +94,12 @@ public class Intake extends SubsystemBase {
 
     public Command tuckIntakeCommand() {
         return Commands.either(
-                new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtTuckPosition),
+                new ParallelDeadlineGroup(Commands.waitSeconds(1.5),
                         Commands.runOnce(() -> {
                             this.currentState = State.TUCKING;
                             runMotor.set(0);
-                            pivotMotor.setControl(
-                                    new MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));// new
+                            pivotMotor.setControl(new VoltageOut(-3));
+                                    //new MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));// new
                                                          // MotionMagicVoltage(IntakeConstants.TUCKED_ENCODER_POSITION).withSlot(0));
                         }, this))
                         .andThen(Commands.runOnce(() -> {
@@ -148,15 +148,17 @@ public class Intake extends SubsystemBase {
 
     public Command extendIntakeCommand() {
 
-        return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::pivotAtExtensionPosition),
+        return Commands.either(new ParallelDeadlineGroup(Commands.waitSeconds(1),
                 Commands.runOnce(() -> {
                     this.currentState = State.EXTENDING;
                     pivotMotor
-                            .setControl(new MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));// new
+                            .setControl(new VoltageOut(3));
+                                //new MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));// new
                                                            // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
                 }, this))
                 .andThen(Commands.runOnce(() -> {
                     this.currentState = State.EXTENDED;
+                    pivotMotor.getMotorStallCurrent();
                     pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
                 }, this)),
                 new InstantCommand(), this::canExtend);
@@ -167,11 +169,11 @@ public class Intake extends SubsystemBase {
     }
 
     private boolean canExtend() {
-        return currentState == State.TUCKED || currentState == State.TUCKING;
+        return true;//currentState == State.TUCKED || currentState == State.TUCKING;
     }
 
     private boolean canTuck() {
-        return currentState == State.EXTENDED || currentState == State.EXTENDING;
+        return true;//currentState == State.EXTENDED || currentState == State.EXTENDING;
     }
 
     public State getState() {
