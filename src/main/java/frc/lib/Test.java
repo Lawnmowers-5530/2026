@@ -20,7 +20,11 @@ public class Test {
     }
 
     public static void main(String[] args) {
-        System.out.println(VelocityToRPS.get(2.0));
-        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(128), Rotation2d.fromDegrees(76), Units.inchesToMeters(15.5)));
+        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(59.75), Rotation2d.fromDegrees(65), Units.inchesToMeters(15.5)));
+        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(82), Rotation2d.fromDegrees(65), Units.inchesToMeters(15.5)));
+        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(115), Rotation2d.fromDegrees(65), Units.inchesToMeters(15.5)));
+        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(154.5), Rotation2d.fromDegrees(65), Units.inchesToMeters(15.5)));
+        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(144+96), Rotation2d.fromDegrees(65), Units.inchesToMeters(15.5)));
+        System.out.println(ProjectileAimer.findv0(Units.inchesToMeters(144+124), Rotation2d.fromDegrees(65), Units.inchesToMeters(15.5)));
     }
 }

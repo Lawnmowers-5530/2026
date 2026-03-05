@@ -49,6 +49,11 @@ public class Turret extends SubsystemBase {
             this.yaw = this.yaw.plus(rotation);
             return this;
         }
+
+        public TurretState setFlywheelSpeed(double speed) {
+            this.flywheelSpeed = speed;
+            return this;
+        }
     }
 
     private TalonFX m_yaw;
@@ -98,10 +103,10 @@ public class Turret extends SubsystemBase {
         motionMagicConfigpitch.MotionMagicJerk = 4000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
         var slot0flywheelConfig = flywheelConfig.Slot0;
-        slot0flywheelConfig.kS = 0; // Add 0.2 V output to overcome static friction
-        slot0flywheelConfig.kV = 0; // A velocity target of 1 rps results in 0.1 V output
-        slot0flywheelConfig.kA = 0; // An acceleration of 1 rps/s requires 0.005 V output
-        slot0flywheelConfig.kP = 0.5; // A position error of 2.5 rotations results in 12 V output
+        slot0flywheelConfig.kS = 0.11572; // Add 0.2 V output to overcome static friction
+        slot0flywheelConfig.kV = 0.12076; // A velocity target of 1 rps results in 0.1 V output
+        slot0flywheelConfig.kA = 0.0083735; // An acceleration of 1 rps/s requires 0.005 V output
+        slot0flywheelConfig.kP = 0.33546; // A position error of 2.5 rotations results in 12 V output
         slot0flywheelConfig.kI = 0; // no output for integrated error
         slot0flywheelConfig.kD = 0; // A velocity error of 1 rps results in 0.05 V output
 
@@ -123,7 +128,7 @@ public class Turret extends SubsystemBase {
 
         this.m_flywheel = new TalonFX(23, "canivore");
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
-        this.flywheelControl = new VelocityVoltage(0);
+        this.flywheelControl = new VelocityVoltage(0).withEnableFOC(true).withSlot(0);
         this.m_flywheel.setControl(flywheelControl);
 
         this.flywheelSysIdControl = new VoltageOut(0).withEnableFOC(true);
@@ -142,7 +147,7 @@ public class Turret extends SubsystemBase {
         );
 
         SysIdRoutine.Config flywheelConfig = new SysIdRoutine.Config(
-                Volts.per(Second).of(1), // 1 V/s voltage ramp
+                Volts.per(Second).of(2), // 1 V/s voltage ramp
                 Volts.of(7),
                 Second.of(10),
                 (state) -> {
@@ -173,7 +178,7 @@ public class Turret extends SubsystemBase {
 
     public void setFlywheelSpeed(double speed) {
         // convert speed to controller velocity units (rps here as an example)
-        double targetVelocity = speed;//LauncherConstants.VelocityToRPS.get(speed); // adjust by gear ratio / sensor units as needed
+        double targetVelocity = LauncherConstants.VelocityToRPS.get(speed); // adjust by gear ratio / sensor units as needed
         if(speed == 0) {
             targetVelocity = 0;
         }
@@ -223,6 +228,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void periodic() {
+        SmartDashboard.putNumber("flywheel velocity", this.m_flywheel.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("pitch encoder value", this.m_pitch.getPosition().getValueAsDouble());
     }
 
@@ -231,7 +237,7 @@ public class Turret extends SubsystemBase {
         this.m_flywheel.setControl(this.flywheelSysIdControl);
     }
 
-    public SysIdRoutine getSysIdRoutine() {
+    public SysIdRoutine getFlywheelSysIdRoutine() {
         return flywheelRoutine;
     }
 }

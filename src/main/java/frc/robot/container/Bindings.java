@@ -85,37 +85,51 @@ public final class Bindings {
 
     final class Intake {
         Command toggleCollect() {
-            return subsystems.intake.extendIntakeCommand().andThen(subsystems.intake.runIntakeCommand()).finallyDo(() -> {CommandScheduler.getInstance().schedule(subsystems.intake.tuckIntakeCommand());});
+            return subsystems.intake.extendIntakeCommand().andThen(subsystems.intake.runIntakeCommand())
+                    .finallyDo(() -> {
+                        CommandScheduler.getInstance().schedule(subsystems.intake.tuckIntakeCommand());
+                    });
         }
 
     }
 
     final class Turret {
+        // Command autoAim() {
+        // Translation3d target = DriverStation.getAlliance().isPresent()
+        // && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ?
+        // LauncherConstants.redTargetPose
+        // : LauncherConstants.blueTargetPose;
+        //
+        // return subsystems.turret.setTurretStateCommand(() -> {
+        // Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
+        // Translation2d relTurretPos = LauncherConstants.distFromCenter.rotateBy(rot);
+        // Rotation2d theta = relTurretPos.getAngle().plus(Rotation2d.fromDegrees(90));
+        // double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond
+        // * LauncherConstants.distFromCenter.getNorm();
+        // ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds
+        // .fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds, rot);
+        // Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() +
+        // fieldRelativeSpeeds.vxMetersPerSecond,
+        // r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
+        // Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
+        // .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
+        // .plus(turretVel.times(LauncherConstants.feedTime));
+        // return ProjectileAimer.parabolicTurretState(target,
+        // turretPos,
+        // turretVel,
+        // -2)
+        // .rotateBy(rot.times(-1)); // Add in robot rotation
+        // });
         Command autoAim() {
-            Translation3d target = DriverStation.getAlliance().isPresent()
-                    && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose
-                            : LauncherConstants.blueTargetPose;
-
             return subsystems.turret.setTurretStateCommand(() -> {
                 Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
-                Translation2d relTurretPos = LauncherConstants.distFromCenter.rotateBy(rot);
-                Rotation2d theta = relTurretPos.getAngle().plus(Rotation2d.fromDegrees(90));
-                double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond
-                        * LauncherConstants.distFromCenter.getNorm();
-                ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds
-                        .fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds, rot);
-                Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() + fieldRelativeSpeeds.vxMetersPerSecond,
-                        r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
                 Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
-                        .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
-                        .plus(turretVel.times(LauncherConstants.feedTime));
-                return ProjectileAimer.parabolicTurretState(target,
-                        turretPos,
-                        turretVel,
-                        -2)
-                        .rotateBy(rot.times(-1)); // Add in robot rotation
+                        .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector();
+                return ProjectileAimer.stupidParabolicCalc(new Translation2d(turretPos),
+                        LauncherConstants.blueTargetPose.toTranslation2d()).rotateBy(rot.times(-1)).setFlywheelSpeed(SmartDashboard.getNumber("flywheel velo", 0));
             });
-        };
+
+        }
 
         Command straightTurretAim() {
             return new RunCommand(() -> {
@@ -124,12 +138,17 @@ public final class Bindings {
         }
 
         Command turretState1() {
-            return new RunCommand(() -> {subsystems.turret.setTurretState(LauncherConstants.state1);}, subsystems.turret);
+            return new RunCommand(() -> {
+                subsystems.turret.setTurretState(LauncherConstants.state1);
+            }, subsystems.turret);
         }
+
         Command turretState2() {
-            return new RunCommand(() -> {subsystems.turret.setTurretState(LauncherConstants.state2);}, subsystems.turret);
+            return new RunCommand(() -> {
+                subsystems.turret.setTurretState(LauncherConstants.state2);
+            }, subsystems.turret);
         }
-    }
+    };
 
     final class Spindexer {
         Command spinKick() {

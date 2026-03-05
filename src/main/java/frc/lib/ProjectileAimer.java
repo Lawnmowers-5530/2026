@@ -1,5 +1,7 @@
 package frc.lib;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
@@ -14,8 +16,12 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N6;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Distance;
 import frc.lib.ShotCalculatorSim;
+import frc.robot.constants.LauncherConstants;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Turret.TurretState;
 
 public class ProjectileAimer {
     private final ShotCalculatorSim shotCalculator;
@@ -141,7 +147,9 @@ public class ProjectileAimer {
     //    System.out.println(test);
     //}
     public static double findv0(double r, Rotation2d angle, double h) {
-        return Math.sqrt(9.81 * Math.pow(r, 2))/(2 * Math.pow(Math.cos(angle.getRadians()), 2)*(r*Math.tan(angle.getRadians())+h));
+        double numerator = 9.81 * Math.pow(r, 2);
+        double denom = (2*Math.pow(angle.getCos(), 2)) * (r * angle.getTan() + h);
+        return Math.sqrt(numerator/denom);
     }
 
 public static Turret.TurretState optimizeTurretState(
@@ -230,6 +238,20 @@ public static Turret.TurretState parabolicTurretState(Translation3d target, Vect
     double exitVelocity = Math.sqrt(Math.pow(horizontalVelocityShooter, 2) + Math.pow(vz_shooter, 2));
 
     return new Turret.TurretState(yaw, pitch, exitVelocity);
+}
+
+public static TurretState stupidParabolicCalc(Translation2d turretPos, Translation2d targetPos) {
+    Rotation2d hoodAngle = Rotation2d.fromDegrees(65);
+
+    double r = turretPos.getDistance(targetPos);
+    double flywheelSpeed = findv0(r, Rotation2d.fromDegrees(65), Units.feetToMeters(5.5));
+    Translation2d relPos = targetPos.minus(turretPos);
+    Rotation2d yaw = relPos.getAngle();
+
+    return new TurretState(yaw, hoodAngle, flywheelSpeed);
+
+
+
 }
 
 public static void main(String[] args) {

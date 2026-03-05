@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.lib.BuildMetadata;
 import frc.robot.Telemetry;
 import frc.robot.constants.LauncherConstants;
@@ -59,6 +60,7 @@ public class RobotContainer {
         private double pitchSp;
 
         public RobotContainer() {
+                
                 this.subsystems = new Subsystems();
 
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
@@ -70,7 +72,7 @@ public class RobotContainer {
                 this.bindings = new Bindings(this.subsystems);
 
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-                //this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
+                this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
                 this.pitchSp = 65;
 
@@ -90,10 +92,14 @@ public class RobotContainer {
                 }));
 
                 //Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(() -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
-                Controller.getInstance().getSecondaryController().y().onTrue(this.subsystems.intake.extendIntakeCommand());
-                Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.tuckIntakeCommand());
+                //Controller.getInstance().getSecondaryController().y().onTrue(this.subsystems.intake.extendIntakeCommand());
+                //Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.tuckIntakeCommand());
 
-                // 
+                // TODO: TEMP SYSID
+                //Controller.getInstance().getSecondaryController().x().whileTrue(this.subsystems.turret.getFlywheelSysIdRoutine().quasistatic(Direction.kForward));
+                //Controller.getInstance().getSecondaryController().y().whileTrue(this.subsystems.turret.getFlywheelSysIdRoutine().quasistatic(Direction.kReverse));
+                //Controller.getInstance().getSecondaryController().a().whileTrue(this.subsystems.turret.getFlywheelSysIdRoutine().dynamic(Direction.kForward));
+                //Controller.getInstance().getSecondaryController().b().whileTrue(this.subsystems.turret.getFlywheelSysIdRoutine().dynamic(Direction.kReverse));
         }
 
         public Command getAutonomousCommand() {
@@ -102,7 +108,7 @@ public class RobotContainer {
         }
 
         public void robotInit() {
-                this.subsystems.drivetrain.resetPose(new Pose2d(0.417, 7.596, Rotation2d.kZero));
+                this.subsystems.drivetrain.resetPose(Pose2d.kZero);//new Pose2d(0.417, 7.596, Rotation2d.kZero));
                 // this.subsystems.turret.zeroYaw();
         }
 
@@ -125,7 +131,7 @@ public class RobotContainer {
                 );
                 //this.subsystems.turret.setYaw(Rotation2d.kZero);
                 //this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
-                this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret velo", 0));
+                //this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret velo", 0));
                 SmartDashboard.putString("turretState", this.subsystems.turret.getTurretState().toString());
                 // Rotation2d angle =
                 // LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
