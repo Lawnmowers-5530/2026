@@ -12,6 +12,9 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
+import edu.wpi.first.math.interpolation.InverseInterpolator;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -43,7 +46,8 @@ public class LauncherFlywheel extends SubsystemBase {
 
     SysIdRoutine sysIdRoutine;
 
-
+     private static final InterpolatingTreeMap<Double, Rotation2d> launchHoodAngleMap =
+      new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), Rotation2d::interpolate);
 
     public LauncherFlywheel(int id) {
         this.shooter = new TalonFX(id, LauncherConstants.canBus);
@@ -105,8 +109,20 @@ public class LauncherFlywheel extends SubsystemBase {
 
         hood.getConfigurator().apply(talonFXConfigs);
 
-
        
+       
+    }
+    static {
+        launchHoodAngleMap.put(1.34, Rotation2d.fromDegrees(19.0));
+        launchHoodAngleMap.put(1.78, Rotation2d.fromDegrees(19.0));
+        launchHoodAngleMap.put(2.17, Rotation2d.fromDegrees(24.0));
+        launchHoodAngleMap.put(2.81, Rotation2d.fromDegrees(27.0));
+        launchHoodAngleMap.put(3.82, Rotation2d.fromDegrees(29.0));
+        launchHoodAngleMap.put(4.09, Rotation2d.fromDegrees(30.0));
+        launchHoodAngleMap.put(4.40, Rotation2d.fromDegrees(31.0));
+        launchHoodAngleMap.put(4.77, Rotation2d.fromDegrees(32.0));
+        launchHoodAngleMap.put(5.57, Rotation2d.fromDegrees(32.0));
+        launchHoodAngleMap.put(5.60, Rotation2d.fromDegrees(35.0));
     }
 
     public void setVelocity(double velocity) {
