@@ -84,6 +84,7 @@ public class RobotContainer {
                 NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
                 new EventTrigger("feed2s").onTrue(
                                 new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
+                new EventTrigger("Extend And Run Intake").onTrue(subsystems.intake.extendIntakeCommand());
                 SmartDashboard.putNumber("set turret velo", 0);
                 SmartDashboard.putNumber("set dist to hub", 0);
 
@@ -117,7 +118,7 @@ public class RobotContainer {
 
         public Command getAutonomousCommand() {
                 // An example command will be run in autonomous
-                return autoChooser.getSelected();
+                return Commands.runOnce(() -> {this.subsystems.turret.zeroYaw();}).andThen(autoChooser.getSelected());
         }
 
         public void robotInit() {

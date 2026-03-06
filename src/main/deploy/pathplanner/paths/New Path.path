@@ -3,25 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 2.0,
-        "y": 7.0
+        "x": 4.3759033989266545,
+        "y": 0.6195527728085859
       },
       "prevControl": null,
       "nextControl": {
-        "x": 3.0,
-        "y": 7.0
+        "x": 5.2345032109037355,
+        "y": 1.137638295308559
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.5159570661896247,
-        "y": 0.4572987477638639
+        "x": 6.84216457960644,
+        "y": 1.9824865831842566
       },
       "prevControl": {
-        "x": 2.5159570661896247,
-        "y": 0.4572987477638639
+        "x": 6.297733608555635,
+        "y": 1.4133513993742315
+      },
+      "nextControl": {
+        "x": 7.4870117660242546,
+        "y": 2.656594489394892
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 8.075295169946333,
+        "y": 4.010661896243291
+      },
+      "prevControl": {
+        "x": 8.269962970950726,
+        "y": 4.448174532490131
       },
       "nextControl": null,
       "isLocked": false,
@@ -31,7 +47,14 @@
   "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
-  "eventMarkers": [],
+  "eventMarkers": [
+    {
+      "name": "Extend And Run Intake",
+      "waypointRelativePos": 0.30000000000000004,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
   "globalConstraints": {
     "maxVelocity": 5.0,
     "maxAcceleration": 4.0,
@@ -42,7 +65,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 63.43494882292208
   },
   "reversed": false,
   "folder": "Full Auto 1",
