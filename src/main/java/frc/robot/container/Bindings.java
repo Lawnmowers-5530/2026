@@ -143,16 +143,17 @@ public final class Bindings {
 
         Command autoPass() {
             return subsystems.turret.setTurretStateCommand(() -> {
-                Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();               
-                Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
-                       .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector();
-
-               
-                    //audience side
-                Translation2d targetPose = new Translation2d(alliance == Alliance.Blue ? 4.65 :16.5- 4.65, turretPos.get(1) < 4 ? 2 : 6);
-                return new TurretState(targetPose.minus(new Translation2d(turretPos)).getAngle(), Rotation2d.fromDegrees(60), Math.abs(turretPos.get(0) - targetPose.getX()) > 4 ? 75 : 50);
-                
-
+        Pose2d pose = subsystems.drivetrain.getState().Pose;
+        Translation2d turretTranslation = pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(pose.getRotation()));
+        Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+        double dist = LauncherConstants.bluePassingPose.toTranslation2d().getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.bluePassingPose.toTranslation2d());
+        Translation2d adjustedTargetPose = LauncherConstants.bluePassingPose.toTranslation2d().minus(turretVelo.times(LauncherConstants.distToTOF.get(dist)));
+        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(adjustedTargetPose.getDistance(turretTranslation));
+        Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
+        double velo = LauncherConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+        TurretState state = new TurretState(yaw, pitchAngle, velo);
+        SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
+        return state.rotateBy(pose.getRotation().times(-1));
             });
         }
 

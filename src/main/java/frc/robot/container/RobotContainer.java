@@ -76,7 +76,7 @@ public class RobotContainer {
 
 
                 this.pitchSp = 65;
-                //Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.handleTurretState());
+                Controller.getInstance().getDriveController().rightTrigger(0.3).toggleOnTrue(this.bindings.turret.autoPass());
                 Controller.getInstance().getDriveController().leftBumper()
                                 .toggleOnTrue(this.bindings.intake.toggleCollect());
                 Controller.getInstance().getDriveController().rightBumper()
@@ -105,7 +105,7 @@ public class RobotContainer {
         }
 
         public void robotInit() {
-                this.subsystems.drivetrain.resetPose(new Pose2d(0.0, 0.0, Rotation2d.kZero));
+                this.subsystems.drivetrain.resetPose(new Pose2d(0.482, 7.58, Rotation2d.kZero));
                 // this.subsystems.turret.zeroYaw();
         }
 

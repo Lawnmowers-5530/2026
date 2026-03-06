@@ -415,6 +415,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * Custom consumer to use {@link EstimatedRobotPose} pair.
      */
     public void addVisionMeasurement(EstimatedRobotPose estimatedRobotPose, Matrix<N3, N1> estimateStdDevs) {
+        SmartDashboard.putString("pose output camera", estimatedRobotPose.estimatedPose.toString());
         super.addVisionMeasurement(estimatedRobotPose.estimatedPose.toPose2d(),
                 Utils.fpgaToCurrentTime(estimatedRobotPose.timestampSeconds), estimateStdDevs);
     }
