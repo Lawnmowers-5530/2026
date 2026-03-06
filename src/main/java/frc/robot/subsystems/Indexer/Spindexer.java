@@ -2,6 +2,7 @@ package frc.robot.subsystems.Indexer;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -21,8 +22,8 @@ public class Spindexer extends SubsystemBase {
     TalonFXConfiguration spindexerConfig = new TalonFXConfiguration();
     TalonFXConfiguration kickerConfig = new TalonFXConfiguration();
 
-    DutyCycleOut spindexerControl = new DutyCycleOut(0);
-    DutyCycleOut kickerControl = new DutyCycleOut(0);
+    VoltageOut spindexerControl = new VoltageOut(0);
+    VoltageOut kickerControl = new VoltageOut(0);
 
     public Spindexer() {
         this.spindexer.getConfigurator().apply(spindexerConfig);

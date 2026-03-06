@@ -133,7 +133,8 @@ public final class Bindings {
         Rotation2d yaw = LauncherConstants.blueTargetPose.toTranslation2d().minus(pose.getTranslation()).getAngle();
         double velo = SmartDashboard.getNumber("set turret velo", 0);
         TurretState state = new TurretState(yaw, pitchAngle, velo);
-        return state;
+        SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
+        return state.rotateBy(pose.getRotation().times(-1));
             });
         }
 

@@ -30,7 +30,7 @@ public class LauncherConstants { // TODO: fill in constants
     public static final double sysIdRampRate = 1.0; // Volts per second
     public static final double sysIdDynamicStepVoltage = 0.0; // Volts
     public static final double sysIdTimeout = 10.0; // Seconds
-    public static final Translation3d blueTargetPose = new Translation3d(4.619, 4.027, Units.feetToMeters(6));
+    public static final Translation3d blueTargetPose = new Translation3d(Units.inchesToMeters(45), 0, 0);//new Translation3d(4.619, 4.027, Units.feetToMeters(6));
     public static final Translation3d redTargetPose = new Translation3d(Units.inchesToMeters(40),
             Units.inchesToMeters(40), Units.inchesToMeters(0)); // TODO change
     public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(-5),
@@ -61,7 +61,9 @@ public class LauncherConstants { // TODO: fill in constants
             InverseInterpolator.forDouble(), Interpolator.forDouble());
 
     static {
-        distToSpinrate.put(1.0, 20.0);
+        distToSpinrate.put(1.524, 42.0);
+        distToSpinrate.put(2.286, 46.0);
+        distToSpinrate.put(3.048, 50.0);
     }
 
     public static InterpolatingTreeMap<Double, Rotation2d> launchHoodAngleMap = new InterpolatingTreeMap<>(
@@ -78,5 +80,14 @@ public class LauncherConstants { // TODO: fill in constants
         launchHoodAngleMap.put(4.77, Rotation2d.fromDegrees(90-32.0));
         launchHoodAngleMap.put(5.57, Rotation2d.fromDegrees(90-32.0));
         launchHoodAngleMap.put(5.60, Rotation2d.fromDegrees(90-35.0));
+    }
+
+        public static InterpolatingTreeMap<Double, Double> distToTOF = new InterpolatingTreeMap<>(
+            InverseInterpolator.forDouble(), Interpolator.forDouble());
+
+    static {
+        distToTOF.put(1.524, 0.9025);
+        distToTOF.put(2.286, 0.98);
+
     }
 }
