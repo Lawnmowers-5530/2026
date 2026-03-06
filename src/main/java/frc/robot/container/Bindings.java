@@ -127,18 +127,50 @@ public final class Bindings {
         //    });
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
-        Pose2d pose = subsystems.drivetrain.getState().Pose;
-        Translation2d turretTranslation = pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(pose.getRotation()));
-        double dist = LauncherConstants.blueTargetPose.toTranslation2d().getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
-        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(dist);
-        Rotation2d yaw = (LauncherConstants.blueTargetPose.toTranslation2d().minus(turretTranslation)).getAngle();
-        double velo = LauncherConstants.distToSpinrate.get(dist);//SmartDashboard.getNumber("set turret velo", 0);
-        TurretState state = new TurretState(yaw, pitchAngle, velo);
-        SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
-        return state.rotateBy(pose.getRotation().times(-1));
+                var estimatedPose = subsystems.drivetrain.getState().Pose;
+                var robotRelativeVelocity = subsystems.drivetrain.getState().Speeds;
+
+                double measurementDelay = 0.03; // seconds, taken from mechanical advantage
+                estimatedPose = estimatedPose.exp(robotRelativeVelocity.toTwist2d(measurementDelay));
+
+                var fieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds,
+                        estimatedPose.getRotation());
+                var turretPosition = estimatedPose.getTranslation()
+                        .plus(LauncherConstants.distFromCenter.rotateBy(estimatedPose.getRotation()));
+                var turretVelocity = new Translation2d(fieldRelativeSpeeds.vxMetersPerSecond,
+                        fieldRelativeSpeeds.vyMetersPerSecond)
+                        .plus(getRotationalVelocity(estimatedPose.getRotation(),
+                                fieldRelativeSpeeds.omegaRadiansPerSecond, LauncherConstants.distFromCenter));
+                var targetPos = alliance == Alliance.Blue ? LauncherConstants.blueTargetPose.toTranslation2d()
+                        : LauncherConstants.redTargetPose.toTranslation2d();
+                var turretToTargetDistance = targetPos.getDistance(turretPosition);
+                var timeOfFlight = LauncherConstants.distToTOF.get(turretToTargetDistance);
+                Translation2d lookaheadPose = turretPosition;
+                double lookaheadLauncherToTargetDistance = turretToTargetDistance;
+                for (int i = 0; i < 20; i++) {
+                    timeOfFlight = LauncherConstants.distToTOF.get(lookaheadLauncherToTargetDistance);
+                    double offsetX = turretVelocity.getX() * timeOfFlight;
+                    double offsetY = turretVelocity.getY() * timeOfFlight;
+                    lookaheadPose = turretPosition.plus(new Translation2d(offsetX, offsetY));
+                    lookaheadLauncherToTargetDistance = targetPos.getDistance(lookaheadPose);
+                }
+                if (lookaheadLauncherToTargetDistance > 6.5) {
+                    return new TurretState(Rotation2d.kZero, Rotation2d.kZero, 0);
+                }
+                // double dist = SmartDashboard.getNumber("set dist to hub",
+                // 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
+                // Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(dist);
+                Rotation2d yaw = targetPos
+                        .minus(lookaheadPose).getAngle();
+                Rotation2d pitch = LauncherConstants.launchHoodAngleMap.get(lookaheadLauncherToTargetDistance);
+                double rps = LauncherConstants.distToSpinrate.get(lookaheadLauncherToTargetDistance);
+                return new TurretState(yaw, pitch, rps);
             });
         }
+        public Translation2d getRotationalVelocity(Rotation2d current, double velocity, Translation2d offset) {
+            return offset.rotateBy(current).rotateBy(Rotation2d.kCCW_90deg).times(velocity * offset.getNorm());
 
+        }
         Command autoPass() {
             return subsystems.turret.setTurretStateCommand(() -> {
                 Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();               
