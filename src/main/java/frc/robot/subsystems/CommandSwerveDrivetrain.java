@@ -23,6 +23,7 @@ import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.estimator.KalmanFilter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -472,6 +473,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     private static Translation2d convertSwerveStateToVelocityVector(SwerveModuleState swerveModuleState) {
         return new Translation2d(swerveModuleState.speedMetersPerSecond, swerveModuleState.angle);
+    }
+
+    public ChassisSpeeds getFieldRelativeSpeeds() {
+        return ChassisSpeeds.fromRobotRelativeSpeeds(this.getState().Speeds, this.getState().Pose.getRotation());
     }
 
 }
