@@ -6,5 +6,6 @@ public class SpindexerConstants {
     public static final double spindexerForwardSpeed = 4;
     public static final double spindexerReverseSpeed = -4;
     public static final double kickerForwardSpeed = 4;
+    //public static final double 
     public static final double kickerReverseSpeed = -4;
 }
