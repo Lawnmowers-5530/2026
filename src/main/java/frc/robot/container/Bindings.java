@@ -11,6 +11,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N2;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,7 +19,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.Controller;
+import frc.robot.subsystems.Turret.TurretState;
 import frc.lib.ProjectileAimer;
+import frc.lib.ShotCalculator;
 import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -77,7 +80,7 @@ public final class Bindings {
 
         Command resetPose() {
             return new InstantCommand(() -> {
-                subsystems.drivetrain.resetPose(new Pose2d());
+                subsystems.drivetrain.resetPose(Pose2d.kZero);
             }, subsystems.drivetrain);
 
         }
@@ -85,12 +88,43 @@ public final class Bindings {
 
     final class Intake {
         Command toggleCollect() {
-            return subsystems.intake.extendIntakeCommand().andThen(subsystems.intake.runIntakeCommand()).finallyDo(() -> {CommandScheduler.getInstance().schedule(subsystems.intake.tuckIntakeCommand());});
+            return subsystems.intake.extendIntakeCommand().andThen(subsystems.intake.runIntakeCommand())
+                    .finallyDo(() -> {
+                        CommandScheduler.getInstance().schedule(subsystems.intake.tuckIntakeCommand());
+                    });
         }
 
     }
 
     final class Turret {
+        // Command autoAim() {
+        // Translation3d target = DriverStation.getAlliance().isPresent()
+        // && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ?
+        // LauncherConstants.redTargetPose
+        // : LauncherConstants.blueTargetPose;
+        //
+        // return subsystems.turret.setTurretStateCommand(() -> {
+        // Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
+        // Translation2d relTurretPos = LauncherConstants.distFromCenter.rotateBy(rot);
+        // Rotation2d theta = relTurretPos.getAngle().plus(Rotation2d.fromDegrees(90));
+        // double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond
+        // * LauncherConstants.distFromCenter.getNorm();
+        // ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds
+        // .fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds, rot);
+        // Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() +
+        // fieldRelativeSpeeds.vxMetersPerSecond,
+        // r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
+        // Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
+        // .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
+        // .plus(turretVel.times(LauncherConstants.feedTime));
+        // return ProjectileAimer.parabolicTurretState(target,
+        // turretPos,
+        // turretVel,
+        // -2)
+        // .rotateBy(rot.times(-1)); // Add in robot rotation
+        // });
+        // };
+
         Command autoAim() {
             Translation3d target = DriverStation.getAlliance().isPresent()
                     && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose
@@ -107,13 +141,17 @@ public final class Bindings {
                 Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() + fieldRelativeSpeeds.vxMetersPerSecond,
                         r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
                 Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
-                        .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
-                        .plus(turretVel.times(LauncherConstants.feedTime));
-                return ProjectileAimer.parabolicTurretState(target,
-                        turretPos,
-                        turretVel,
-                        -2)
-                        .rotateBy(rot.times(-1)); // Add in robot rotation
+                        .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector();
+                // .plus(turretVel.times(LauncherConstants.feedTime));
+                TurretState requestedState = new TurretState(LauncherConstants.blueTargetPose.toTranslation2d().minus(new Translation2d(turretPos)).getAngle(),
+                Rotation2d.fromDegrees(72), ProjectileAimer.spinRateAt72(ShotCalculator.calculateVelocity(
+                        new Translation3d(turretPos.get(0), turretPos.get(1), Units.inchesToMeters(15.5)), LauncherConstants.blueTargetPose)))
+                        .rotateBy(rot.times(-1));
+                        SmartDashboard.putString("requestedState", requestedState.toString());
+                        SmartDashboard.putNumber("distToTarget", new Translation2d(turretPos).getDistance(LauncherConstants.blueTargetPose.toTranslation2d()));
+                //requestedState.flywheelSpeed = ProjectileAimer.spinRateAt72(5/Math.sin(Math.toRadians(72)));
+                requestedState.flywheelSpeed*=1.3;
+                return requestedState;
             });
         };
 
@@ -124,10 +162,15 @@ public final class Bindings {
         }
 
         Command turretState1() {
-            return new RunCommand(() -> {subsystems.turret.setTurretState(LauncherConstants.state1);}, subsystems.turret);
+            return new RunCommand(() -> {
+                subsystems.turret.setTurretState(LauncherConstants.state1);
+            }, subsystems.turret);
         }
+
         Command turretState2() {
-            return new RunCommand(() -> {subsystems.turret.setTurretState(LauncherConstants.state2);}, subsystems.turret);
+            return new RunCommand(() -> {
+                subsystems.turret.setTurretState(LauncherConstants.state2);
+            }, subsystems.turret);
         }
     }
 

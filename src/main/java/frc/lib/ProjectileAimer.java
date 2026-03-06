@@ -234,6 +234,11 @@ public class ProjectileAimer {
         return new Turret.TurretState(yaw, pitch, exitVelocity);
     }
 
+    public static double spinRateAt72(double velocityMps) {
+        double spinrate = 5.17301*velocityMps + 1.93074;
+        return spinrate;
+    }
+
     public static void main(String[] args) {
         Translation3d target = new Translation3d(2, 2, 2);
         Vector<N2> robotPose = VecBuilder.fill(2, 0);

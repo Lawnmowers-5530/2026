@@ -70,7 +70,7 @@ public class RobotContainer {
                 this.bindings = new Bindings(this.subsystems);
 
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-                //this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
+                this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
                 this.pitchSp = 65;
 
@@ -86,7 +86,7 @@ public class RobotContainer {
                 Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
                                 .manualIntakeControl(Controller.getInstance().secondaryTriggerAxesSum));
                 Controller.getInstance().getSwitches().x().onTrue(new InstantCommand(() -> {
-                        this.subsystems.drivetrain.resetPose(new Pose2d());
+                        this.subsystems.drivetrain.resetPose(new Pose2d(0.498, 0.441, Rotation2d.kZero));
                 }));
 
                 //Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(() -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
@@ -102,7 +102,7 @@ public class RobotContainer {
         }
 
         public void robotInit() {
-                this.subsystems.drivetrain.resetPose(new Pose2d(0.417, 7.596, Rotation2d.kZero));
+                this.subsystems.drivetrain.resetPose(new Pose2d(0.498, 0.441, Rotation2d.kZero));
                 // this.subsystems.turret.zeroYaw();
         }
 
@@ -125,7 +125,7 @@ public class RobotContainer {
                 );
                 //this.subsystems.turret.setYaw(Rotation2d.kZero);
                 //this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
-                this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret velo", 0));
+                //this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret velo", 0));
                 SmartDashboard.putString("turretState", this.subsystems.turret.getTurretState().toString());
                 // Rotation2d angle =
                 // LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());

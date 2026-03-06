@@ -30,8 +30,8 @@ public class LauncherConstants { //TODO: fill in constants
     public static final double sysIdRampRate = 1.0; // Volts per second
     public static final double sysIdDynamicStepVoltage = 0.0; // Volts
     public static final double sysIdTimeout = 10.0; // Seconds
-    public static final Translation3d blueTargetPose = new Translation3d(4.619, 4.027, Units.feetToMeters(6));
-    public static final Translation3d redTargetPose = new Translation3d(Units.inchesToMeters(40), Units.inchesToMeters(40), Units.inchesToMeters(0)); //TODO change
+    public static final Translation3d blueTargetPose = new Translation3d(4.619, 4.0, Units.feetToMeters(6));
+    public static final Translation3d redTargetPose = new Translation3d(16.5-4.619, 4, Units.feetToMeters(6)); //changed
     public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(-5), Units.inchesToMeters(-6));
     public static final double launcherHeight = 0.3;
     public static final double feedTime = 0.0; //TODO try at 0 if not working
