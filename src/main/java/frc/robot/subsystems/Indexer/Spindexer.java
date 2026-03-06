@@ -63,7 +63,8 @@ public class Spindexer extends SubsystemBase {
         this.kicker.setControl(kickerControl);
     }
 
-    public Command spinKickCommand() {
+    public Command 
+    spinKickCommand() {
         return new RunCommand(() -> {
             this.spinKick();
         }, this);
