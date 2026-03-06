@@ -88,7 +88,7 @@ public class Turret extends SubsystemBase {
         slot0pitchConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
         slot0pitchConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
         slot0pitchConfig.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-        slot0pitchConfig.kP = 6; // A position error of 2.5 rotations results in 12 V output
+        slot0pitchConfig.kP = 7;//6; // A position error of 2.5 rotations results in 12 V output
         slot0pitchConfig.kI = 0; // no output for integrated error
         slot0pitchConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
 

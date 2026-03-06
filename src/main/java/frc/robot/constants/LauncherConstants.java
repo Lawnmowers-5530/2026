@@ -33,8 +33,8 @@ public class LauncherConstants { // TODO: fill in constants
     public static final Translation3d blueTargetPose = new Translation3d(Units.inchesToMeters(45), 0, 0);//new Translation3d(4.619, 4.027, Units.feetToMeters(6));
     public static final Translation3d redTargetPose = new Translation3d(Units.inchesToMeters(40),
             Units.inchesToMeters(40), Units.inchesToMeters(0)); // TODO change
-    public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(-5),
-            Units.inchesToMeters(-6));
+    public static final Translation2d distFromCenter = new Translation2d(Units.inchesToMeters(-4.25),
+            Units.inchesToMeters(5.75));
     public static final double launcherHeight = 0.3;
     public static final double feedTime = 0.0; // TODO try at 0 if not working
 
@@ -64,6 +64,9 @@ public class LauncherConstants { // TODO: fill in constants
         distToSpinrate.put(1.524, 42.0);
         distToSpinrate.put(2.286, 46.0);
         distToSpinrate.put(3.048, 50.0);
+        distToSpinrate.put(3.81, 54.0);
+        distToSpinrate.put(4.972, 59.0);
+        distToSpinrate.put(5.334, 61.5);
     }
 
     public static InterpolatingTreeMap<Double, Rotation2d> launchHoodAngleMap = new InterpolatingTreeMap<>(
@@ -75,11 +78,7 @@ public class LauncherConstants { // TODO: fill in constants
         launchHoodAngleMap.put(2.17, Rotation2d.fromDegrees(90-24.0));
         launchHoodAngleMap.put(2.81, Rotation2d.fromDegrees(90-27.0));
         launchHoodAngleMap.put(3.82, Rotation2d.fromDegrees(90-29.0));
-        launchHoodAngleMap.put(4.09, Rotation2d.fromDegrees(90-30.0));
-        launchHoodAngleMap.put(4.40, Rotation2d.fromDegrees(90-31.0));
-        launchHoodAngleMap.put(4.77, Rotation2d.fromDegrees(90-32.0));
-        launchHoodAngleMap.put(5.57, Rotation2d.fromDegrees(90-32.0));
-        launchHoodAngleMap.put(5.60, Rotation2d.fromDegrees(90-35.0));
+        launchHoodAngleMap.put(5.6, Rotation2d.fromDegrees(90-29.0));
     }
 
         public static InterpolatingTreeMap<Double, Double> distToTOF = new InterpolatingTreeMap<>(
@@ -88,6 +87,8 @@ public class LauncherConstants { // TODO: fill in constants
     static {
         distToTOF.put(1.524, 0.9025);
         distToTOF.put(2.286, 0.98);
-
+        distToTOF.put(3.81, 1.235);
+        distToTOF.put(4.572, 1.353);
+        distToTOF.put(5.334, 1.413);
     }
 }

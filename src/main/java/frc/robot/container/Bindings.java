@@ -128,10 +128,11 @@ public final class Bindings {
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
         Pose2d pose = subsystems.drivetrain.getState().Pose;
-        double dist = SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
+        Translation2d turretTranslation = pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(pose.getRotation()));
+        double dist = LauncherConstants.blueTargetPose.toTranslation2d().getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
         Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(dist);
-        Rotation2d yaw = LauncherConstants.blueTargetPose.toTranslation2d().minus(pose.getTranslation()).getAngle();
-        double velo = SmartDashboard.getNumber("set turret velo", 0);
+        Rotation2d yaw = (LauncherConstants.blueTargetPose.toTranslation2d().minus(turretTranslation)).getAngle();
+        double velo = LauncherConstants.distToSpinrate.get(dist);//SmartDashboard.getNumber("set turret velo", 0);
         TurretState state = new TurretState(yaw, pitchAngle, velo);
         SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
         return state.rotateBy(pose.getRotation().times(-1));
