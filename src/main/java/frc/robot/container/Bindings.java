@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -130,8 +131,15 @@ public final class Bindings {
         Pose2d pose = subsystems.drivetrain.getState().Pose;
         Translation2d turretTranslation = pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(pose.getRotation()));
         Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+        Translation2d robotVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+        double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * LauncherConstants.distFromCenter.getNorm();
+        Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
+        Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw* theta.getSin());
         double dist = LauncherConstants.blueTargetPose.toTranslation2d().getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
-        Translation2d adjustedTargetPose = LauncherConstants.blueTargetPose.toTranslation2d().minus(turretVelo.times(LauncherConstants.distToTOF.get(dist)));
+        Translation2d adjustedTargetPose = LauncherConstants.blueTargetPose.toTranslation2d().minus((turretVelo.plus(turretVeloRot)).times(LauncherConstants.distToTOF.get(dist)));
+        double lookaheadDist = dist;
+      //  for (int i = 0; i < 2)
+
         Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(adjustedTargetPose.getDistance(turretTranslation));
         Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
         double velo = LauncherConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
