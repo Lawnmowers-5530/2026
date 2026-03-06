@@ -147,6 +147,7 @@ public class LauncherFlywheel extends SubsystemBase {
     public AngularVelocity getVelocity() {
         return velocitySignal.refresh().getValue();
     }
+    
 
     public Voltage getAppliedOutput() {
         return appliedOutputSignal.refresh().getValue();

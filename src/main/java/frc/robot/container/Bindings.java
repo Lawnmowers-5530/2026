@@ -1,6 +1,9 @@
 package frc.robot.container;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+
+import static edu.wpi.first.units.Units.Meters;
+
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.VecBuilder;
@@ -12,12 +15,15 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.Controller;
+import frc.robot.subsystems.Turret.TurretState;
 import frc.lib.ProjectileAimer;
 import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
@@ -26,6 +32,8 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 public final class Bindings {
 
     RobotContainer.Subsystems subsystems;
+
+    Alliance alliance;
 
     Drivetrain drivetrain;
     Intake intake;
@@ -41,6 +49,7 @@ public final class Bindings {
     }
 
     final class Drivetrain {
+
         Command drive() {
             final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
                     .withDeadband(SwerveConstants.MaxSpeed * 0.1)
@@ -65,6 +74,7 @@ public final class Bindings {
         Command zeroGyro() {
             return new InstantCommand(() -> {
                 if (DriverStation.getAlliance().isPresent()) {
+                    alliance = DriverStation.getAlliance().get();
                     if (DriverStation.getAlliance().get() == DriverStation.Alliance.Red) {
                         subsystems.drivetrain.setOperatorPerspectiveForward(
                                 subsystems.drivetrain.getState().Pose.getRotation().plus(Rotation2d.k180deg));
@@ -117,10 +127,36 @@ public final class Bindings {
             });
         };
 
-        Command straightTurretAim() {
+        Command autoPass() {
+            return subsystems.turret.setTurretStateCommand(() -> {
+                Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();               
+                Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
+                       .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector();
+
+               
+                    //audience side
+                Translation2d targetPose = new Translation2d(alliance == Alliance.Blue ? 4.65 :16.5- 4.65, turretPos.get(1) < 4 ? 2 : 6);
+                return new TurretState(targetPose.minus(new Translation2d(turretPos)).getAngle(), Rotation2d.fromDegrees(60), Math.abs(turretPos.get(0) - targetPose.getX()) > 4 ? 75 : 50);
+                
+
+            });
+        }
+
+        Command handleTurretState() {
             return new RunCommand(() -> {
-                subsystems.turret.setYaw(subsystems.drivetrain.getState().Pose.getRotation().times(-1));
-            }, subsystems.turret);
+                if (getDrivetrainInAllianceZone(alliance, subsystems.drivetrain.getState().Pose)) {
+                    CommandScheduler.getInstance().schedule(this.autoAim());
+                }else {
+                    CommandScheduler.getInstance().schedule(this.autoPass());
+                }
+            }, subsystems.turret).finallyDo(()->subsystems.turret.setTurretState(new TurretState(Rotation2d.kZero, LauncherConstants.pitchZeroAngle, 0)));
+        }
+        
+        public static boolean getDrivetrainInAllianceZone(Alliance alliance, Pose2d pose) {
+            return switch (alliance) {
+                case Red -> pose.getMeasureX().in(Meters) > 12.5;
+                case Blue -> pose.getMeasureY().in(Meters) < 4;
+            };
         }
 
         Command turretState1() {

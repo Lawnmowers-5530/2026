@@ -72,8 +72,9 @@ public class RobotContainer {
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
                 //this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
-                this.pitchSp = 65;
 
+                this.pitchSp = 65;
+                Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.handleTurretState());
                 Controller.getInstance().getDriveController().leftBumper()
                                 .toggleOnTrue(this.bindings.intake.toggleCollect());
                 Controller.getInstance().getDriveController().rightBumper()
