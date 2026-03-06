@@ -44,6 +44,13 @@ public class Spindexer extends SubsystemBase {
         this.kicker.setControl(kickerControl);
     }
 
+        public void spinKickFast() {
+        spindexerControl.Output = SpindexerConstants.spindexerFastSpeed;
+        kickerControl.Output = SpindexerConstants.kickerFastSpeed;
+        this.spindexer.setControl(spindexerControl);
+        this.kicker.setControl(kickerControl);
+    }
+
     public void stopSpinKick() {
         this.spindexer.stopMotor();
         this.kicker.stopMotor();
@@ -59,6 +66,12 @@ public class Spindexer extends SubsystemBase {
     public Command spinKickCommand() {
         return new RunCommand(() -> {
             this.spinKick();
+        }, this);
+    }
+
+    public Command spinKickFastCommand() {
+                return new RunCommand(() -> {
+            this.spinKickFast();
         }, this);
     }
 

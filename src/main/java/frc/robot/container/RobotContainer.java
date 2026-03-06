@@ -80,10 +80,12 @@ public class RobotContainer {
                 this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
                 autoChooser = AutoBuilder.buildAutoChooser("singleShot");
+                SmartDashboard.putData("autoChooser", autoChooser);
 
                 NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
                 new EventTrigger("feed2s").onTrue(
                                 new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
+                new EventTrigger("Extend And Run Intake").onTrue(this.bindings.intake.toggleCollect());
                 SmartDashboard.putNumber("set turret velo", 0);
                 SmartDashboard.putNumber("set dist to hub", 0);
 
@@ -95,6 +97,9 @@ public class RobotContainer {
                 Controller.getInstance().getDriveController().rightBumper()
                                 .toggleOnTrue(this.bindings.spindexer.spinKick());
                 Controller.getInstance().getSecondaryController().x().onTrue(this.bindings.drivetrain.zeroGyro());
+
+                Controller.getInstance().getSecondaryController().leftBumper().toggleOnTrue(this.bindings.spindexer.spinKick());
+                Controller.getInstance().getSecondaryController().rightBumper().toggleOnTrue(this.bindings.spindexer.passSpinKick());
 
                 // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
                 // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());

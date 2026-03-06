@@ -197,6 +197,12 @@ public final class Bindings {
             });
         }
 
+        Command passSpinKick() {
+            return subsystems.spindexer.spinKickFastCommand().finallyDo(() -> {
+                subsystems.spindexer.stopSpinKick();
+            });
+        }
+
         Command reverse() {
             return subsystems.spindexer.reverseCommand().finallyDo(() -> {
                 subsystems.spindexer.stopSpinKick();
