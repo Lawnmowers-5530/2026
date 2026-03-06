@@ -59,6 +59,8 @@ public class RobotContainer {
         private double pitchSp;
 
         public RobotContainer() {
+                SmartDashboard.putNumber("set turret velo", 0);
+                SmartDashboard.putNumber("set dist to hub", 0);
                 this.subsystems = new Subsystems();
 
                 // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
@@ -70,19 +72,19 @@ public class RobotContainer {
                 this.bindings = new Bindings(this.subsystems);
 
                 this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-                //this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
+                this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
 
                 this.pitchSp = 65;
-                Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.handleTurretState());
+                //Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.handleTurretState());
                 Controller.getInstance().getDriveController().leftBumper()
                                 .toggleOnTrue(this.bindings.intake.toggleCollect());
                 Controller.getInstance().getDriveController().rightBumper()
                                 .toggleOnTrue(this.bindings.spindexer.spinKick());
                 Controller.getInstance().getDriveController().x().onTrue(this.bindings.drivetrain.zeroGyro());
 
-                Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
-                Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
+                //Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
+                //Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
 
                 Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
                                 .manualIntakeControl(Controller.getInstance().secondaryTriggerAxesSum));

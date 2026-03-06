@@ -101,31 +101,41 @@ public final class Bindings {
     }
 
     final class Turret {
+        //Command autoAim() {
+        //    Translation3d target = DriverStation.getAlliance().isPresent()
+        //            && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose
+        //                    : LauncherConstants.blueTargetPose;
+//
+        //    return subsystems.turret.setTurretStateCommand(() -> {
+        //        Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
+        //        Translation2d relTurretPos = LauncherConstants.distFromCenter.rotateBy(rot);
+        //        Rotation2d theta = relTurretPos.getAngle().plus(Rotation2d.fromDegrees(90));
+        //        double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond
+        //                * LauncherConstants.distFromCenter.getNorm();
+        //        ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds
+        //                .fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds, rot);
+        //        Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() + fieldRelativeSpeeds.vxMetersPerSecond,
+        //                r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
+        //        Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
+        //                .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
+        //                .plus(turretVel.times(LauncherConstants.feedTime));
+        //        return ProjectileAimer.parabolicTurretState(target,
+        //                turretPos,
+        //                turretVel,
+        //                -2)
+        //                .rotateBy(rot.times(-1)); // Add in robot rotation
+        //    });
         Command autoAim() {
-            Translation3d target = DriverStation.getAlliance().isPresent()
-                    && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose
-                            : LauncherConstants.blueTargetPose;
-
             return subsystems.turret.setTurretStateCommand(() -> {
-                Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
-                Translation2d relTurretPos = LauncherConstants.distFromCenter.rotateBy(rot);
-                Rotation2d theta = relTurretPos.getAngle().plus(Rotation2d.fromDegrees(90));
-                double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond
-                        * LauncherConstants.distFromCenter.getNorm();
-                ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds
-                        .fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds, rot);
-                Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() + fieldRelativeSpeeds.vxMetersPerSecond,
-                        r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
-                Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
-                        .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
-                        .plus(turretVel.times(LauncherConstants.feedTime));
-                return ProjectileAimer.parabolicTurretState(target,
-                        turretPos,
-                        turretVel,
-                        -2)
-                        .rotateBy(rot.times(-1)); // Add in robot rotation
+        Pose2d pose = subsystems.drivetrain.getState().Pose;
+        double dist = SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
+        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(dist);
+        Rotation2d yaw = LauncherConstants.blueTargetPose.toTranslation2d().minus(pose.getTranslation()).getAngle();
+        double velo = SmartDashboard.getNumber("set turret velo", 0);
+        TurretState state = new TurretState(yaw, pitchAngle, velo);
+        return state;
             });
-        };
+        }
 
         Command autoPass() {
             return subsystems.turret.setTurretStateCommand(() -> {
