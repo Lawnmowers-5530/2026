@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.interpolation.InterpolatingTreeMap;
 import edu.wpi.first.math.interpolation.Interpolator;
 import edu.wpi.first.math.interpolation.InverseInterpolator;
@@ -60,7 +61,7 @@ public class LauncherConstants { // TODO: fill in constants
 
     public static InterpolatingTreeMap<Double, Double> distToSpinrate = new InterpolatingTreeMap<>(
             InverseInterpolator.forDouble(), Interpolator.forDouble());
-
+    public static InterpolatingDoubleTreeMap distToSpinratePassing = new InterpolatingDoubleTreeMap();
     static {
         distToSpinrate.put(1.524, 42.0);
         distToSpinrate.put(2.286, 46.0);
@@ -71,6 +72,8 @@ public class LauncherConstants { // TODO: fill in constants
     }
 
     public static InterpolatingTreeMap<Double, Rotation2d> launchHoodAngleMap = new InterpolatingTreeMap<>(
+            InverseInterpolator.forDouble(), Rotation2d::interpolate);
+        public static InterpolatingTreeMap<Double, Rotation2d> launchHoodAngleMapPassing = new InterpolatingTreeMap<>(
             InverseInterpolator.forDouble(), Rotation2d::interpolate);
 
     static {
@@ -91,5 +94,21 @@ public class LauncherConstants { // TODO: fill in constants
         distToTOF.put(3.81, 1.235);
         distToTOF.put(4.572, 1.353);
         distToTOF.put(5.334, 1.413);
+    }
+    static {
+        distToSpinratePassing.put(1.524, 42.0);
+        distToSpinratePassing.put(2.286, 46.0);
+        distToSpinratePassing.put(3.048, 50.0);
+        distToSpinratePassing.put(3.81, 54.0);
+        distToSpinratePassing.put(4.972, 59.0);
+        distToSpinratePassing.put(5.334, 61.5);
+        distToSpinratePassing.put(10.0, 90.0); //this is some bullshit I made up but hopefully it works
+        launchHoodAngleMapPassing.put(1.34, Rotation2d.fromDegrees(90-19.0));
+        launchHoodAngleMapPassing.put(1.78, Rotation2d.fromDegrees(90-19.0));
+        launchHoodAngleMapPassing.put(2.17, Rotation2d.fromDegrees(90-24.0));
+        launchHoodAngleMapPassing.put(2.81, Rotation2d.fromDegrees(90-27.0));
+        launchHoodAngleMapPassing.put(3.82, Rotation2d.fromDegrees(90-29.0));
+        launchHoodAngleMapPassing.put(5.6, Rotation2d.fromDegrees(90-29.0));
+        launchHoodAngleMapPassing.put(10.0,Rotation2d.fromDegrees(90 - 35));
     }
 }

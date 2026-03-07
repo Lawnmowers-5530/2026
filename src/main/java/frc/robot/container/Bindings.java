@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.Meters;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -160,16 +161,22 @@ public final class Bindings {
         Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
         double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.bluePassingPose.toTranslation2d());
         Translation2d adjustedTargetPose = target.minus(turretVelo.times(LauncherConstants.distToTOF.get(dist)));
-        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(adjustedTargetPose.getDistance(turretTranslation));
+        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMapPassing.get(adjustedTargetPose.getDistance(turretTranslation));
         Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
-        double velo = LauncherConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+        double velo = LauncherConstants.distToSpinratePassing.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
         TurretState state = new TurretState(yaw, pitchAngle, velo);
         SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
         return state.rotateBy(pose.getRotation().times(-1));
             });
         }
         Translation2d getTargetFromCurrentPose(Pose2d pose, Alliance alliance) {
-            return alliance == Alliance.Red ? FlippingUtil.flipFieldPosition(LauncherConstants.bluePassingPose.toTranslation2d()) : LauncherConstants.bluePassingPose.toTranslation2d();
+            Translation2d passingPoseRed;
+            if (pose.getY() > 4) {
+                passingPoseRed = new Translation2d(14, MathUtil.clamp(pose.getX(), 6, 7.5));
+            }else {
+                passingPoseRed = new Translation2d(14, MathUtil.clamp(pose.getY(), 0.5, 2));
+            }
+            return alliance == Alliance.Blue ? FlippingUtil.flipFieldPosition(passingPoseRed) : passingPoseRed;
         }
         Command handleTurretState() {
             return new RunCommand(() -> {
