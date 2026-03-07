@@ -98,8 +98,8 @@ public class RobotContainer {
                                 .toggleOnTrue(this.bindings.spindexer.spinKick());
                 Controller.getInstance().getSecondaryController().x().onTrue(this.bindings.drivetrain.zeroGyro());
 
-                Controller.getInstance().getSecondaryController().rightBumper().toggleOnTrue(this.bindings.spindexer.spinKick());
-                Controller.getInstance().getSecondaryController().leftBumper().toggleOnTrue(this.bindings.spindexer.passSpinKick());
+                Controller.getInstance().getSecondaryController().rightBumper().toggleOnTrue(this.bindings.spindexer.spinKick().alongWith(this.bindings.turret.autoAim()));
+                Controller.getInstance().getSecondaryController().leftBumper().toggleOnTrue(this.bindings.spindexer.passSpinKick().alongWith(this.bindings.turret.autoPass()));
 
                 // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
                 // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
