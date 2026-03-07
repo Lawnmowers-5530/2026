@@ -68,8 +68,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
 
-     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCam1);
-     private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCam2);
+     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCamBack);
+     private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
 
     private static final double kSimLoopPeriod = 0.004; // 4 ms
     private Notifier m_simNotifier = null;
