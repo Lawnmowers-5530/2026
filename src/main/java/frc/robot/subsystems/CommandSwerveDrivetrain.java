@@ -51,7 +51,9 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Robot;
+import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
+import frc.robot.constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.vision.Vision;
 
@@ -66,7 +68,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
 
-    private final Vision vision = new Vision(this::addVisionMeasurement);
+     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCam1);
+     private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCam2);
+
     private static final double kSimLoopPeriod = 0.004; // 4 ms
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;

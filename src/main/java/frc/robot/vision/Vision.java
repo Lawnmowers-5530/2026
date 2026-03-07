@@ -30,6 +30,7 @@ import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -57,10 +58,10 @@ public class Vision extends SubsystemBase{
      *                    desired {@link
      *                    edu.wpi.first.math.estimator.SwerveDrivePoseEstimator}
      */
-    public Vision(BiConsumer<EstimatedRobotPose, Matrix<N3, N1>> estConsumer) {
+    public Vision(BiConsumer<EstimatedRobotPose, Matrix<N3, N1>> estConsumer, String cameraName, Transform3d cameraTransform) {
         this.estConsumer = estConsumer;
-        cameras = new PhotonCamera[] { new PhotonCamera(kCameraName) };
-        photonEstimator = new PhotonPoseEstimator(kTagLayout, kRobotToCam);
+        cameras = new PhotonCamera[] { new PhotonCamera(cameraName) };
+        photonEstimator = new PhotonPoseEstimator(kTagLayout, cameraTransform);
         CommandScheduler.getInstance().registerSubsystem(this);
     }
 

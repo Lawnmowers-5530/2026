@@ -1,5 +1,7 @@
 package frc.robot.constants;
 
+import javax.xml.crypto.dsig.Transform;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -15,9 +17,10 @@ import edu.wpi.first.units.Unit;
 public class VisionConstants {
         public static final String kCameraName = "main";
         // Cam mounted facing forward, half a meter forward of center, half a meter up from center.
-        public static final Transform3d kRobotToCam =
+        public static final Transform3d kRobotToCam1 =
                 new Transform3d(new Translation3d( Units.inchesToMeters(-27.5/2), Units.inchesToMeters(27/2 - 8), Units.inchesToMeters(7.5)), new Rotation3d(Math.toRadians(5), Math.toRadians(45), Math.toRadians(180)));
-
+        public static final Transform3d kRobotToCam2 = 
+        new Transform3d(new Translation3d(Units.inchesToMeters(27.5/2 - 3),Units.inchesToMeters(26.5/2),Units.inchesToMeters(8.5)), new Rotation3d(Math.toRadians(16.5), Math.toRadians(30), Math.toRadians(0)));
         // The layout of the AprilTags on the field
         public static final AprilTagFieldLayout kTagLayout =
                 AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
