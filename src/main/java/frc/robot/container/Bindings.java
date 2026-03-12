@@ -18,7 +18,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import frc.robot.subsystems.Controller;
 import frc.robot.subsystems.Turret.TurretState;
 import frc.robot.constants.TurretConstants;
 import frc.robot.constants.SwerveConstants;

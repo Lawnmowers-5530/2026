@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.*;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import frc.robot.container.Controller;
 import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;

@@ -25,7 +25,6 @@ import frc.robot.Telemetry;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.Controller;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Intake;
