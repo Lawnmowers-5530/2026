@@ -1,17 +1,20 @@
 package frc.robot.constants;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class IntakeConstants {
    
     //TODO find the actual values for these
-    public static final int PIVOT_MOTOR_PORT = 24;
-    public static final int RUN_MOTOR_PORT = 25;
+    public final int pivotMotorPort = 24;
+    public final int runMotorPort = 25;
 
-    public static final double RUN_MOTOR_AMPS = 15;
+    public final double runMotorAmps = 15;
 
 
-    public static final double EXTENDED_ENCODER_POSITION = 2;
-    public static final double TUCKED_ENCODER_POSITION = 0;
+    public final double extendedEncoderPosition = 2;
+    public final double tuckedEncoderPosition = 0;
 
-    public static final double PIVOT_HOLD_DOWN_AMPS = 2;
-    
+    public final double pivotHoldDownAmps = 2;
+
 }

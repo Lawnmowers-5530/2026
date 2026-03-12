@@ -1,7 +1,10 @@
 package frc.robot.constants;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class ControllerConstants {
-    public static final double driveControllerJoystickDeadband = 0.1;
-    
+    public final double driveControllerJoystickDeadband = 0.1;
+
     
 }

@@ -46,19 +46,19 @@ public final class Bindings {
 
         Command drive() {
             final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-                    .withDeadband(SwerveConstants.MaxSpeed * 0.1)
-                    .withRotationalDeadband(SwerveConstants.MaxAngularRate * 0.1) // Add a 10% deadband
+                    .withDeadband(SwerveConstants.maxSpeed * 0.1)
+                    .withRotationalDeadband(SwerveConstants.maxAngularRate * 0.1) // Add a 10% deadband
                     .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
             return subsystems.drivetrain.applyRequest(() -> drive
-                    .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.MaxSpeed) // Drive
+                    .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.maxSpeed) // Drive
                                                                                                                  // forward
                                                                                                                  // with
                     // negative Y (forward)
-                    .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.MaxSpeed) // Drive
+                    .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.maxSpeed) // Drive
                                                                                                                  // left
                                                                                                                  // with
                     // negative X (left)
-                    .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.MaxAngularRate) // Drive
+                    .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.maxAngularRate) // Drive
             // counterclockwise
             // with
             // negative X (left)

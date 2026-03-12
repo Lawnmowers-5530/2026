@@ -11,11 +11,12 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.constants.IndexerConstants;
+import frc.robot.constants.RobotConstants;
 import frc.robot.constants.SpindexerConstants;
 
 public class Spindexer extends SubsystemBase {
-    TalonFX spindexer = new TalonFX(SpindexerConstants.SPINDEXER_MOTOR_PORT, "canivore");
-    TalonFX kicker = new TalonFX(SpindexerConstants.KICKER_MOTOR_PORT, "canivore");
+    TalonFX spindexer = new TalonFX(SpindexerConstants.spindexerMotorPort, RobotConstants.canivoreBus);
+    TalonFX kicker = new TalonFX(SpindexerConstants.kickerMotorPort, RobotConstants.canivoreBus);
 
     TalonFXConfiguration spindexerConfig = new TalonFXConfiguration();
     TalonFXConfiguration kickerConfig = new TalonFXConfiguration();

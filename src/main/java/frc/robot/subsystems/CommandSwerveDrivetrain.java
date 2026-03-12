@@ -337,7 +337,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
             Vector<N2> robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.kDefaultPeriod);
             Vector<N2> commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.kDefaultPeriod)
-                    .times(SwerveConstants.MaxSpeed);
+                    .times(SwerveConstants.maxSpeed);
             SmartDashboard.putNumber("Jerk Magnitude", new Translation2d(robotJerk).getSquaredNorm());
             SmartDashboard.putNumber("acceleration", new Translation2d(accelerationVector).getSquaredNorm());
             boolean collisionOcurred = new Translation2d(robotJerk).getSquaredNorm() > 25;

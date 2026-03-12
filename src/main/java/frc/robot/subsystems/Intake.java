@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.IntakeConstants;
+import frc.robot.constants.RobotConstants;
 
 public class Intake extends SubsystemBase {
     public enum State {
@@ -49,8 +50,8 @@ public class Intake extends SubsystemBase {
             this.robotVelocity = robotVelocity;
             instance = this;
             Intake.exists = true;
-            pivotMotor = new TalonFX(IntakeConstants.PIVOT_MOTOR_PORT, "canivore");
-            runMotor = new TalonFX(IntakeConstants.RUN_MOTOR_PORT, "canivore");
+            pivotMotor = new TalonFX(IntakeConstants.pivotMotorPort, RobotConstants.canivoreBus);
+            runMotor = new TalonFX(IntakeConstants.runMotorPort, RobotConstants.canivoreBus);
             TalonFXConfiguration runMotorConfig = new TalonFXConfiguration();
             TorqueCurrentConfigs torqueCurrentConfig = new TorqueCurrentConfigs();
             runMotorConfig = runMotorConfig.withTorqueCurrent(torqueCurrentConfig);
@@ -151,7 +152,7 @@ public class Intake extends SubsystemBase {
                 }, this))
                 .andThen(Commands.runOnce(() -> {
                     this.currentState = State.EXTENDED;
-                    pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.PIVOT_HOLD_DOWN_AMPS));
+                    pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.pivotHoldDownAmps));
                 }, this)),
                 new InstantCommand(), this::canExtend);
     }
@@ -173,11 +174,11 @@ public class Intake extends SubsystemBase {
     }
 
     private boolean pivotAtTuckPosition() {
-        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.TUCKED_ENCODER_POSITION) <= 0.1;
+        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.tuckedEncoderPosition) <= 0.1;
     }
 
     private boolean pivotAtExtensionPosition() {
-        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.EXTENDED_ENCODER_POSITION) <= 0.1;
+        return Math.abs(pivotMotor.getPosition().getValueAsDouble() - IntakeConstants.extendedEncoderPosition) <= 0.1;
     }
 
     public void zeroPivot() {

@@ -50,7 +50,7 @@ public class RobotContainer {
 
         boolean _programmingDashboard = true;
 
-        private final Telemetry logger = new Telemetry(SwerveConstants.MaxSpeed);
+        private final Telemetry logger = new Telemetry(SwerveConstants.maxSpeed);
 
         private double pitchSp;
 
