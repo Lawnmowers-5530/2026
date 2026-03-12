@@ -2,7 +2,6 @@ package frc.robot.constants;
 
 import com.ctre.phoenix6.CANBus;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -14,8 +13,8 @@ import edu.wpi.first.math.util.Units;
 import frc.lib.ProjectileAimer;
 import frc.robot.subsystems.Turret.TurretState;
 
-public class LauncherConstants { // TODO: fill in constants
-    public static final CANBus canBus = new CANBus("canivore", "logs/launcherFlywheel");
+public class TurretConstants { // TODO: fill in constants
+    public static final CANBus canBus = RobotConstants.canivoreBus;
     public static final int canId = 23;
     public static final double kV = 0.12379;
     public static final double kA = 0.011841;

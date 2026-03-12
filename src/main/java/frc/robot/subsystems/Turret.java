@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.constants.LauncherConstants;
+import frc.robot.constants.TurretConstants;
 
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
@@ -107,21 +107,21 @@ public class Turret extends SubsystemBase {
 
         yawConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-        this.m_yaw = new TalonFX(21, "canivore");
+        this.m_yaw = new TalonFX(21, TurretConstants.canBus);
         this.m_yaw.getConfigurator().apply(yawConfig);
         this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
         //this.m_yaw.setControl(yawControl);
 
         pitchConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; //TODO ensure correct direction
 
-        this.m_pitch = new TalonFX(22, "canivore");
+        this.m_pitch = new TalonFX(22, TurretConstants.canBus);
         this.m_pitch.getConfigurator().apply(pitchConfig);
         this.pitchControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
         this.m_pitch.setControl(pitchControl);
 
         flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-        this.m_flywheel = new TalonFX(23, "canivore");
+        this.m_flywheel = new TalonFX(23, TurretConstants.canBus);
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
         this.flywheelControl = new VelocityVoltage(0);
         this.m_flywheel.setControl(flywheelControl);
@@ -155,18 +155,18 @@ public class Turret extends SubsystemBase {
 
     public void setYaw(Rotation2d pos) {
         // convert angle to controller position units (radians here as an example)
-        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians())).plus(LauncherConstants.turretOffset);
+        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians())).plus(TurretConstants.turretOffset);
 
-        this.yawControl.Position = targetPosition.times(LauncherConstants.motorToYawRot).getRotations();
+        this.yawControl.Position = targetPosition.times(TurretConstants.motorToYawRot).getRotations();
         this.m_yaw.setControl(this.yawControl);
 
         SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
     }
 
     public void setPitch(Rotation2d pos) {
-        pos = pos.minus(LauncherConstants.pitchZeroAngle);
+        pos = pos.minus(TurretConstants.pitchZeroAngle);
         SmartDashboard.putNumber("pospreclamp", pos.getDegrees());
-        double targetPosition = pos.getDegrees() * LauncherConstants.motorRotToPitchDeg;
+        double targetPosition = pos.getDegrees() * TurretConstants.motorRotToPitchDeg;
         this.pitchControl.Position = targetPosition;
         this.m_pitch.setControl(this.pitchControl);
     }
@@ -189,9 +189,9 @@ public class Turret extends SubsystemBase {
 
     public TurretState getTurretState() {
         return new TurretState(
-            Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / LauncherConstants.motorToYawRot).minus(LauncherConstants.turretOffset),
-            Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / LauncherConstants.motorRotToPitchDeg).plus(LauncherConstants.pitchZeroAngle),
-            this.m_flywheel.getVelocity().getValueAsDouble() * LauncherConstants.motorToFlywheelRot
+            Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot).minus(TurretConstants.turretOffset),
+            Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / TurretConstants.motorRotToPitchDeg).plus(TurretConstants.pitchZeroAngle),
+            this.m_flywheel.getVelocity().getValueAsDouble() * TurretConstants.motorToFlywheelRot
         );
     }
 
@@ -205,7 +205,7 @@ public class Turret extends SubsystemBase {
 
     public void fourRotations() {
         this.m_yaw.setPosition(0);
-        this.yawControl.Position = 0.25*LauncherConstants.motorToYawRot;
+        this.yawControl.Position = 0.25* TurretConstants.motorToYawRot;
         this.m_yaw.setControl(this.yawControl);
     }
 

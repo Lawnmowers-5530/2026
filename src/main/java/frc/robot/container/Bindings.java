@@ -8,29 +8,20 @@ import static edu.wpi.first.units.Units.Meters;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.geometry.Twist2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.Controller;
 import frc.robot.subsystems.Turret.TurretState;
-import frc.lib.ProjectileAimer;
-import frc.robot.constants.LauncherConstants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.constants.SwerveConstants;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public final class Bindings {
 
@@ -130,22 +121,22 @@ public final class Bindings {
         //    });
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
-        Translation2d target = alliance == Alliance.Red ? LauncherConstants.redTargetPose.toTranslation2d() : LauncherConstants.blueTargetPose.toTranslation2d();
+        Translation2d target = alliance == Alliance.Red ? TurretConstants.redTargetPose.toTranslation2d() : TurretConstants.blueTargetPose.toTranslation2d();
         Pose2d pose = subsystems.drivetrain.getState().Pose;
-        Translation2d turretTranslation = pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(pose.getRotation()));
+        Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
         Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
         Translation2d robotVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
-        double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * LauncherConstants.distFromCenter.getNorm();
+        double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * TurretConstants.distFromCenter.getNorm();
         Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
         Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw* theta.getSin());
         double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
-        Translation2d adjustedTargetPose = target.minus((turretVelo.plus(turretVeloRot)).times(LauncherConstants.distToTOF.get(dist)));
+        Translation2d adjustedTargetPose = target.minus((turretVelo.plus(turretVeloRot)).times(TurretConstants.distToTOF.get(dist)));
 
       //  for (int i = 0; i < 2)
 
-        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMap.get(adjustedTargetPose.getDistance(turretTranslation));
+        Rotation2d pitchAngle = TurretConstants.launchHoodAngleMap.get(adjustedTargetPose.getDistance(turretTranslation));
         Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
-        double velo = LauncherConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+        double velo = TurretConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
         TurretState state = new TurretState(yaw, pitchAngle, velo);
         SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
         return state.rotateBy(pose.getRotation().times(-1));
@@ -157,13 +148,13 @@ public final class Bindings {
         
         Pose2d pose = subsystems.drivetrain.getState().Pose;
         Translation2d target = getTargetFromCurrentPose(pose, alliance);
-        Translation2d turretTranslation = pose.getTranslation().plus(LauncherConstants.distFromCenter.rotateBy(pose.getRotation()));
+        Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
         Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
         double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.bluePassingPose.toTranslation2d());
-        Translation2d adjustedTargetPose = target.minus(turretVelo.times(LauncherConstants.distToTOF.get(dist)));
-        Rotation2d pitchAngle = LauncherConstants.launchHoodAngleMapPassing.get(adjustedTargetPose.getDistance(turretTranslation));
+        Translation2d adjustedTargetPose = target.minus(turretVelo.times(TurretConstants.distToTOF.get(dist)));
+        Rotation2d pitchAngle = TurretConstants.launchHoodAngleMapPassing.get(adjustedTargetPose.getDistance(turretTranslation));
         Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
-        double velo = LauncherConstants.distToSpinratePassing.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+        double velo = TurretConstants.distToSpinratePassing.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
         TurretState state = new TurretState(yaw, pitchAngle, velo);
         SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
         return state.rotateBy(pose.getRotation().times(-1));
@@ -185,7 +176,7 @@ public final class Bindings {
                 }else {
                     CommandScheduler.getInstance().schedule(this.autoPass());
                 }
-            }, subsystems.turret).finallyDo(()->subsystems.turret.setTurretState(new TurretState(Rotation2d.kZero, LauncherConstants.pitchZeroAngle, 0)));
+            }, subsystems.turret).finallyDo(()->subsystems.turret.setTurretState(new TurretState(Rotation2d.kZero, TurretConstants.pitchZeroAngle, 0)));
         }
         
         public static boolean getDrivetrainInAllianceZone(Alliance alliance, Pose2d pose) {
@@ -196,10 +187,10 @@ public final class Bindings {
         }
 
         Command turretState1() {
-            return new RunCommand(() -> {subsystems.turret.setTurretState(LauncherConstants.state1);}, subsystems.turret);
+            return new RunCommand(() -> {subsystems.turret.setTurretState(TurretConstants.state1);}, subsystems.turret);
         }
         Command turretState2() {
-            return new RunCommand(() -> {subsystems.turret.setTurretState(LauncherConstants.state2);}, subsystems.turret);
+            return new RunCommand(() -> {subsystems.turret.setTurretState(TurretConstants.state2);}, subsystems.turret);
         }
     }
 
