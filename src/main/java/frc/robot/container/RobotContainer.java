@@ -32,121 +32,119 @@ import frc.robot.subsystems.Intake;
 
 public class RobotContainer {
 
-        public class Subsystems {
-                public Intake intake;
-                public Spindexer spindexer;
-                public CommandSwerveDrivetrain drivetrain;
-                public Turret turret;
-        }
+    private final Telemetry logger = new Telemetry(SwerveConstants.maxSpeed);
+    Supplier<LinearVelocity> robotVelocitySupplier;
 
-        Supplier<LinearVelocity> robotVelocitySupplier;
+    Subsystems subsystems;
+    Bindings bindings;
 
-        Subsystems subsystems;
-        Bindings bindings;
+    BuildMetadata metadata = new BuildMetadata();
 
-        BuildMetadata metadata = new BuildMetadata();
+    SendableChooser<Command> autoChooser;
 
-        SendableChooser<Command> autoChooser;
+    boolean _programmingDashboard = true;
+    private double pitchSp;
 
-        boolean _programmingDashboard = true;
+    public RobotContainer() {
+        this.subsystems = new Subsystems();
 
-        private final Telemetry logger = new Telemetry(SwerveConstants.maxSpeed);
+        // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
+        this.subsystems.drivetrain = TunerConstants.createDrivetrain();
+        this.subsystems.intake = new Intake(robotVelocitySupplier);
+        this.subsystems.spindexer = new Spindexer();
+        this.subsystems.turret = new Turret();
 
-        private double pitchSp;
+        this.bindings = new Bindings(this.subsystems);
 
-        public RobotContainer() {
-                this.subsystems = new Subsystems();
+        this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
+        this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
 
-                // subsystems.launcherFlywheel = new LauncherFlywheel(LauncherConstants.canId);
-                this.subsystems.drivetrain = TunerConstants.createDrivetrain();
-                this.subsystems.intake = new Intake(robotVelocitySupplier);
-                this.subsystems.spindexer = new Spindexer();
-                this.subsystems.turret = new Turret();
+        autoChooser = AutoBuilder.buildAutoChooser("singleShot");
+        SmartDashboard.putData("autoChooser", autoChooser);
 
-                this.bindings = new Bindings(this.subsystems);
+        NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
+        new EventTrigger("feed2s").onTrue(
+                new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
+        new EventTrigger("Extend And Run Intake").onTrue(this.bindings.intake.toggleCollect());
+        SmartDashboard.putNumber("set turret velo", 0);
+        SmartDashboard.putNumber("set dist to hub", 0);
 
-                this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-                this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
+        this.pitchSp = 65;
+        Controller.getInstance().getDriveController().rightTrigger(0.3)
+                .toggleOnTrue(this.bindings.turret.autoPass());
+        Controller.getInstance().getDriveController().leftBumper()
+                .toggleOnTrue(this.bindings.intake.toggleCollect());
+        Controller.getInstance().getDriveController().rightBumper()
+                .toggleOnTrue(this.bindings.spindexer.spinKick());
+        Controller.getInstance().getSecondaryController().x().onTrue(this.bindings.drivetrain.zeroGyro());
 
-                autoChooser = AutoBuilder.buildAutoChooser("singleShot");
-                SmartDashboard.putData("autoChooser", autoChooser);
+        Controller.getInstance().getSecondaryController().rightBumper().toggleOnTrue(this.bindings.spindexer.spinKick().alongWith(this.bindings.turret.autoAim()));
+        Controller.getInstance().getSecondaryController().leftBumper().toggleOnTrue(this.bindings.spindexer.passSpinKick().alongWith(this.bindings.turret.autoPass()));
 
-                NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
-                new EventTrigger("feed2s").onTrue(
-                                new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
-                new EventTrigger("Extend And Run Intake").onTrue(this.bindings.intake.toggleCollect());
-                SmartDashboard.putNumber("set turret velo", 0);
-                SmartDashboard.putNumber("set dist to hub", 0);
+        // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
+        // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
 
-                this.pitchSp = 65;
-                Controller.getInstance().getDriveController().rightTrigger(0.3)
-                                .toggleOnTrue(this.bindings.turret.autoPass());
-                Controller.getInstance().getDriveController().leftBumper()
-                                .toggleOnTrue(this.bindings.intake.toggleCollect());
-                Controller.getInstance().getDriveController().rightBumper()
-                                .toggleOnTrue(this.bindings.spindexer.spinKick());
-                Controller.getInstance().getSecondaryController().x().onTrue(this.bindings.drivetrain.zeroGyro());
+        Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
+                .manualIntakeControl(Controller.getInstance().secondaryTriggerAxesSum));
+        Controller.getInstance().getSwitches().x().onTrue(new InstantCommand(() -> {
+            this.subsystems.drivetrain.resetPose(new Pose2d());
+        }));
 
-                Controller.getInstance().getSecondaryController().rightBumper().toggleOnTrue(this.bindings.spindexer.spinKick().alongWith(this.bindings.turret.autoAim()));
-                Controller.getInstance().getSecondaryController().leftBumper().toggleOnTrue(this.bindings.spindexer.passSpinKick().alongWith(this.bindings.turret.autoPass()));
+        // Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(()
+        // -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
+        Controller.getInstance().getSecondaryController().y()
+                .onTrue(this.subsystems.intake.extendIntakeCommand());
+        Controller.getInstance().getSecondaryController().a()
+                .onTrue(this.subsystems.intake.tuckIntakeCommand());
 
-                // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
-                // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
+        //
+    }
 
-                Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
-                                .manualIntakeControl(Controller.getInstance().secondaryTriggerAxesSum));
-                Controller.getInstance().getSwitches().x().onTrue(new InstantCommand(() -> {
-                        this.subsystems.drivetrain.resetPose(new Pose2d());
-                }));
+    public Command getAutonomousCommand() {
+        // An example command will be run in autonomous
+        return autoChooser.getSelected();
+    }
 
-                // Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(()
-                // -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
-                Controller.getInstance().getSecondaryController().y()
-                                .onTrue(this.subsystems.intake.extendIntakeCommand());
-                Controller.getInstance().getSecondaryController().a()
-                                .onTrue(this.subsystems.intake.tuckIntakeCommand());
+    public void robotInit() {
+        this.subsystems.drivetrain.resetPose(new Pose2d(0.482, 7.58, Rotation2d.kZero));
+        // this.subsystems.turret.zeroYaw();
+    }
 
-                //
-        }
+    public void teleopInit() {
+        this.subsystems.intake.zeroPivot();
+        this.subsystems.turret.zeroYaw();
+        this.subsystems.turret.zeroPitch();
+        SmartDashboard.putNumber("turret velo", 0);
+        this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
+    }
 
-        public Command getAutonomousCommand() {
-                // An example command will be run in autonomous
-                return autoChooser.getSelected();
-        }
+    public void teleopPeriodic() {
+        // SmartDashboard.putString("pose",
+        // this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
+        pitchSp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getLeftY(), 0.07);
+        // SmartDashboard.putNumber("pitchSp", pitchSp);
 
-        public void robotInit() {
-                this.subsystems.drivetrain.resetPose(new Pose2d(0.482, 7.58, Rotation2d.kZero));
-                // this.subsystems.turret.zeroYaw();
-        }
+        SmartDashboard.putString(
+                "pose", this.subsystems.drivetrain.getState().Pose.toString());
+        // this.subsystems.turret.setYaw(Rotation2d.kZero);
+        // this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
+        // this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret
+        // velo", 0));
+        // SmartDashboard.putString("turretState",
+        // this.subsystems.turret.getTurretState().toString());
+        // Rotation2d angle =
+        // LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
 
-        public void teleopInit() {
-                this.subsystems.intake.zeroPivot();
-                this.subsystems.turret.zeroYaw();
-                this.subsystems.turret.zeroPitch();
-                SmartDashboard.putNumber("turret velo", 0);
-                this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
-        }
+    }
 
-        public void teleopPeriodic() {
-                // SmartDashboard.putString("pose",
-                // this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
-                pitchSp += MathUtil.applyDeadband(Controller.getInstance().getSecondaryController().getLeftY(), 0.07);
-                // SmartDashboard.putNumber("pitchSp", pitchSp);
+    public void teleopExit() {
+        // Any teleop-specific cleanup code can go here.
+    }
 
-                SmartDashboard.putString(
-                                "pose", this.subsystems.drivetrain.getState().Pose.toString());
-                // this.subsystems.turret.setYaw(Rotation2d.kZero);
-                // this.subsystems.turret.setPitch(Rotation2d.fromDegrees(pitchSp));
-                // this.subsystems.turret.setFlywheelSpeed(SmartDashboard.getNumber("turret
-                // velo", 0));
-                // SmartDashboard.putString("turretState",
-                // this.subsystems.turret.getTurretState().toString());
-                // Rotation2d angle =
-                // LauncherConstants.blueTargetPose.minus(this.subsystems.drivetrain.getState().Pose.getTranslation().plus((LauncherConstants.distFromCenter.rotateBy(this.subsystems.drivetrain.getState().Pose.getRotation())))).getAngle().minus(this.subsystems.drivetrain.getState().Pose.getRotation());
-
-        }
-
-        public void teleopExit() {
-                // Any teleop-specific cleanup code can go here.
-        }
+    public class Subsystems {
+        public Intake intake;
+        public Spindexer spindexer;
+        public CommandSwerveDrivetrain drivetrain;
+        public Turret turret;
+    }
 }
