@@ -4,41 +4,31 @@
 
 package frc.robot.container;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
 import java.util.function.Supplier;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.events.EventTrigger;
-import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.path.PathPlannerPath;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.lib.BuildMetadata;
 import frc.robot.Telemetry;
-import frc.robot.constants.LauncherConstants;
 import frc.robot.constants.SwerveConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Controller;
 import frc.robot.subsystems.Turret;
-import frc.robot.subsystems.*;
-import frc.robot.subsystems.Indexer.Spindexer;
-import frc.robot.subsystems.Intake.Intake;
+import frc.robot.subsystems.Spindexer;
+import frc.robot.subsystems.Intake;
 
 public class RobotContainer {
 
