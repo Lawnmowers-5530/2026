@@ -28,37 +28,12 @@ import static edu.wpi.first.units.Units.Volts;
 
 public class Turret extends SubsystemBase {
 
-    public static class TurretState {
-        public Rotation2d yaw;
-        public Rotation2d pitch;
-        public double flywheelSpeed;
-
-        public TurretState(Rotation2d yaw, Rotation2d pitch, double flywheelSpeed) {
-            this.yaw = yaw;
-            this.pitch = pitch;
-            this.flywheelSpeed = flywheelSpeed;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)", 
-                yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
-        }
-
-        public TurretState rotateBy(Rotation2d rotation) {
-            this.yaw = this.yaw.plus(rotation);
-            return this;
-        }
-    }
-
     private TalonFX m_yaw;
     private TalonFXConfiguration yawConfig = new TalonFXConfiguration();
     private MotionMagicVoltage yawControl;
-
     private TalonFX m_pitch;
     private TalonFXConfiguration pitchConfig = new TalonFXConfiguration();
     private MotionMagicVoltage pitchControl;
-
     private TalonFX m_flywheel;
     private TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
     private VelocityVoltage flywheelControl;
@@ -67,7 +42,6 @@ public class Turret extends SubsystemBase {
     private StatusSignal<AngularVelocity> flywheelVelocitySignal;
     private StatusSignal<Voltage> voltageStatusSignal;
     private SysIdRoutine flywheelRoutine;
-
     public Turret() {
         CommandScheduler.getInstance().registerSubsystem(this);
 
@@ -174,25 +148,25 @@ public class Turret extends SubsystemBase {
     public void setFlywheelSpeed(double speed) {
         // convert speed to controller velocity units (rps here as an example)
         double targetVelocity = speed;//LauncherConstants.VelocityToRPS.get(speed); // adjust by gear ratio / sensor units as needed
-        if(speed == 0) {
+        if (speed == 0) {
             targetVelocity = 0;
         }
         this.flywheelControl.Velocity = targetVelocity;
         this.m_flywheel.setControl(this.flywheelControl);
     }
 
+    public TurretState getTurretState() {
+        return new TurretState(
+                Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot).minus(TurretConstants.turretOffset),
+                Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / TurretConstants.motorRotToPitchDeg).plus(TurretConstants.pitchZeroAngle),
+                this.m_flywheel.getVelocity().getValueAsDouble() * TurretConstants.motorToFlywheelRot
+        );
+    }
+
     public void setTurretState(TurretState state) {
         this.setYaw(state.yaw);
         this.setPitch(state.pitch);
         this.setFlywheelSpeed(state.flywheelSpeed);
-    }
-
-    public TurretState getTurretState() {
-        return new TurretState(
-            Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot).minus(TurretConstants.turretOffset),
-            Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / TurretConstants.motorRotToPitchDeg).plus(TurretConstants.pitchZeroAngle),
-            this.m_flywheel.getVelocity().getValueAsDouble() * TurretConstants.motorToFlywheelRot
-        );
     }
 
     public void zeroYaw() {
@@ -205,21 +179,27 @@ public class Turret extends SubsystemBase {
 
     public void fourRotations() {
         this.m_yaw.setPosition(0);
-        this.yawControl.Position = 0.25* TurretConstants.motorToYawRot;
+        this.yawControl.Position = 0.25 * TurretConstants.motorToYawRot;
         this.m_yaw.setControl(this.yawControl);
     }
 
     public Command setFlywheelSpeedCommand(double speed) {
-        return new InstantCommand(() -> {this.setFlywheelSpeed(speed);}, this);
+        return new InstantCommand(() -> {
+            this.setFlywheelSpeed(speed);
+        }, this);
     }
 
     public Command setPitchCommand(Rotation2d angle) {
-        return new InstantCommand(() -> {this.setPitch(angle);}, this);
+        return new InstantCommand(() -> {
+            this.setPitch(angle);
+        }, this);
     }
 
     public Command setTurretStateCommand(Supplier<TurretState> state) {
         SmartDashboard.putString("goalTurretState", state.get().toString());
-        return new RunCommand(() -> {this.setTurretState(state.get());}, this);
+        return new RunCommand(() -> {
+            this.setTurretState(state.get());
+        }, this);
     }
 
     public void periodic() {
@@ -233,5 +213,28 @@ public class Turret extends SubsystemBase {
 
     public SysIdRoutine getSysIdRoutine() {
         return flywheelRoutine;
+    }
+
+    public static class TurretState {
+        public Rotation2d yaw;
+        public Rotation2d pitch;
+        public double flywheelSpeed;
+
+        public TurretState(Rotation2d yaw, Rotation2d pitch, double flywheelSpeed) {
+            this.yaw = yaw;
+            this.pitch = pitch;
+            this.flywheelSpeed = flywheelSpeed;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)",
+                    yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
+        }
+
+        public TurretState rotateBy(Rotation2d rotation) {
+            this.yaw = this.yaw.plus(rotation);
+            return this;
+        }
     }
 }

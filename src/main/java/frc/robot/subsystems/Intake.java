@@ -27,19 +27,14 @@ import frc.robot.constants.IntakeConstants;
 import frc.robot.constants.RobotConstants;
 
 public class Intake extends SubsystemBase {
-    public enum State {
-        EXTENDED, TUCKED, TUCKING, EXTENDING
-    }
-
+    public static Intake instance;
+    private static boolean exists = false;
     private State currentState = State.TUCKED;
-
     private TalonFX pivotMotor;
     private TalonFX runMotor;
-
-    private static boolean exists = false;
-    public static Intake instance;
     private Supplier<LinearVelocity> robotVelocity;
     private Debouncer stalliDebouncer;
+    private boolean isStalling = false;
 
     public Intake(Supplier<LinearVelocity> robotVelocity) {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -89,20 +84,26 @@ public class Intake extends SubsystemBase {
         isStalling = stalliDebouncer.calculate(stallinBallin());
         // TODO Telemetry or logging
     }
-    private boolean isStalling = false;
+
     public Command tuckIntakeCommand() {
-        return Commands.runOnce(()->{
+        return Commands.runOnce(() -> {
             this.currentState = State.TUCKING;
-             runMotor.set(0);
+            runMotor.set(0);
             pivotMotor.setControl(new VoltageOut(-3));
-        }, this).andThen(Commands.waitUntil(this::isStalling)).andThen(()->{this.currentState = State.TUCKED;pivotMotor.setControl(new VoltageOut(-0.4));}, this);
+        }, this).andThen(Commands.waitUntil(this::isStalling)).andThen(() -> {
+            this.currentState = State.TUCKED;
+            pivotMotor.setControl(new VoltageOut(-0.4));
+        }, this);
     }
+
     private boolean isStalling() {
         return isStalling;
     }
+
     public boolean stallinBallin() {
         return pivotMotor.getStatorCurrent().getValue().in(Amps) > 100 && Math.abs(pivotMotor.getVelocity().getValue().in(RotationsPerSecond)) < 5;
     }
+
     public void runIntake() {
         runMotor.setControl(new VoltageOut(7));
     }
@@ -133,7 +134,7 @@ public class Intake extends SubsystemBase {
     @Deprecated
     /**
      * DO NOT CALL THIS IN PRODUCTION CODE
-     * 
+     *
      */
     public Command applyTorqueDownward() {
         return Commands.runOnce(() -> {
@@ -144,16 +145,16 @@ public class Intake extends SubsystemBase {
     public Command extendIntakeCommand() {
 
         return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::isStalling),
-                Commands.runOnce(() -> {
-                    this.currentState = State.EXTENDING;
-                    pivotMotor
-                            .setControl(new VoltageOut(2));// new
-                                                           // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
-                }, this))
-                .andThen(Commands.runOnce(() -> {
-                    this.currentState = State.EXTENDED;
-                    pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.pivotHoldDownAmps));
-                }, this)),
+                        Commands.runOnce(() -> {
+                            this.currentState = State.EXTENDING;
+                            pivotMotor
+                                    .setControl(new VoltageOut(2));// new
+                            // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
+                        }, this))
+                        .andThen(Commands.runOnce(() -> {
+                            this.currentState = State.EXTENDED;
+                            pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.pivotHoldDownAmps));
+                        }, this)),
                 new InstantCommand(), this::canExtend);
     }
 
@@ -195,6 +196,10 @@ public class Intake extends SubsystemBase {
         return new RunCommand(() -> {
             this.pivotMotor.set(pivotSpeed.get());
         }, this);
+    }
+
+    public enum State {
+        EXTENDED, TUCKED, TUCKING, EXTENDING
     }
 
 }

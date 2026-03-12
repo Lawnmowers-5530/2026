@@ -47,7 +47,7 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-public class Vision extends SubsystemBase{
+public class Vision extends SubsystemBase {
     private final PhotonCamera[] cameras;
     private final PhotonPoseEstimator photonEstimator;
     private Matrix<N3, N1> curStdDevs;
@@ -60,14 +60,13 @@ public class Vision extends SubsystemBase{
      */
     public Vision(BiConsumer<EstimatedRobotPose, Matrix<N3, N1>> estConsumer, String cameraName, Transform3d cameraTransform) {
         this.estConsumer = estConsumer;
-        cameras = new PhotonCamera[] { new PhotonCamera(cameraName) };
+        cameras = new PhotonCamera[]{new PhotonCamera(cameraName)};
         photonEstimator = new PhotonPoseEstimator(kTagLayout, cameraTransform);
         CommandScheduler.getInstance().registerSubsystem(this);
     }
 
     public void periodic() {
         for (var camera : cameras) {
-
             Optional<EstimatedRobotPose> visionEst = Optional.empty();
             for (var result : camera.getAllUnreadResults()) {
                 visionEst = photonEstimator.estimateCoprocMultiTagPose(result);
@@ -75,10 +74,10 @@ public class Vision extends SubsystemBase{
                     visionEst = photonEstimator.estimateLowestAmbiguityPose(result);
                 }
                 updateEstimationStdDevs(visionEst, result.getTargets());
-            if(visionEst.isPresent()) {
-                //System.out.println("direct vision est: " + visionEst.get().estimatedPose.toString());
-            }
-            //System.out.println("std devs: " + curStdDevs.toString());
+                if (visionEst.isPresent()) {
+                    //System.out.println("direct vision est: " + visionEst.get().estimatedPose.toString());
+                }
+                //System.out.println("std devs: " + curStdDevs.toString());
 
                 visionEst.ifPresent(
                         est -> {
@@ -127,8 +126,8 @@ public class Vision extends SubsystemBase{
                         .getDistance(estimatedPose.get().estimatedPose.toPose2d().getTranslation());
             }
 
-            curStdDevs = VecBuilder.fill(0.9+Math.pow(avgDist,2 )*0.1, 0.9+Math.pow(avgDist,2)*0.1
-            , Double.MAX_VALUE);
+            curStdDevs = VecBuilder.fill(0.9 + Math.pow(avgDist, 2) * 0.1, 0.9 + Math.pow(avgDist, 2) * 0.1
+                    , Double.MAX_VALUE);
         }
     }
 

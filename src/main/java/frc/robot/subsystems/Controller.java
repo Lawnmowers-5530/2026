@@ -11,10 +11,10 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.constants.ControllerConstants;
 
 public class Controller {
+    private static Controller instance;
     public CommandXboxController driverController;
     public CommandXboxController secondaryController;
     public CommandXboxController switches;
-
     public Supplier<Vector<N2>> driveVector;
     public Supplier<Double> driveRotation;
     public Supplier<Double> secondaryTriggerAxesSum;
@@ -24,15 +24,6 @@ public class Controller {
     public Trigger reverseIntake;
     public Trigger extendIntake;
     public Trigger tuckIntake;
-
-    private static Controller instance;
-
-    public static Controller getInstance() {
-        if (instance == null) {
-            instance = new Controller();
-        }
-        return instance;
-    }
 
     private Controller() {
         this.driverController = new CommandXboxController(0);
@@ -68,6 +59,13 @@ public class Controller {
         secondaryTriggerAxesSum = () -> {
             return secondaryController.getRightTriggerAxis() - secondaryController.getLeftTriggerAxis();
         };
+    }
+
+    public static Controller getInstance() {
+        if (instance == null) {
+            instance = new Controller();
+        }
+        return instance;
     }
 
     public CommandXboxController getDriveController() {
