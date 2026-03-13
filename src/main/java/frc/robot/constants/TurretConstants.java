@@ -17,21 +17,35 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class TurretConstants { // TODO: fill in constants
     public final CANBus canBus = RobotConstants.canivoreBus;
-    public final int canId = 23;
-    public final double kV = 0.12379;
-    public final double kA = 0.011841;
-    public final double kS = 0.34;
-    public final double kP = 0.19033;
-    public final double kI = 0.0;
-    public final double kD = 0.00;
-    public final double motorToYawRot = 8;
-    public final double motorRotToPitchDeg = 1.4 / 20.0;// 17 * 0.75;
+    public int canId = 23;
+
+    // Dashboard path for tuning
+    public static final String dashboardPath = "Turret";
+
+    // Generic feedforward / PID (kept mutable for runtime tuning)
+    public double
+        kV = 0.12379,
+        kA = 0.011841,
+        kS = 0.34,
+        kP = 0.19033,
+        kI = 0.0,
+        kD = 0.00;
+
+    // Gear ratios / conversions
+    public double
+        motorToYawRot = 8,
+        motorRotToPitchDeg = 1.4 / 20.0; // 17 * 0.75;
+
     public final Rotation2d turretOffset = Rotation2d.fromRotations(0.647).times(1.0 / 8.0);
     public final Rotation2d pitchZeroAngle = Rotation2d.fromDegrees(72);
-    public final double motorToFlywheelRot = 1;
-    public final double sysIdRampRate = 1.0; // Volts per second
-    public final double sysIdDynamicStepVoltage = 0.0; // Volts
-    public final double sysIdTimeout = 10.0; // Seconds
+    public double motorToFlywheelRot = 1;
+
+    // SysId / safety
+    public double
+        sysIdRampRate = 1.0, // Volts per second
+        sysIdDynamicStepVoltage = 0.0, // Volts
+        sysIdTimeout = 10.0; // Seconds
+
     public final Translation3d blueTargetPose = new Translation3d(4.619, 4.027, 0);
     public final Translation3d bluePassingPose = new Translation3d(1.8, 4, 0);
     public final Translation3d redTargetPose = new Translation3d(Units.inchesToMeters(40),
@@ -40,6 +54,40 @@ public class TurretConstants { // TODO: fill in constants
             Units.inchesToMeters(5.75));
     public final double launcherHeight = 0.3;
     public final double feedTime = 0.0; // TODO try at 0 if not working
+
+    // Separate PID/motion constants for each axis and flywheel (mutable for tuning)
+    // Yaw
+    public double
+        yaw_kS = 0.4,
+        yaw_kV = 0.12,
+        yaw_kA = 0.01,
+        yaw_kP = 4.8,
+        yaw_kI = 0.0,
+        yaw_kD = 0.1,
+        yawMotionMagicCruiseVelocity = 16,
+        yawMotionMagicAcceleration = 40,
+        yawMotionMagicJerk = 2000;
+
+    // Pitch
+    public double
+        pitch_kS = 0.25,
+        pitch_kV = 0.12,
+        pitch_kA = 0.01,
+        pitch_kP = 7.0,
+        pitch_kI = 0.0,
+        pitch_kD = 0.0,
+        pitchMotionMagicCruiseVelocity = 16,
+        pitchMotionMagicAcceleration = 300,
+        pitchMotionMagicJerk = 4000;
+
+    // Flywheel
+    public double
+        flywheel_kS = 0.0,
+        flywheel_kV = 0.0,
+        flywheel_kA = 0.0,
+        flywheel_kP = 0.5,
+        flywheel_kI = 0.0,
+        flywheel_kD = 0.0;
 
     public final TurretState state1 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
     public final TurretState state2 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
