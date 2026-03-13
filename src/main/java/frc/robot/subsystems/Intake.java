@@ -110,14 +110,27 @@ public class Intake extends SubsystemBase {
         pivotKG = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kG", IntakeConstants.pivotKG),
         pivotMotionMagicCruiseVelocity = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/motionMagicCruiseVelocity", IntakeConstants.pivotMotionMagicCruiseVelocity),
         pivotMotionMagicAcceleration = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/motionMagicAcceleration", IntakeConstants.pivotMotionMagicAcceleration),
-        pivotMotionMagicJerk = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/motionMagicJerk", IntakeConstants.pivotMotionMagicJerk);
+        pivotMotionMagicJerk = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/motionMagicJerk", IntakeConstants.pivotMotionMagicJerk),
+
+        // non-motor-config constants
+        ln_runMotorAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/runMotorAmps", IntakeConstants.runMotorAmps),
+        ln_pivotHoldDownAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivotHoldDownAmps", IntakeConstants.pivotHoldDownAmps),
+        ln_pivotTorqueDownwardAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivotTorqueDownwardAmps", IntakeConstants.pivotTorqueDownwardAmps),
+
+        ln_stallDebounceSeconds = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/stallDebounceSeconds", IntakeConstants.stallDebounceSeconds),
+        ln_stallCurrentAmpsThreshold = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/stallCurrentAmpsThreshold", IntakeConstants.stallCurrentAmpsThreshold),
+        ln_stallVelocityRpsThreshold = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/stallVelocityRpsThreshold", IntakeConstants.stallVelocityRpsThreshold),
+
+        ln_tuckVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckVoltage", IntakeConstants.tuckVoltage),
+        ln_tuckHoldVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckHoldVoltage", IntakeConstants.tuckHoldVoltage),
+        ln_extendVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/extendVoltage", IntakeConstants.extendVoltage),
+        ln_runMotorVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/runMotorVoltage", IntakeConstants.runMotorVoltage),
+
+        ln_pivotPositionTolerance = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivotPositionTolerance", IntakeConstants.pivotPositionTolerance),
+        ln_extendedEncoderPosition = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/extendedEncoderPosition", IntakeConstants.extendedEncoderPosition),
+        ln_tuckedEncoderPosition = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckedEncoderPosition", IntakeConstants.tuckedEncoderPosition);
 
     public void updateDashboardConfig() {
-        // small epsilon for floating point comparisons
-
-        if (pivotMotorConfig == null || pivotMotorConfig.Slot0 == null || pivotMotorConfig.MotionMagic == null) {
-            return; // nothing to tune yet
-        }
 
         Slot0Configs slot = pivotMotorConfig.Slot0;
         MotionMagicConfigs mm = pivotMotorConfig.MotionMagic;
@@ -200,6 +213,24 @@ public class Intake extends SubsystemBase {
             changed = true;
             IntakeConstants.pivotMotionMagicJerk = newJerk;
         }
+
+        // non-motor-config constants: update unconditionally
+        IntakeConstants.runMotorAmps = ln_runMotorAmps.get();
+        IntakeConstants.pivotHoldDownAmps = ln_pivotHoldDownAmps.get();
+        IntakeConstants.pivotTorqueDownwardAmps = ln_pivotTorqueDownwardAmps.get();
+
+        IntakeConstants.stallDebounceSeconds = ln_stallDebounceSeconds.get();
+        IntakeConstants.stallCurrentAmpsThreshold = ln_stallCurrentAmpsThreshold.get();
+        IntakeConstants.stallVelocityRpsThreshold = ln_stallVelocityRpsThreshold.get();
+
+        IntakeConstants.tuckVoltage = ln_tuckVoltage.get();
+        IntakeConstants.tuckHoldVoltage = ln_tuckHoldVoltage.get();
+        IntakeConstants.extendVoltage = ln_extendVoltage.get();
+        IntakeConstants.runMotorVoltage = ln_runMotorVoltage.get();
+
+        IntakeConstants.pivotPositionTolerance = ln_pivotPositionTolerance.get();
+        IntakeConstants.extendedEncoderPosition = ln_extendedEncoderPosition.get();
+        IntakeConstants.tuckedEncoderPosition = ln_tuckedEncoderPosition.get();
 
         if (changed) {
             // Applying the configs can be blocking/flash operation, so only do it when necessary
