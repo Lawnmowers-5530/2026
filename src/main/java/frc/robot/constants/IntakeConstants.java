@@ -27,7 +27,7 @@ public class IntakeConstants {
 
     public double
         runMotorAmps = 15,
-        pivotHoldDownAmps = 2,
+        pivotHoldDownAmps = 10,
         pivotTorqueDownwardAmps = 15.0;
 
     public double
