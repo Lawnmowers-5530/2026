@@ -23,11 +23,14 @@ public class IntakeConstants {
         pivotKG = 0,
         pivotMotionMagicCruiseVelocity = 1,
         pivotMotionMagicAcceleration = 1,
-        pivotMotionMagicJerk = 4;
+        pivotMotionMagicJerk = 4,
+        lowerJigglePos = 0,
+        upperJigglePos = 0;
+
 
     public double
         runMotorAmps = 15,
-        pivotHoldDownAmps = 10,
+        //pivotHoldDownAmps = 10,
         pivotTorqueDownwardAmps = 15.0;
 
     public double
@@ -43,7 +46,7 @@ public class IntakeConstants {
         tuckVoltage = -3.0,
         tuckHoldVoltage = -0.4,
         extendVoltage = 2.0,
-        runMotorVoltage = 7.0;
+        runMotorVoltage = 11.5;
 
     public double
         pivotPositionTolerance = 0.1,

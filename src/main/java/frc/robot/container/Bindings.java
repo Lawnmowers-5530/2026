@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import frc.robot.subsystems.Turret.TurretState;
@@ -26,7 +27,6 @@ public final class Bindings {
 
     RobotContainer.Subsystems subsystems;
 
-    Alliance alliance;
 
     Drivetrain drivetrain;
     Intake intake;
@@ -68,7 +68,7 @@ public final class Bindings {
         Command zeroGyro() {
             return new InstantCommand(() -> {
                 if (DriverStation.getAlliance().isPresent()) {
-                    alliance = DriverStation.getAlliance().get();
+        
                     if (DriverStation.getAlliance().get() == DriverStation.Alliance.Red) {
                         subsystems.drivetrain.setOperatorPerspectiveForward(
                                 subsystems.drivetrain.getState().Pose.getRotation().plus(Rotation2d.k180deg));
@@ -88,11 +88,7 @@ public final class Bindings {
     }
 
     final class Intake {
-        Command toggleCollect() {
-            return subsystems.intake.extendIntakeCommand().andThen(subsystems.intake.runIntakeCommand()).finallyDo(() -> {
-                CommandScheduler.getInstance().schedule(subsystems.intake.tuckIntakeCommand());
-            });
-        }
+        
 
     }
 
@@ -130,7 +126,10 @@ public final class Bindings {
         //    });
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
-                Translation2d target = alliance == Alliance.Red ? TurretConstants.redTargetPose.toTranslation2d() : TurretConstants.blueTargetPose.toTranslation2d();
+                if (DriverStation.getAlliance().isEmpty()) {
+                    return new TurretState(TurretConstants.turretOffset, TurretConstants.pitchZeroAngle, 0);
+                }
+                Translation2d target = DriverStation.getAlliance().get() == Alliance.Red ? FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d()) : TurretConstants.blueTargetPose.toTranslation2d();
                 Pose2d pose = subsystems.drivetrain.getState().Pose;
                 Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
                 Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
@@ -152,11 +151,17 @@ public final class Bindings {
             });
         }
 
+        Command smartShootingCommand() {
+            return Commands.either(autoAim(), autoPass(), this::inAllianceZone);
+        }
+
         Command autoPass() {
             return subsystems.turret.setTurretStateCommand(() -> {
-
+                if (DriverStation.getAlliance().isEmpty()) {
+                    return new TurretState(TurretConstants.turretOffset, TurretConstants.pitchZeroAngle, 0);
+                }
                 Pose2d pose = subsystems.drivetrain.getState().Pose;
-                Translation2d target = getTargetFromCurrentPose(pose, alliance);
+                Translation2d target = getTargetFromCurrentPose(pose, DriverStation.getAlliance().get());
                 Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
                 Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
                 double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.bluePassingPose.toTranslation2d());
@@ -180,14 +185,11 @@ public final class Bindings {
             return alliance == Alliance.Blue ? FlippingUtil.flipFieldPosition(passingPoseRed) : passingPoseRed;
         }
 
-        Command handleTurretState() {
-            return new RunCommand(() -> {
-                if (getDrivetrainInAllianceZone(alliance, subsystems.drivetrain.getState().Pose)) {
-                    CommandScheduler.getInstance().schedule(this.autoAim());
-                } else {
-                    CommandScheduler.getInstance().schedule(this.autoPass());
-                }
-            }, subsystems.turret).finallyDo(() -> subsystems.turret.setTurretState(new TurretState(Rotation2d.kZero, TurretConstants.pitchZeroAngle, 0)));
+        boolean inAllianceZone() {
+            if (DriverStation.getAlliance().isEmpty()) {
+                return false;
+            }
+            return getDrivetrainInAllianceZone(DriverStation.getAlliance().get(), subsystems.drivetrain.getState().Pose) ;
         }
 
         Command turretState1() {
