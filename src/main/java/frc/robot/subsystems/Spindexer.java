@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.constants.IndexerConstants;
 import frc.robot.constants.RobotConstants;
 import frc.robot.constants.SpindexerConstants;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class Spindexer extends SubsystemBase {
     TalonFX spindexer = new TalonFX(SpindexerConstants.spindexerMotorPort, RobotConstants.canivoreBus);
@@ -24,12 +26,38 @@ public class Spindexer extends SubsystemBase {
     VoltageOut spindexerControl = new VoltageOut(0);
     VoltageOut kickerControl = new VoltageOut(0);
 
+    private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(SpindexerConstants.dashboardPath + "/tuningEnabled");
+
+    private final LoggedNetworkNumber
+        ln_spindexerForwardSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerForwardSpeed", SpindexerConstants.spindexerForwardSpeed),
+        ln_spindexerFastSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerFastSpeed", SpindexerConstants.spindexerFastSpeed),
+        ln_spindexerReverseSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerReverseSpeed", SpindexerConstants.spindexerReverseSpeed),
+        ln_kickerForwardSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerForwardSpeed", SpindexerConstants.kickerForwardSpeed),
+        ln_kickerFastSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerFastSpeed", SpindexerConstants.kickerFastSpeed),
+        ln_kickerReverseSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerReverseSpeed", SpindexerConstants.kickerReverseSpeed);
+
     public Spindexer() {
         this.spindexer.getConfigurator().apply(spindexerConfig);
         this.kicker.getConfigurator().apply(kickerConfig);
         spindexerControl.EnableFOC = true;
         kickerControl.EnableFOC = true;
-    };
+    }
+
+    @Override
+    public void periodic() {
+        if (tuningEnabled.get()) updateDashboardConfig();
+    }
+
+    private void updateDashboardConfig() {
+        // Directly update the constants from the dashboard values (no conditional checks)
+        SpindexerConstants.spindexerForwardSpeed = ln_spindexerForwardSpeed.get();
+        SpindexerConstants.spindexerFastSpeed = ln_spindexerFastSpeed.get();
+        SpindexerConstants.spindexerReverseSpeed = ln_spindexerReverseSpeed.get();
+
+        SpindexerConstants.kickerForwardSpeed = ln_kickerForwardSpeed.get();
+        SpindexerConstants.kickerFastSpeed = ln_kickerFastSpeed.get();
+        SpindexerConstants.kickerReverseSpeed = ln_kickerReverseSpeed.get();
+    }
 
     public void spin() {
         spindexerControl.Output = SpindexerConstants.spindexerForwardSpeed;

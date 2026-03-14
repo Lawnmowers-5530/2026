@@ -26,65 +26,107 @@ import frc.robot.constants.TurretConstants;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+
 public class Turret extends SubsystemBase {
 
-    private TalonFX m_yaw;
-    private TalonFXConfiguration yawConfig = new TalonFXConfiguration();
-    private MotionMagicVoltage yawControl;
-    private TalonFX m_pitch;
-    private TalonFXConfiguration pitchConfig = new TalonFXConfiguration();
-    private MotionMagicVoltage pitchControl;
-    private TalonFX m_flywheel;
-    private TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
+    // group related private fields with the same visibility modifier
+    private TalonFX m_yaw, m_pitch, m_flywheel;
+    private TalonFXConfiguration yawConfig = new TalonFXConfiguration(), pitchConfig = new TalonFXConfiguration(), flywheelConfig = new TalonFXConfiguration();
+    private MotionMagicVoltage yawControl, pitchControl;
     private VelocityVoltage flywheelControl;
     private VoltageOut flywheelSysIdControl;
-    private StatusSignal<Angle> flywheelPositionSignal;
+    private StatusSignal<Angle> flywheelPositionSignal, pitchPositionSignal;
     private StatusSignal<AngularVelocity> flywheelVelocitySignal;
     private StatusSignal<Voltage> voltageStatusSignal;
     private SysIdRoutine flywheelRoutine;
+
+
+    // Tuning enable
+    private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(TurretConstants.dashboardPath + "/tuningEnabled");
+
+    // Grouped LoggedNetworkNumber declarations for motor configs and non-motor constants
+    private final LoggedNetworkNumber
+        ln_yaw_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kS", TurretConstants.yaw_kS),
+        ln_yaw_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kV", TurretConstants.yaw_kV),
+        ln_yaw_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kA", TurretConstants.yaw_kA),
+        ln_yaw_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kP", TurretConstants.yaw_kP),
+        ln_yaw_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kI", TurretConstants.yaw_kI),
+        ln_yaw_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kD", TurretConstants.yaw_kD),
+        ln_yaw_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/cruise", TurretConstants.yawMotionMagicCruiseVelocity),
+        ln_yaw_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/acc", TurretConstants.yawMotionMagicAcceleration),
+        ln_yaw_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/jerk", TurretConstants.yawMotionMagicJerk),
+
+        ln_pitch_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kS", TurretConstants.pitch_kS),
+        ln_pitch_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kV", TurretConstants.pitch_kV),
+        ln_pitch_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kA", TurretConstants.pitch_kA),
+        ln_pitch_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kP", TurretConstants.pitch_kP),
+        ln_pitch_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kI", TurretConstants.pitch_kI),
+        ln_pitch_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kD", TurretConstants.pitch_kD),
+        ln_pitch_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/cruise", TurretConstants.pitchMotionMagicCruiseVelocity),
+        ln_pitch_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/acc", TurretConstants.pitchMotionMagicAcceleration),
+        ln_pitch_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/jerk", TurretConstants.pitchMotionMagicJerk),
+
+        ln_fly_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kS", TurretConstants.flywheel_kS),
+        ln_fly_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kV", TurretConstants.flywheel_kV),
+        ln_fly_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kA", TurretConstants.flywheel_kA),
+        ln_fly_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kP", TurretConstants.flywheel_kP),
+        ln_fly_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kI", TurretConstants.flywheel_kI),
+        ln_fly_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kD", TurretConstants.flywheel_kD),
+
+        // non-motor tunables (updated unconditionally)
+        ln_motorToYawRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToYawRot", TurretConstants.motorToYawRot),
+        ln_motorRotToPitchDeg = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorRotToPitchDeg", TurretConstants.motorRotToPitchDeg),
+        ln_motorToFlywheelRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToFlywheelRot", TurretConstants.motorToFlywheelRot),
+        ln_sysIdRamp = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdRampRate", TurretConstants.sysIdRampRate),
+        ln_sysIdStep = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdDynamicStepVoltage", TurretConstants.sysIdDynamicStepVoltage);
+
     public Turret() {
         CommandScheduler.getInstance().registerSubsystem(this);
 
         var slot0yawConfig = yawConfig.Slot0;
-        slot0yawConfig.kS = 0.4; // Add 0.25 V output to overcome static friction
-        slot0yawConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
-        slot0yawConfig.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-        slot0yawConfig.kP = 4.8; // A position error of 2.5 rotations results in 12 V output
-        slot0yawConfig.kI = 0; // no output for integrated error
-        slot0yawConfig.kD = 0.1; // A velocity error of 1 rps results in 0.1 V output
+        slot0yawConfig.kS = TurretConstants.yaw_kS; // Add 0.25 V output to overcome static friction
+        slot0yawConfig.kV = TurretConstants.yaw_kV; // A velocity target of 1 rps results in 0.12 V output
+        slot0yawConfig.kA = TurretConstants.yaw_kA; // An acceleration of 1 rps/s requires 0.01 V output
+        slot0yawConfig.kP = TurretConstants.yaw_kP; // A position error of 2.5 rotations results in 12 V output
+        slot0yawConfig.kI = TurretConstants.yaw_kI; // no output for integrated error
+        slot0yawConfig.kD = TurretConstants.yaw_kD; // A velocity error of 1 rps results in 0.1 V output
 
         var motionMagicConfigYaw = yawConfig.MotionMagic;
-        motionMagicConfigYaw.MotionMagicCruiseVelocity = 16; // Target cruise velocity of 80 rps
-        motionMagicConfigYaw.MotionMagicAcceleration = 40; // Target acceleration of 160 rps/s (0.5 seconds)
-        motionMagicConfigYaw.MotionMagicJerk = 2000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+        motionMagicConfigYaw.MotionMagicCruiseVelocity = TurretConstants.yawMotionMagicCruiseVelocity;
+        motionMagicConfigYaw.MotionMagicAcceleration = TurretConstants.yawMotionMagicAcceleration;
+        motionMagicConfigYaw.MotionMagicJerk = TurretConstants.yawMotionMagicJerk;
 
         var slot0pitchConfig = pitchConfig.Slot0;
-        slot0pitchConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
-        slot0pitchConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
-        slot0pitchConfig.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-        slot0pitchConfig.kP = 7;//6; // A position error of 2.5 rotations results in 12 V output
-        slot0pitchConfig.kI = 0; // no output for integrated error
-        slot0pitchConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
+        slot0pitchConfig.kS = TurretConstants.pitch_kS; // Add 0.25 V output to overcome static friction
+        slot0pitchConfig.kV = TurretConstants.pitch_kV; // A velocity target of 1 rps results in 0.12 V output
+        slot0pitchConfig.kA = TurretConstants.pitch_kA; // An acceleration of 1 rps/s requires 0.01 V output
+        slot0pitchConfig.kP = TurretConstants.pitch_kP;//6; // A position error of 2.5 rotations results in 12 V output
+        slot0pitchConfig.kI = TurretConstants.pitch_kI; // no output for integrated error
+        slot0pitchConfig.kD = TurretConstants.pitch_kD; // A velocity error of 1 rps results in 0.1 V output
 
         var motionMagicConfigpitch = pitchConfig.MotionMagic;
-        motionMagicConfigpitch.MotionMagicCruiseVelocity = 16; // Target cruise velocity of 80 rps
-        motionMagicConfigpitch.MotionMagicAcceleration = 300; // Target acceleration of 160 rps/s (0.5 seconds)
-        motionMagicConfigpitch.MotionMagicJerk = 4000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+        motionMagicConfigpitch.MotionMagicCruiseVelocity = TurretConstants.pitchMotionMagicCruiseVelocity;
+        motionMagicConfigpitch.MotionMagicAcceleration = TurretConstants.pitchMotionMagicAcceleration;
+        motionMagicConfigpitch.MotionMagicJerk = TurretConstants.pitchMotionMagicJerk;
 
         var slot0flywheelConfig = flywheelConfig.Slot0;
-        slot0flywheelConfig.kS = TurretConstants.kS; // Add 0.2 V output to overcome static friction
-        slot0flywheelConfig.kV = TurretConstants.kV; // A velocity target of 1 rps results in 0.1 V output
-        slot0flywheelConfig.kA = TurretConstants.kA; // An acceleration of 1 rps/s requires 0.005 V output
-        slot0flywheelConfig.kP = TurretConstants.kP; // A position error of 2.5 rotations results in 12 V output
-        slot0flywheelConfig.kI = 0; // no output for integrated error
-        slot0flywheelConfig.kD = 0; // A velocity error of 1 rps results in 0.05 V output
+        slot0flywheelConfig.kS = TurretConstants.flywheel_kS; // Add 0.2 V output to overcome static friction
+        slot0flywheelConfig.kV = TurretConstants.flywheel_kV; // A velocity target of 1 rps results in 0.1 V output
+        slot0flywheelConfig.kA = TurretConstants.flywheel_kA; // An acceleration of 1 rps/s requires 0.005 V output
+        slot0flywheelConfig.kP = TurretConstants.flywheel_kP; // A position error of 2.5 rotations results in 12 V output
+        slot0flywheelConfig.kI = TurretConstants.flywheel_kI; // no output for integrated error
+        slot0flywheelConfig.kD = TurretConstants.flywheel_kD; // A velocity error of 1 rps results in 0.05 V output
 
         yawConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
         this.m_yaw = new TalonFX(21, TurretConstants.canBus);
         this.m_yaw.getConfigurator().apply(yawConfig);
         this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
-        //this.m_yaw.setControl(yawControl);
 
         pitchConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; //TODO ensure correct direction
 
@@ -98,16 +140,20 @@ public class Turret extends SubsystemBase {
         this.m_flywheel = new TalonFX(23, TurretConstants.canBus);
         this.m_flywheel.getConfigurator().apply(flywheelConfig);
         this.flywheelControl = new VelocityVoltage(0);
-        this.m_flywheel.setControl(flywheelControl);
 
         this.flywheelSysIdControl = new VoltageOut(0).withEnableFOC(true);
         this.voltageStatusSignal = this.m_flywheel.getMotorVoltage();
         this.flywheelPositionSignal = this.m_flywheel.getPosition();
         this.flywheelVelocitySignal = this.m_flywheel.getVelocity();
-        this.m_flywheel.optimizeBusUtilization();
+        this.pitchPositionSignal = this.m_pitch.getPosition();
+
         this.voltageStatusSignal.setUpdateFrequency(1000);
         this.flywheelPositionSignal.setUpdateFrequency(1000);
         this.flywheelVelocitySignal.setUpdateFrequency(1000);
+
+        this.m_flywheel.optimizeBusUtilization();
+        this.m_pitch.optimizeBusUtilization();
+        this.m_yaw.optimizeBusUtilization();
 
         SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
                 this::setVoltage,
@@ -161,6 +207,87 @@ public class Turret extends SubsystemBase {
         this.m_flywheel.setControl(this.flywheelControl);
     }
 
+    private void updateDashboardConfig() {
+        Slot0Configs yawSlot = yawConfig.Slot0;
+        MotionMagicConfigs yawMM = yawConfig.MotionMagic;
+
+        Slot0Configs pitchSlot = pitchConfig.Slot0;
+        MotionMagicConfigs pitchMM = pitchConfig.MotionMagic;
+
+        Slot0Configs flySlot = flywheelConfig.Slot0;
+
+        boolean changed = false;
+
+        double newYawKS = ln_yaw_kS.get();
+        if (yawSlot.kS != newYawKS) { yawSlot.kS = newYawKS; changed = true; TurretConstants.yaw_kS = newYawKS; }
+        double newYawKV = ln_yaw_kV.get();
+        if (yawSlot.kV != newYawKV) { yawSlot.kV = newYawKV; changed = true; TurretConstants.yaw_kV = newYawKV; }
+        double newYawKA = ln_yaw_kA.get();
+        if (yawSlot.kA != newYawKA) { yawSlot.kA = newYawKA; changed = true; TurretConstants.yaw_kA = newYawKA; }
+        double newYawKP = ln_yaw_kP.get();
+        if (yawSlot.kP != newYawKP) { yawSlot.kP = newYawKP; changed = true; TurretConstants.yaw_kP = newYawKP; }
+        double newYawKI = ln_yaw_kI.get();
+        if (yawSlot.kI != newYawKI) { yawSlot.kI = newYawKI; changed = true; TurretConstants.yaw_kI = newYawKI; }
+        double newYawKD = ln_yaw_kD.get();
+        if (yawSlot.kD != newYawKD) { yawSlot.kD = newYawKD; changed = true; TurretConstants.yaw_kD = newYawKD; }
+
+        double newYawCruise = ln_yaw_cruise.get();
+        if (yawMM.MotionMagicCruiseVelocity != newYawCruise) { yawMM.MotionMagicCruiseVelocity = newYawCruise; changed = true; TurretConstants.yawMotionMagicCruiseVelocity = newYawCruise; }
+        double newYawAcc = ln_yaw_acc.get();
+        if (yawMM.MotionMagicAcceleration != newYawAcc) { yawMM.MotionMagicAcceleration = newYawAcc; changed = true; TurretConstants.yawMotionMagicAcceleration = newYawAcc; }
+        double newYawJerk = ln_yaw_jerk.get();
+        if (yawMM.MotionMagicJerk != newYawJerk) { yawMM.MotionMagicJerk = newYawJerk; changed = true; TurretConstants.yawMotionMagicJerk = newYawJerk; }
+
+        double newPitchKS = ln_pitch_kS.get();
+        if (pitchSlot.kS != newPitchKS) { pitchSlot.kS = newPitchKS; changed = true; TurretConstants.pitch_kS = newPitchKS; }
+        double newPitchKV = ln_pitch_kV.get();
+        if (pitchSlot.kV != newPitchKV) { pitchSlot.kV = newPitchKV; changed = true; TurretConstants.pitch_kV = newPitchKV; }
+        double newPitchKA = ln_pitch_kA.get();
+        if (pitchSlot.kA != newPitchKA) { pitchSlot.kA = newPitchKA; changed = true; TurretConstants.pitch_kA = newPitchKA; }
+        double newPitchKP = ln_pitch_kP.get();
+        if (pitchSlot.kP != newPitchKP) { pitchSlot.kP = newPitchKP; changed = true; TurretConstants.pitch_kP = newPitchKP; }
+        double newPitchKI = ln_pitch_kI.get();
+        if (pitchSlot.kI != newPitchKI) { pitchSlot.kI = newPitchKI; changed = true; TurretConstants.pitch_kI = newPitchKI; }
+        double newPitchKD = ln_pitch_kD.get();
+        if (pitchSlot.kD != newPitchKD) { pitchSlot.kD = newPitchKD; changed = true; TurretConstants.pitch_kD = newPitchKD; }
+
+        double newPitchCruise = ln_pitch_cruise.get();
+        if (pitchMM.MotionMagicCruiseVelocity != newPitchCruise) { pitchMM.MotionMagicCruiseVelocity = newPitchCruise; changed = true; TurretConstants.pitchMotionMagicCruiseVelocity = newPitchCruise; }
+        double newPitchAcc = ln_pitch_acc.get();
+        if (pitchMM.MotionMagicAcceleration != newPitchAcc) { pitchMM.MotionMagicAcceleration = newPitchAcc; changed = true; TurretConstants.pitchMotionMagicAcceleration = newPitchAcc; }
+        double newPitchJerk = ln_pitch_jerk.get();
+        if (pitchMM.MotionMagicJerk != newPitchJerk) { pitchMM.MotionMagicJerk = newPitchJerk; changed = true; TurretConstants.pitchMotionMagicJerk = newPitchJerk; }
+
+        double newFlyKS = ln_fly_kS.get();
+        if (flySlot.kS != newFlyKS) { flySlot.kS = newFlyKS; changed = true; TurretConstants.flywheel_kS = newFlyKS; }
+        double newFlyKV = ln_fly_kV.get();
+        if (flySlot.kV != newFlyKV) { flySlot.kV = newFlyKV; changed = true; TurretConstants.flywheel_kV = newFlyKV; }
+        double newFlyKA = ln_fly_kA.get();
+        if (flySlot.kA != newFlyKA) { flySlot.kA = newFlyKA; changed = true; TurretConstants.flywheel_kA = newFlyKA; }
+        double newFlyKP = ln_fly_kP.get();
+        if (flySlot.kP != newFlyKP) { flySlot.kP = newFlyKP; changed = true; TurretConstants.flywheel_kP = newFlyKP; }
+        double newFlyKI = ln_fly_kI.get();
+        if (flySlot.kI != newFlyKI) { flySlot.kI = newFlyKI; changed = true; TurretConstants.flywheel_kI = newFlyKI; }
+        double newFlyKD = ln_fly_kD.get();
+        if (flySlot.kD != newFlyKD) { flySlot.kD = newFlyKD; changed = true; TurretConstants.flywheel_kD = newFlyKD; }
+
+        // non motor constants: write unconditionally
+        TurretConstants.motorToYawRot = ln_motorToYawRot.get();
+        TurretConstants.motorRotToPitchDeg = ln_motorRotToPitchDeg.get();
+        TurretConstants.motorToFlywheelRot = ln_motorToFlywheelRot.get();
+        TurretConstants.sysIdRampRate = ln_sysIdRamp.get();
+        TurretConstants.sysIdDynamicStepVoltage = ln_sysIdStep.get();
+
+        if (changed) {
+            yawConfig = yawConfig.withSlot0(yawSlot).withMotionMagic(yawMM);
+            pitchConfig = pitchConfig.withSlot0(pitchSlot).withMotionMagic(pitchMM);
+            flywheelConfig = flywheelConfig.withSlot0(flySlot);
+            m_yaw.getConfigurator().apply(yawConfig);
+            m_pitch.getConfigurator().apply(pitchConfig);
+            m_flywheel.getConfigurator().apply(flywheelConfig);
+        }
+    }
+
     public TurretState getTurretState() {
         return new TurretState(
                 Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot).minus(TurretConstants.turretOffset),
@@ -209,7 +336,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void periodic() {
-        SmartDashboard.putNumber("pitch encoder value", this.m_pitch.getPosition().getValueAsDouble());
+        if (tuningEnabled.get()) updateDashboardConfig();
     }
 
     public void setVoltage(Voltage voltage) {
@@ -242,5 +369,9 @@ public class Turret extends SubsystemBase {
             this.yaw = this.yaw.plus(rotation);
             return this;
         }
+    }
+    @AutoLogOutput(key = TurretConstants.dashboardPath + "/pitchPosition")
+    public double getPitchPosition() {
+        return this.pitchPositionSignal.refresh().getValueAsDouble();
     }
 }
