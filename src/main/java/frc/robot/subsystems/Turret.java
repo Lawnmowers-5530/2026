@@ -44,46 +44,7 @@ public class Turret extends SubsystemBase {
     private StatusSignal<AngularVelocity> flywheelVelocitySignal;
     private StatusSignal<Voltage> voltageStatusSignal;
     private SysIdRoutine flywheelRoutine;
-
-
-    // Tuning enable
-    private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(TurretConstants.dashboardPath + "/tuningEnabled");
-
-    // Grouped LoggedNetworkNumber declarations for motor configs and non-motor constants
-    private final LoggedNetworkNumber
-        ln_yaw_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kS", TurretConstants.yaw_kS),
-        ln_yaw_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kV", TurretConstants.yaw_kV),
-        ln_yaw_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kA", TurretConstants.yaw_kA),
-        ln_yaw_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kP", TurretConstants.yaw_kP),
-        ln_yaw_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kI", TurretConstants.yaw_kI),
-        ln_yaw_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kD", TurretConstants.yaw_kD),
-        ln_yaw_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/cruise", TurretConstants.yawMotionMagicCruiseVelocity),
-        ln_yaw_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/acc", TurretConstants.yawMotionMagicAcceleration),
-        ln_yaw_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/jerk", TurretConstants.yawMotionMagicJerk),
-
-        ln_pitch_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kS", TurretConstants.pitch_kS),
-        ln_pitch_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kV", TurretConstants.pitch_kV),
-        ln_pitch_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kA", TurretConstants.pitch_kA),
-        ln_pitch_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kP", TurretConstants.pitch_kP),
-        ln_pitch_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kI", TurretConstants.pitch_kI),
-        ln_pitch_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kD", TurretConstants.pitch_kD),
-        ln_pitch_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/cruise", TurretConstants.pitchMotionMagicCruiseVelocity),
-        ln_pitch_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/acc", TurretConstants.pitchMotionMagicAcceleration),
-        ln_pitch_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/jerk", TurretConstants.pitchMotionMagicJerk),
-
-        ln_fly_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kS", TurretConstants.flywheel_kS),
-        ln_fly_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kV", TurretConstants.flywheel_kV),
-        ln_fly_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kA", TurretConstants.flywheel_kA),
-        ln_fly_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kP", TurretConstants.flywheel_kP),
-        ln_fly_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kI", TurretConstants.flywheel_kI),
-        ln_fly_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kD", TurretConstants.flywheel_kD),
-
-        // non-motor tunables (updated unconditionally)
-        ln_motorToYawRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToYawRot", TurretConstants.motorToYawRot),
-        ln_motorRotToPitchDeg = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorRotToPitchDeg", TurretConstants.motorRotToPitchDeg),
-        ln_motorToFlywheelRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToFlywheelRot", TurretConstants.motorToFlywheelRot),
-        ln_sysIdRamp = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdRampRate", TurretConstants.sysIdRampRate),
-        ln_sysIdStep = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdDynamicStepVoltage", TurretConstants.sysIdDynamicStepVoltage);
+    private Tunables tunables;
 
     public Turret() {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -156,37 +117,43 @@ public class Turret extends SubsystemBase {
         this.m_yaw.optimizeBusUtilization();
 
         SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
-                this::setVoltage,
-                null,
-                this
+            this::setVoltage,
+            null,
+            this
         );
 
         SysIdRoutine.Config flywheelConfig = new SysIdRoutine.Config(
-                Volts.per(Second).of(0.6), // 1 V/s voltage ramp
-                Volts.of(3),
-                Second.of(4),
-                (state) -> {
-                    SignalLogger.writeString("flywheelState", state.toString());
-                }
+            Volts.per(Second).of(0.6), // 1 V/s voltage ramp
+            Volts.of(3),
+            Second.of(4),
+            (state) -> {
+                SignalLogger.writeString("flywheelState", state.toString());
+            }
         );
 
         this.flywheelRoutine = new SysIdRoutine(flywheelConfig, flywheelMechanism);
+
+        tunables = new Tunables();
     }
 
     public void setYaw(Rotation2d pos) {
         // convert angle to controller position units (radians here as an example)
-        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians())).plus(TurretConstants.turretOffset);
+        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians()))
+            .plus(TurretConstants.turretOffset);
 
         this.yawControl.Position = targetPosition.times(TurretConstants.motorToYawRot).getRotations();
         this.m_yaw.setControl(this.yawControl);
 
         SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
     }
+
     public Command smartDashboardTurretCommand(String pitchKey, String speedRPSKey, String yawKey) {
         SmartDashboard.putNumber(yawKey, 0);
         SmartDashboard.putNumber(speedRPSKey, 0);
         SmartDashboard.putNumber(pitchKey, 72);
-        return this.setTurretStateCommand(()->{return new TurretState(Rotation2d.fromDegrees(SmartDashboard.getNumber(yawKey, 0)), Rotation2d.fromDegrees(SmartDashboard.getNumber(pitchKey, 72)), SmartDashboard.getNumber(speedRPSKey, 0));});
+        return this.setTurretStateCommand(() -> {
+            return new TurretState(Rotation2d.fromDegrees(SmartDashboard.getNumber(yawKey, 0)), Rotation2d.fromDegrees(SmartDashboard.getNumber(pitchKey, 72)), SmartDashboard.getNumber(speedRPSKey, 0));
+        });
     }
 
     public void setPitch(Rotation2d pos) {
@@ -207,92 +174,13 @@ public class Turret extends SubsystemBase {
         this.m_flywheel.setControl(this.flywheelControl);
     }
 
-    private void updateDashboardConfig() {
-        Slot0Configs yawSlot = yawConfig.Slot0;
-        MotionMagicConfigs yawMM = yawConfig.MotionMagic;
-
-        Slot0Configs pitchSlot = pitchConfig.Slot0;
-        MotionMagicConfigs pitchMM = pitchConfig.MotionMagic;
-
-        Slot0Configs flySlot = flywheelConfig.Slot0;
-
-        boolean changed = false;
-
-        double newYawKS = ln_yaw_kS.get();
-        if (yawSlot.kS != newYawKS) { yawSlot.kS = newYawKS; changed = true; TurretConstants.yaw_kS = newYawKS; }
-        double newYawKV = ln_yaw_kV.get();
-        if (yawSlot.kV != newYawKV) { yawSlot.kV = newYawKV; changed = true; TurretConstants.yaw_kV = newYawKV; }
-        double newYawKA = ln_yaw_kA.get();
-        if (yawSlot.kA != newYawKA) { yawSlot.kA = newYawKA; changed = true; TurretConstants.yaw_kA = newYawKA; }
-        double newYawKP = ln_yaw_kP.get();
-        if (yawSlot.kP != newYawKP) { yawSlot.kP = newYawKP; changed = true; TurretConstants.yaw_kP = newYawKP; }
-        double newYawKI = ln_yaw_kI.get();
-        if (yawSlot.kI != newYawKI) { yawSlot.kI = newYawKI; changed = true; TurretConstants.yaw_kI = newYawKI; }
-        double newYawKD = ln_yaw_kD.get();
-        if (yawSlot.kD != newYawKD) { yawSlot.kD = newYawKD; changed = true; TurretConstants.yaw_kD = newYawKD; }
-
-        double newYawCruise = ln_yaw_cruise.get();
-        if (yawMM.MotionMagicCruiseVelocity != newYawCruise) { yawMM.MotionMagicCruiseVelocity = newYawCruise; changed = true; TurretConstants.yawMotionMagicCruiseVelocity = newYawCruise; }
-        double newYawAcc = ln_yaw_acc.get();
-        if (yawMM.MotionMagicAcceleration != newYawAcc) { yawMM.MotionMagicAcceleration = newYawAcc; changed = true; TurretConstants.yawMotionMagicAcceleration = newYawAcc; }
-        double newYawJerk = ln_yaw_jerk.get();
-        if (yawMM.MotionMagicJerk != newYawJerk) { yawMM.MotionMagicJerk = newYawJerk; changed = true; TurretConstants.yawMotionMagicJerk = newYawJerk; }
-
-        double newPitchKS = ln_pitch_kS.get();
-        if (pitchSlot.kS != newPitchKS) { pitchSlot.kS = newPitchKS; changed = true; TurretConstants.pitch_kS = newPitchKS; }
-        double newPitchKV = ln_pitch_kV.get();
-        if (pitchSlot.kV != newPitchKV) { pitchSlot.kV = newPitchKV; changed = true; TurretConstants.pitch_kV = newPitchKV; }
-        double newPitchKA = ln_pitch_kA.get();
-        if (pitchSlot.kA != newPitchKA) { pitchSlot.kA = newPitchKA; changed = true; TurretConstants.pitch_kA = newPitchKA; }
-        double newPitchKP = ln_pitch_kP.get();
-        if (pitchSlot.kP != newPitchKP) { pitchSlot.kP = newPitchKP; changed = true; TurretConstants.pitch_kP = newPitchKP; }
-        double newPitchKI = ln_pitch_kI.get();
-        if (pitchSlot.kI != newPitchKI) { pitchSlot.kI = newPitchKI; changed = true; TurretConstants.pitch_kI = newPitchKI; }
-        double newPitchKD = ln_pitch_kD.get();
-        if (pitchSlot.kD != newPitchKD) { pitchSlot.kD = newPitchKD; changed = true; TurretConstants.pitch_kD = newPitchKD; }
-
-        double newPitchCruise = ln_pitch_cruise.get();
-        if (pitchMM.MotionMagicCruiseVelocity != newPitchCruise) { pitchMM.MotionMagicCruiseVelocity = newPitchCruise; changed = true; TurretConstants.pitchMotionMagicCruiseVelocity = newPitchCruise; }
-        double newPitchAcc = ln_pitch_acc.get();
-        if (pitchMM.MotionMagicAcceleration != newPitchAcc) { pitchMM.MotionMagicAcceleration = newPitchAcc; changed = true; TurretConstants.pitchMotionMagicAcceleration = newPitchAcc; }
-        double newPitchJerk = ln_pitch_jerk.get();
-        if (pitchMM.MotionMagicJerk != newPitchJerk) { pitchMM.MotionMagicJerk = newPitchJerk; changed = true; TurretConstants.pitchMotionMagicJerk = newPitchJerk; }
-
-        double newFlyKS = ln_fly_kS.get();
-        if (flySlot.kS != newFlyKS) { flySlot.kS = newFlyKS; changed = true; TurretConstants.flywheel_kS = newFlyKS; }
-        double newFlyKV = ln_fly_kV.get();
-        if (flySlot.kV != newFlyKV) { flySlot.kV = newFlyKV; changed = true; TurretConstants.flywheel_kV = newFlyKV; }
-        double newFlyKA = ln_fly_kA.get();
-        if (flySlot.kA != newFlyKA) { flySlot.kA = newFlyKA; changed = true; TurretConstants.flywheel_kA = newFlyKA; }
-        double newFlyKP = ln_fly_kP.get();
-        if (flySlot.kP != newFlyKP) { flySlot.kP = newFlyKP; changed = true; TurretConstants.flywheel_kP = newFlyKP; }
-        double newFlyKI = ln_fly_kI.get();
-        if (flySlot.kI != newFlyKI) { flySlot.kI = newFlyKI; changed = true; TurretConstants.flywheel_kI = newFlyKI; }
-        double newFlyKD = ln_fly_kD.get();
-        if (flySlot.kD != newFlyKD) { flySlot.kD = newFlyKD; changed = true; TurretConstants.flywheel_kD = newFlyKD; }
-
-        // non motor constants: write unconditionally
-        TurretConstants.motorToYawRot = ln_motorToYawRot.get();
-        TurretConstants.motorRotToPitchDeg = ln_motorRotToPitchDeg.get();
-        TurretConstants.motorToFlywheelRot = ln_motorToFlywheelRot.get();
-        TurretConstants.sysIdRampRate = ln_sysIdRamp.get();
-        TurretConstants.sysIdDynamicStepVoltage = ln_sysIdStep.get();
-
-        if (changed) {
-            yawConfig = yawConfig.withSlot0(yawSlot).withMotionMagic(yawMM);
-            pitchConfig = pitchConfig.withSlot0(pitchSlot).withMotionMagic(pitchMM);
-            flywheelConfig = flywheelConfig.withSlot0(flySlot);
-            m_yaw.getConfigurator().apply(yawConfig);
-            m_pitch.getConfigurator().apply(pitchConfig);
-            m_flywheel.getConfigurator().apply(flywheelConfig);
-        }
-    }
-
     public TurretState getTurretState() {
         return new TurretState(
-                Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot).minus(TurretConstants.turretOffset),
-                Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / TurretConstants.motorRotToPitchDeg).plus(TurretConstants.pitchZeroAngle),
-                this.m_flywheel.getVelocity().getValueAsDouble() * TurretConstants.motorToFlywheelRot
+            Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot)
+                .minus(TurretConstants.turretOffset),
+            Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / TurretConstants.motorRotToPitchDeg)
+                .plus(TurretConstants.pitchZeroAngle),
+            this.m_flywheel.getVelocity().getValueAsDouble() * TurretConstants.motorToFlywheelRot
         );
     }
 
@@ -336,7 +224,7 @@ public class Turret extends SubsystemBase {
     }
 
     public void periodic() {
-        if (tuningEnabled.get()) updateDashboardConfig();
+        tunables.updateDashboardConfig();
     }
 
     public void setVoltage(Voltage voltage) {
@@ -346,6 +234,11 @@ public class Turret extends SubsystemBase {
 
     public SysIdRoutine getSysIdRoutine() {
         return flywheelRoutine;
+    }
+
+    @AutoLogOutput(key = TurretConstants.dashboardPath + "/pitchPosition")
+    public double getPitchPosition() {
+        return this.pitchPositionSignal.refresh().getValueAsDouble();
     }
 
     public static class TurretState {
@@ -362,7 +255,7 @@ public class Turret extends SubsystemBase {
         @Override
         public String toString() {
             return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)",
-                    yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
+                yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
         }
 
         public TurretState rotateBy(Rotation2d rotation) {
@@ -370,8 +263,224 @@ public class Turret extends SubsystemBase {
             return this;
         }
     }
-    @AutoLogOutput(key = TurretConstants.dashboardPath + "/pitchPosition")
-    public double getPitchPosition() {
-        return this.pitchPositionSignal.refresh().getValueAsDouble();
+
+    private class Tunables {
+        // Tuning enable
+        private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(TurretConstants.dashboardPath + "/tuningEnabled");
+
+        // Grouped LoggedNetworkNumber declarations for motor configs and non-motor constants
+        private final LoggedNetworkNumber
+            yaw_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kS", TurretConstants.yaw_kS),
+            yaw_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kV", TurretConstants.yaw_kV),
+            yaw_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kA", TurretConstants.yaw_kA),
+            yaw_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kP", TurretConstants.yaw_kP),
+            yaw_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kI", TurretConstants.yaw_kI),
+            yaw_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kD", TurretConstants.yaw_kD),
+            yaw_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/cruise", TurretConstants.yawMotionMagicCruiseVelocity),
+            yaw_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/acc", TurretConstants.yawMotionMagicAcceleration),
+            yaw_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/jerk", TurretConstants.yawMotionMagicJerk),
+
+        pitch_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kS", TurretConstants.pitch_kS),
+            pitch_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kV", TurretConstants.pitch_kV),
+            pitch_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kA", TurretConstants.pitch_kA),
+            pitch_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kP", TurretConstants.pitch_kP),
+            pitch_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kI", TurretConstants.pitch_kI),
+            pitch_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kD", TurretConstants.pitch_kD),
+            pitch_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/cruise", TurretConstants.pitchMotionMagicCruiseVelocity),
+            pitch_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/acc", TurretConstants.pitchMotionMagicAcceleration),
+            pitch_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/jerk", TurretConstants.pitchMotionMagicJerk),
+
+        fly_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kS", TurretConstants.flywheel_kS),
+            fly_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kV", TurretConstants.flywheel_kV),
+            fly_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kA", TurretConstants.flywheel_kA),
+            fly_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kP", TurretConstants.flywheel_kP),
+            fly_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kI", TurretConstants.flywheel_kI),
+            fly_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kD", TurretConstants.flywheel_kD),
+
+        // non-motor tunables (updated unconditionally)
+        motorToYawRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToYawRot", TurretConstants.motorToYawRot),
+            motorRotToPitchDeg = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorRotToPitchDeg", TurretConstants.motorRotToPitchDeg),
+            motorToFlywheelRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToFlywheelRot", TurretConstants.motorToFlywheelRot),
+            sysIdRamp = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdRampRate", TurretConstants.sysIdRampRate),
+            sysIdStep = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdDynamicStepVoltage", TurretConstants.sysIdDynamicStepVoltage);
+
+        private void updateDashboardConfig() {
+            if (!tuningEnabled.get()) return;
+
+            Slot0Configs yawSlot = yawConfig.Slot0;
+            MotionMagicConfigs yawMM = yawConfig.MotionMagic;
+
+            Slot0Configs pitchSlot = pitchConfig.Slot0;
+            MotionMagicConfigs pitchMM = pitchConfig.MotionMagic;
+
+            Slot0Configs flySlot = flywheelConfig.Slot0;
+
+            boolean changed = false;
+
+            double newYawKS = yaw_kS.get();
+            if (yawSlot.kS != newYawKS) {
+                yawSlot.kS = newYawKS;
+                changed = true;
+                TurretConstants.yaw_kS = newYawKS;
+            }
+            double newYawKV = yaw_kV.get();
+            if (yawSlot.kV != newYawKV) {
+                yawSlot.kV = newYawKV;
+                changed = true;
+                TurretConstants.yaw_kV = newYawKV;
+            }
+            double newYawKA = yaw_kA.get();
+            if (yawSlot.kA != newYawKA) {
+                yawSlot.kA = newYawKA;
+                changed = true;
+                TurretConstants.yaw_kA = newYawKA;
+            }
+            double newYawKP = yaw_kP.get();
+            if (yawSlot.kP != newYawKP) {
+                yawSlot.kP = newYawKP;
+                changed = true;
+                TurretConstants.yaw_kP = newYawKP;
+            }
+            double newYawKI = yaw_kI.get();
+            if (yawSlot.kI != newYawKI) {
+                yawSlot.kI = newYawKI;
+                changed = true;
+                TurretConstants.yaw_kI = newYawKI;
+            }
+            double newYawKD = yaw_kD.get();
+            if (yawSlot.kD != newYawKD) {
+                yawSlot.kD = newYawKD;
+                changed = true;
+                TurretConstants.yaw_kD = newYawKD;
+            }
+
+            double newYawCruise = yaw_cruise.get();
+            if (yawMM.MotionMagicCruiseVelocity != newYawCruise) {
+                yawMM.MotionMagicCruiseVelocity = newYawCruise;
+                changed = true;
+                TurretConstants.yawMotionMagicCruiseVelocity = newYawCruise;
+            }
+            double newYawAcc = yaw_acc.get();
+            if (yawMM.MotionMagicAcceleration != newYawAcc) {
+                yawMM.MotionMagicAcceleration = newYawAcc;
+                changed = true;
+                TurretConstants.yawMotionMagicAcceleration = newYawAcc;
+            }
+            double newYawJerk = yaw_jerk.get();
+            if (yawMM.MotionMagicJerk != newYawJerk) {
+                yawMM.MotionMagicJerk = newYawJerk;
+                changed = true;
+                TurretConstants.yawMotionMagicJerk = newYawJerk;
+            }
+
+            double newPitchKS = pitch_kS.get();
+            if (pitchSlot.kS != newPitchKS) {
+                pitchSlot.kS = newPitchKS;
+                changed = true;
+                TurretConstants.pitch_kS = newPitchKS;
+            }
+            double newPitchKV = pitch_kV.get();
+            if (pitchSlot.kV != newPitchKV) {
+                pitchSlot.kV = newPitchKV;
+                changed = true;
+                TurretConstants.pitch_kV = newPitchKV;
+            }
+            double newPitchKA = pitch_kA.get();
+            if (pitchSlot.kA != newPitchKA) {
+                pitchSlot.kA = newPitchKA;
+                changed = true;
+                TurretConstants.pitch_kA = newPitchKA;
+            }
+            double newPitchKP = pitch_kP.get();
+            if (pitchSlot.kP != newPitchKP) {
+                pitchSlot.kP = newPitchKP;
+                changed = true;
+                TurretConstants.pitch_kP = newPitchKP;
+            }
+            double newPitchKI = pitch_kI.get();
+            if (pitchSlot.kI != newPitchKI) {
+                pitchSlot.kI = newPitchKI;
+                changed = true;
+                TurretConstants.pitch_kI = newPitchKI;
+            }
+            double newPitchKD = pitch_kD.get();
+            if (pitchSlot.kD != newPitchKD) {
+                pitchSlot.kD = newPitchKD;
+                changed = true;
+                TurretConstants.pitch_kD = newPitchKD;
+            }
+
+            double newPitchCruise = pitch_cruise.get();
+            if (pitchMM.MotionMagicCruiseVelocity != newPitchCruise) {
+                pitchMM.MotionMagicCruiseVelocity = newPitchCruise;
+                changed = true;
+                TurretConstants.pitchMotionMagicCruiseVelocity = newPitchCruise;
+            }
+            double newPitchAcc = pitch_acc.get();
+            if (pitchMM.MotionMagicAcceleration != newPitchAcc) {
+                pitchMM.MotionMagicAcceleration = newPitchAcc;
+                changed = true;
+                TurretConstants.pitchMotionMagicAcceleration = newPitchAcc;
+            }
+            double newPitchJerk = pitch_jerk.get();
+            if (pitchMM.MotionMagicJerk != newPitchJerk) {
+                pitchMM.MotionMagicJerk = newPitchJerk;
+                changed = true;
+                TurretConstants.pitchMotionMagicJerk = newPitchJerk;
+            }
+
+            double newFlyKS = fly_kS.get();
+            if (flySlot.kS != newFlyKS) {
+                flySlot.kS = newFlyKS;
+                changed = true;
+                TurretConstants.flywheel_kS = newFlyKS;
+            }
+            double newFlyKV = fly_kV.get();
+            if (flySlot.kV != newFlyKV) {
+                flySlot.kV = newFlyKV;
+                changed = true;
+                TurretConstants.flywheel_kV = newFlyKV;
+            }
+            double newFlyKA = fly_kA.get();
+            if (flySlot.kA != newFlyKA) {
+                flySlot.kA = newFlyKA;
+                changed = true;
+                TurretConstants.flywheel_kA = newFlyKA;
+            }
+            double newFlyKP = fly_kP.get();
+            if (flySlot.kP != newFlyKP) {
+                flySlot.kP = newFlyKP;
+                changed = true;
+                TurretConstants.flywheel_kP = newFlyKP;
+            }
+            double newFlyKI = fly_kI.get();
+            if (flySlot.kI != newFlyKI) {
+                flySlot.kI = newFlyKI;
+                changed = true;
+                TurretConstants.flywheel_kI = newFlyKI;
+            }
+            double newFlyKD = fly_kD.get();
+            if (flySlot.kD != newFlyKD) {
+                flySlot.kD = newFlyKD;
+                changed = true;
+                TurretConstants.flywheel_kD = newFlyKD;
+            }
+
+            // non motor constants: write unconditionally
+            TurretConstants.motorToYawRot = motorToYawRot.get();
+            TurretConstants.motorRotToPitchDeg = motorRotToPitchDeg.get();
+            TurretConstants.motorToFlywheelRot = motorToFlywheelRot.get();
+            TurretConstants.sysIdRampRate = sysIdRamp.get();
+            TurretConstants.sysIdDynamicStepVoltage = sysIdStep.get();
+
+            if (changed) {
+                yawConfig = yawConfig.withSlot0(yawSlot).withMotionMagic(yawMM);
+                pitchConfig = pitchConfig.withSlot0(pitchSlot).withMotionMagic(pitchMM);
+                flywheelConfig = flywheelConfig.withSlot0(flySlot);
+                m_yaw.getConfigurator().apply(yawConfig);
+                m_pitch.getConfigurator().apply(pitchConfig);
+                m_flywheel.getConfigurator().apply(flywheelConfig);
+            }
+        }
     }
 }

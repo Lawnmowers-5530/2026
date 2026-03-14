@@ -26,37 +26,20 @@ public class Spindexer extends SubsystemBase {
     VoltageOut spindexerControl = new VoltageOut(0);
     VoltageOut kickerControl = new VoltageOut(0);
 
-    private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(SpindexerConstants.dashboardPath + "/tuningEnabled");
-
-    private final LoggedNetworkNumber
-        ln_spindexerForwardSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerForwardSpeed", SpindexerConstants.spindexerForwardSpeed),
-        ln_spindexerFastSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerFastSpeed", SpindexerConstants.spindexerFastSpeed),
-        ln_spindexerReverseSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerReverseSpeed", SpindexerConstants.spindexerReverseSpeed),
-        ln_kickerForwardSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerForwardSpeed", SpindexerConstants.kickerForwardSpeed),
-        ln_kickerFastSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerFastSpeed", SpindexerConstants.kickerFastSpeed),
-        ln_kickerReverseSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerReverseSpeed", SpindexerConstants.kickerReverseSpeed);
+    Tunables tunables;
 
     public Spindexer() {
         this.spindexer.getConfigurator().apply(spindexerConfig);
         this.kicker.getConfigurator().apply(kickerConfig);
         spindexerControl.EnableFOC = true;
         kickerControl.EnableFOC = true;
+
+        tunables = new Tunables();
     }
 
     @Override
     public void periodic() {
-        if (tuningEnabled.get()) updateDashboardConfig();
-    }
-
-    private void updateDashboardConfig() {
-        // Directly update the constants from the dashboard values (no conditional checks)
-        SpindexerConstants.spindexerForwardSpeed = ln_spindexerForwardSpeed.get();
-        SpindexerConstants.spindexerFastSpeed = ln_spindexerFastSpeed.get();
-        SpindexerConstants.spindexerReverseSpeed = ln_spindexerReverseSpeed.get();
-
-        SpindexerConstants.kickerForwardSpeed = ln_kickerForwardSpeed.get();
-        SpindexerConstants.kickerFastSpeed = ln_kickerFastSpeed.get();
-        SpindexerConstants.kickerReverseSpeed = ln_kickerReverseSpeed.get();
+        tunables.updateDashboardConfig();
     }
 
     public void spin() {
@@ -129,5 +112,30 @@ public class Spindexer extends SubsystemBase {
                         new ParallelDeadlineGroup(
                                 new WaitCommand(IndexerConstants.jitterTime),
                                 this.reverseCommand()));
+    }
+
+    private static class Tunables {
+        private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(SpindexerConstants.dashboardPath + "/tuningEnabled");
+
+        private final LoggedNetworkNumber
+            spindexerForwardSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerForwardSpeed", SpindexerConstants.spindexerForwardSpeed),
+            spindexerFastSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerFastSpeed", SpindexerConstants.spindexerFastSpeed),
+            spindexerReverseSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/spindexerReverseSpeed", SpindexerConstants.spindexerReverseSpeed),
+            kickerForwardSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerForwardSpeed", SpindexerConstants.kickerForwardSpeed),
+            kickerFastSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerFastSpeed", SpindexerConstants.kickerFastSpeed),
+            kickerReverseSpeed = new LoggedNetworkNumber(SpindexerConstants.dashboardPath + "/kickerReverseSpeed", SpindexerConstants.kickerReverseSpeed);
+
+        private void updateDashboardConfig() {
+            if (!tuningEnabled.get()) return;
+
+            // Directly update the constants from the dashboard values (no conditional checks)
+            SpindexerConstants.spindexerForwardSpeed = spindexerForwardSpeed.get();
+            SpindexerConstants.spindexerFastSpeed = spindexerFastSpeed.get();
+            SpindexerConstants.spindexerReverseSpeed = spindexerReverseSpeed.get();
+
+            SpindexerConstants.kickerForwardSpeed = kickerForwardSpeed.get();
+            SpindexerConstants.kickerFastSpeed = kickerFastSpeed.get();
+            SpindexerConstants.kickerReverseSpeed = kickerReverseSpeed.get();
+        }
     }
 }
