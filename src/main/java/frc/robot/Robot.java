@@ -10,8 +10,12 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.container.RobotContainer;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-public class Robot extends TimedRobot {
+public class Robot extends LoggedRobot {
 
     private final RobotContainer m_robotContainer;
 
@@ -22,6 +26,28 @@ public class Robot extends TimedRobot {
             .withJoystickReplay();
     private Command m_autonomousCommand;
     public Robot() {
+        Logger.recordMetadata("ProjectName", "5530 2026 Robot Code");
+        Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
+        Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
+        Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
+        Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
+        Logger.recordMetadata(
+            "GitDirty",
+            switch (BuildConstants.DIRTY) {
+                case 0 -> "All changes committed";
+                case 1 -> "Uncommitted changes";
+                default -> "Unknown";
+            });
+
+        if (isReal()) {
+            Logger.addDataReceiver(new WPILOGWriter());
+            Logger.addDataReceiver(new NT4Publisher());
+        } else {
+            Logger.recordMetadata("HootAutoReplay", "Disabled");
+        }
+
+        Logger.start();
+
         m_robotContainer = new RobotContainer();
         m_robotContainer.robotInit();
     }
