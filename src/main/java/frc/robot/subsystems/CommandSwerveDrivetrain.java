@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.*;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.container.Controller;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -381,8 +382,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
             // Uses imu and joystick data to determine if a collision has occurred
 
-            robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.kDefaultPeriod);
-            commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.kDefaultPeriod)
+            robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.defaultPeriodSecs);
+            commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.defaultPeriodSecs)
                     .times(SwerveConstants.maxSpeed);
         }
         previousAcceleration = accelerationVector;
