@@ -9,6 +9,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class SwerveConstants {
+    public final String dashboardPath = "Swerve";
     public final double maxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
     // speed
     public final double maxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second

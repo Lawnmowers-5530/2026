@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import frc.robot.container.Controller;
+import org.littletonrobotics.junction.AutoLog;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -125,11 +127,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     },
                     null,
                     this));
+
+    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/Field")
     Field2d field = new Field2d();
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCamBack);
     private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
+
+    Vision[] cameras = {visionBack, visionLeft};
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
     /* Keep track if we've ever applied the operator perspective before or not */
@@ -336,6 +342,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
+    Vector<N2> robotJerk;
+    Vector<N2> commandedJerk;
+    Vector<N2> accelerationVector;
+
     @Override
     public void periodic() {
         /*
@@ -351,7 +361,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          */
 
         field.setRobotPose(getState().Pose);
-        SmartDashboard.putData(field);
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(
@@ -362,32 +371,43 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             });
         }
 
-        Vector<N2> accelerationVector = new Translation2d(
+        accelerationVector = new Translation2d(
                 getPigeon2().getAccelerationX().getValue().in(MetersPerSecondPerSecond),
                 getPigeon2().getAccelerationY().getValue().in(MetersPerSecondPerSecond)).toVector();
         Vector<N2> joystickInput = Controller.getInstance().driveVector.get();
         if (previousAcceleration != null) {
-
             // Wrap these two booleans in debouncers. Can be used to check if our odometry
             // is reliable.
 
             // Uses imu and joystick data to determine if a collision has occurred
 
-            Vector<N2> robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.kDefaultPeriod);
-            Vector<N2> commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.kDefaultPeriod)
+            robotJerk = accelerationVector.minus(previousAcceleration).div(Robot.kDefaultPeriod);
+            commandedJerk = joystickInput.minus(previousJoystickInput).div(Robot.kDefaultPeriod)
                     .times(SwerveConstants.maxSpeed);
-            SmartDashboard.putNumber("Jerk Magnitude", new Translation2d(robotJerk).getSquaredNorm());
-            SmartDashboard.putNumber("acceleration", new Translation2d(accelerationVector).getSquaredNorm());
-            boolean collisionOcurred = new Translation2d(robotJerk).getSquaredNorm() > 25;
-            SmartDashboard.putBoolean("SwerveDrivetrain/CollisionOccurred", collisionOcurred);
-
-            // Get's if the drivetrain is skidding
-            double ratio = getSkiddingRatio(this.getState().ModuleStates, this.getKinematics());
-            SmartDashboard.putBoolean("SwerveDrivetrain/Skidding", ratio > 1.05);
         }
         previousAcceleration = accelerationVector;
         previousJoystickInput = joystickInput;
+    }
 
+    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/jerkMagnitude")
+    public double getJerkMagnitude() {
+        return new Translation2d(robotJerk).getSquaredNorm();
+    }
+
+    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/accelerationMagnitude")
+    public double getAccelerationMagnitude() {
+        return new Translation2d(accelerationVector).getSquaredNorm();
+    }
+
+    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/collisionOccurred")
+    public boolean getCollisionOccurred() {
+        return new Translation2d(robotJerk).getSquaredNorm() > SwerveConstants.collisionOccurredJerkThreshold;
+    }
+
+    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/skidding")
+    public boolean getSkidding() {
+        double ratio = getSkiddingRatio(this.getState().ModuleStates, this.getKinematics());
+        return ratio > 1.05;
     }
 
     private void startSimThread() {
@@ -451,7 +471,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * Custom consumer to use {@link EstimatedRobotPose} pair.
      */
     public void addVisionMeasurement(EstimatedRobotPose estimatedRobotPose, Matrix<N3, N1> estimateStdDevs) {
-        SmartDashboard.putString("pose output camera", estimatedRobotPose.estimatedPose.toString());
         super.addVisionMeasurement(estimatedRobotPose.estimatedPose.toPose2d(),
                 Utils.fpgaToCurrentTime(estimatedRobotPose.timestampSeconds), estimateStdDevs);
     }
