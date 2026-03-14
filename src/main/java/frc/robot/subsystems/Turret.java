@@ -72,10 +72,10 @@ public class Turret extends SubsystemBase {
         motionMagicConfigpitch.MotionMagicJerk = 4000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
         var slot0flywheelConfig = flywheelConfig.Slot0;
-        slot0flywheelConfig.kS = 0; // Add 0.2 V output to overcome static friction
-        slot0flywheelConfig.kV = 0; // A velocity target of 1 rps results in 0.1 V output
-        slot0flywheelConfig.kA = 0; // An acceleration of 1 rps/s requires 0.005 V output
-        slot0flywheelConfig.kP = 0.5; // A position error of 2.5 rotations results in 12 V output
+        slot0flywheelConfig.kS = TurretConstants.kS; // Add 0.2 V output to overcome static friction
+        slot0flywheelConfig.kV = TurretConstants.kV; // A velocity target of 1 rps results in 0.1 V output
+        slot0flywheelConfig.kA = TurretConstants.kA; // An acceleration of 1 rps/s requires 0.005 V output
+        slot0flywheelConfig.kP = TurretConstants.kP; // A position error of 2.5 rotations results in 12 V output
         slot0flywheelConfig.kI = 0; // no output for integrated error
         slot0flywheelConfig.kD = 0; // A velocity error of 1 rps results in 0.05 V output
 
@@ -116,9 +116,9 @@ public class Turret extends SubsystemBase {
         );
 
         SysIdRoutine.Config flywheelConfig = new SysIdRoutine.Config(
-                Volts.per(Second).of(1), // 1 V/s voltage ramp
-                Volts.of(7),
-                Second.of(10),
+                Volts.per(Second).of(0.6), // 1 V/s voltage ramp
+                Volts.of(3),
+                Second.of(4),
                 (state) -> {
                     SignalLogger.writeString("flywheelState", state.toString());
                 }
@@ -135,6 +135,12 @@ public class Turret extends SubsystemBase {
         this.m_yaw.setControl(this.yawControl);
 
         SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
+    }
+    public Command smartDashboardTurretCommand(String pitchKey, String speedRPSKey, String yawKey) {
+        SmartDashboard.putNumber(yawKey, 0);
+        SmartDashboard.putNumber(speedRPSKey, 0);
+        SmartDashboard.putNumber(pitchKey, 72);
+        return this.setTurretStateCommand(()->{return new TurretState(Rotation2d.fromDegrees(SmartDashboard.getNumber(yawKey, 0)), Rotation2d.fromDegrees(SmartDashboard.getNumber(pitchKey, 72)), SmartDashboard.getNumber(speedRPSKey, 0));});
     }
 
     public void setPitch(Rotation2d pos) {
@@ -208,7 +214,7 @@ public class Turret extends SubsystemBase {
 
     public void setVoltage(Voltage voltage) {
         this.flywheelSysIdControl = this.flywheelSysIdControl.withOutput(voltage);
-        this.m_flywheel.setControl(this.flywheelSysIdControl);
+        this.m_yaw.setControl(this.flywheelSysIdControl);
     }
 
     public SysIdRoutine getSysIdRoutine() {

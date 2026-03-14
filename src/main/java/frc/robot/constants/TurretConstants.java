@@ -32,7 +32,7 @@ public class TurretConstants { // TODO: fill in constants
     public final double sysIdRampRate = 1.0; // Volts per second
     public final double sysIdDynamicStepVoltage = 0.0; // Volts
     public final double sysIdTimeout = 10.0; // Seconds
-    public final Translation3d blueTargetPose = new Translation3d(4.619, 4.027, 0);
+    public final Translation3d blueTargetPose = new Translation3d(4.619, 4.0, 0);
     public final Translation3d bluePassingPose = new Translation3d(1.8, 4, 0);
     public final Translation3d redTargetPose = new Translation3d(Units.inchesToMeters(40),
             Units.inchesToMeters(40), Units.inchesToMeters(0)); // TODO change

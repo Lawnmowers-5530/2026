@@ -76,11 +76,11 @@ public class Intake extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putString("Intake State", this.currentState.toString());
-        SmartDashboard.putString("Pivot pos", this.pivotMotor.getPosition().toString());
-        SmartDashboard.putString("Target", this.pivotMotor.getAppliedControl().getControlInfo().toString());
-        SmartDashboard.putBoolean("pivotAtExtensionPosition", this.pivotAtExtensionPosition());
-        SmartDashboard.putNumber("applied output", this.pivotMotor.get());
+        SmartDashboard.putString("Intake/Intake State", this.currentState.toString());
+        SmartDashboard.putString("Intake/Pivot pos", this.pivotMotor.getPosition().toString());
+        SmartDashboard.putString("Intake/Target", this.pivotMotor.getAppliedControl().getControlInfo().toString());
+        SmartDashboard.putBoolean("Intake/pivotAtExtensionPosition", this.pivotAtExtensionPosition());
+        SmartDashboard.putNumber("Intake/applied output", this.pivotMotor.get());
         isStalling = stalliDebouncer.calculate(stallinBallin());
         // TODO Telemetry or logging
     }
@@ -89,10 +89,10 @@ public class Intake extends SubsystemBase {
         return Commands.runOnce(() -> {
             this.currentState = State.TUCKING;
             runMotor.set(0);
-            pivotMotor.setControl(new VoltageOut(-3));
+            pivotMotor.setControl(new VoltageOut(-1));
         }, this).andThen(Commands.waitUntil(this::isStalling)).andThen(() -> {
             this.currentState = State.TUCKED;
-            pivotMotor.setControl(new VoltageOut(-0.4));
+            pivotMotor.setControl(new VoltageOut(-0.2));
         }, this);
     }
 
@@ -105,7 +105,8 @@ public class Intake extends SubsystemBase {
     }
 
     public void runIntake() {
-        runMotor.setControl(new VoltageOut(7));
+
+        runMotor.setControl(new VoltageOut(SmartDashboard.getNumber("Intake/Run Speed", 7)));
     }
 
     public void stopIntake() {
@@ -113,9 +114,10 @@ public class Intake extends SubsystemBase {
     }
 
     public Command runIntakeCommand() {
+        SmartDashboard.putNumber("Intake/Run Speed", 7);
         return Commands.either(
                 Commands.run(() -> {
-                    SmartDashboard.putNumber("Intake speed", runMotor.get());
+                    SmartDashboard.putNumber("Intake/measured speed", runMotor.get());
                     // runMotor.setControl(new TorqueCurrentFOC(IntakeConstants.RUN_MOTOR_AMPS));
                     this.runIntake();
 
@@ -144,17 +146,18 @@ public class Intake extends SubsystemBase {
 
     public Command extendIntakeCommand() {
 
-        return Commands.either(new ParallelDeadlineGroup(Commands.waitUntil(this::isStalling),
+        return Commands.either(new ParallelDeadlineGroup(Commands.waitSeconds(3),
                         Commands.runOnce(() -> {
                             this.currentState = State.EXTENDING;
                             pivotMotor
-                                    .setControl(new VoltageOut(2));// new
+                                    .setControl(new VoltageOut(1));// new
                             // MotionMagicVoltage(IntakeConstants.EXTENDED_ENCODER_POSITION).withSlot(0));
                         }, this))
                         .andThen(Commands.runOnce(() -> {
                             this.currentState = State.EXTENDED;
                             pivotMotor.setControl(new TorqueCurrentFOC(IntakeConstants.pivotHoldDownAmps));
-                        }, this)),
+                        }, this))
+                        .andThen(runIntakeCommand()),
                 new InstantCommand(), this::canExtend);
     }
 

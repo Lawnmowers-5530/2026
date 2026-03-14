@@ -10,6 +10,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.events.EventTrigger;
 
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -20,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.lib.BuildMetadata;
 import frc.robot.Telemetry;
 import frc.robot.constants.SwerveConstants;
@@ -56,7 +58,7 @@ public class RobotContainer {
         this.bindings = new Bindings(this.subsystems);
 
         this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-        this.subsystems.turret.setDefaultCommand(this.bindings.turret.autoAim());
+        this.subsystems.turret.setDefaultCommand(this.subsystems.turret.smartDashboardTurretCommand("Turret Pitch", "Turret Speed", "Turret Yaw"));
 
         autoChooser = AutoBuilder.buildAutoChooser("singleShot");
         SmartDashboard.putData("autoChooser", autoChooser);
@@ -75,7 +77,7 @@ public class RobotContainer {
                 .toggleOnTrue(this.bindings.intake.toggleCollect());
         Controller.getInstance().getDriveController().rightBumper()
                 .toggleOnTrue(this.bindings.spindexer.spinKick());
-        Controller.getInstance().getSecondaryController().x().onTrue(this.bindings.drivetrain.zeroGyro());
+        Controller.getInstance().getDriveController().x().onTrue(this.bindings.drivetrain.zeroGyro());
 
         Controller.getInstance().getSecondaryController().rightBumper().toggleOnTrue(this.bindings.spindexer.spinKick().alongWith(this.bindings.turret.autoAim()));
         Controller.getInstance().getSecondaryController().leftBumper().toggleOnTrue(this.bindings.spindexer.passSpinKick().alongWith(this.bindings.turret.autoPass()));
@@ -91,11 +93,14 @@ public class RobotContainer {
 
         // Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(()
         // -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
-        Controller.getInstance().getSecondaryController().y()
+        Controller.getInstance().getDriveController().y()
                 .onTrue(this.subsystems.intake.extendIntakeCommand());
         Controller.getInstance().getSecondaryController().a()
                 .onTrue(this.subsystems.intake.tuckIntakeCommand());
-
+        Controller.getInstance().getSecondaryController().povUp().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction.kForward));
+        Controller.getInstance().getSecondaryController().povLeft().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kReverse));
+        Controller.getInstance().getSecondaryController().povRight().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kForward));
+        Controller.getInstance().getSecondaryController().povDown().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kReverse));
         //
     }
 

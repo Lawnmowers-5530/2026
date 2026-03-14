@@ -15,6 +15,6 @@ public class IntakeConstants {
     public final double extendedEncoderPosition = 2;
     public final double tuckedEncoderPosition = 0;
 
-    public final double pivotHoldDownAmps = 2;
+    public final double pivotHoldDownAmps = 10;
 
 }
