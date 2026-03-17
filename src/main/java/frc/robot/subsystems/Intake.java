@@ -101,9 +101,9 @@ public class Intake extends SubsystemBase {
             Commands.runOnce(() -> {
                     isExtended = true;
                     pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition).withEnableFOC(true));
-                }, this)
-                .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-                .andThen(this::applyTorqueDownward, this),
+                    }, this),
+                //.andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
+                //.andThen(this::applyTorqueDownward, this),
             () -> this.isExtended
         );
     }

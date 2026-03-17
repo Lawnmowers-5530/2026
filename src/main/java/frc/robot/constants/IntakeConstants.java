@@ -21,7 +21,7 @@ public class IntakeConstants {
         pivotKD = 0,
         pivotGravityArmPositionOffset = 0.1,
         pivotKG = 0,
-        pivotMotionMagicCruiseVelocity = 9,
+        pivotMotionMagicCruiseVelocity = 20,
         pivotMotionMagicAcceleration = 0.5,
         pivotMotionMagicJerk = 0.5,
         lowerJigglePos = 0,
@@ -50,6 +50,6 @@ public class IntakeConstants {
 
     public double
         pivotPositionTolerance = 0.001,
-        extendedEncoderPosition = 17.214,
+        extendedEncoderPosition = 17.21582,
         tuckedEncoderPosition = 0;
 }
