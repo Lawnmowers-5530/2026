@@ -13,6 +13,7 @@ import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.ParentDevice;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 
@@ -21,13 +22,7 @@ import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.constants.IntakeConstants;
 import frc.robot.constants.RobotConstants;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -35,22 +30,17 @@ import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
 import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class Intake extends SubsystemBase {
-    @AutoLogOutput(key = IntakeConstants.dashboardPath + "/Is Extended")
-    private boolean isExtended = false;
-
     private final TalonFX pivotMotor;
     private final TalonFX runMotor;
     private final Supplier<LinearVelocity> robotVelocity;
-
     private final Debouncer stallDebouncer;
+    private final StatusSignal<Angle> pivotPositionSignal;
+    Tunables tunables;
+    @AutoLogOutput(key = IntakeConstants.dashboardPath + "/Is Extended")
+    private boolean isExtended = false;
     @AutoLogOutput(key = IntakeConstants.dashboardPath + "/isStalling")
     private boolean isStalling = false;
-
     private TalonFXConfiguration pivotMotorConfig, runMotorConfig;
-
-    private final StatusSignal<Angle> pivotPositionSignal;
-
-    Tunables tunables;
 
     public Intake(Supplier<LinearVelocity> robotVelocity) {
         CommandScheduler.getInstance().registerSubsystem(this);
@@ -62,7 +52,7 @@ public class Intake extends SubsystemBase {
 
         TorqueCurrentConfigs torqueCurrentConfig = new TorqueCurrentConfigs();
         runMotorConfig = new TalonFXConfiguration()
-                .withTorqueCurrent(torqueCurrentConfig);
+            .withTorqueCurrent(torqueCurrentConfig);
         runMotor.getConfigurator().apply(runMotorConfig);
 
         pivotMotorConfig = new TalonFXConfiguration();
@@ -81,10 +71,10 @@ public class Intake extends SubsystemBase {
 
         MotionMagicConfigs pivotMotionMagicConfig = pivotMotorConfig.MotionMagic;
         pivotMotionMagicConfig.MotionMagicCruiseVelocity = IntakeConstants.pivotMotionMagicCruiseVelocity; // Target
-                                                                                                           // cruise
-                                                                                                           // velocity
+        // cruise
+        // velocity
         pivotMotionMagicConfig.MotionMagicAcceleration = IntakeConstants.pivotMotionMagicAcceleration; // Target
-                                                                                                       // acceleration
+        // acceleration
         pivotMotionMagicConfig.MotionMagicJerk = IntakeConstants.pivotMotionMagicJerk; // Target jerk
 
         pivotMotor.getConfigurator().apply(pivotMotorConfig);
@@ -105,24 +95,38 @@ public class Intake extends SubsystemBase {
 
     public Command toggleIntakeExtensionCommand() {
         return Commands.either(Commands.runOnce(() -> {
-            isExtended = false;
-            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition));
-        }, this), Commands.runOnce(() -> {
-            isExtended = true;
-            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition));
-        }, this)
-        .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-        .andThen(applyTorqueDownward()), () -> {
-            return isExtended;
-        });
+                isExtended = false;
+                pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition).withEnableFOC(true));
+            }, this),
+            Commands.runOnce(() -> {
+                    isExtended = true;
+                    pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition).withEnableFOC(true));
+                }, this)
+                .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
+                .andThen(this::applyTorqueDownward, this),
+            () -> this.isExtended
+        );
     }
+
+    public Command jiggleAndRunIntakeCommand() {
+        return new ParallelCommandGroup(
+            Commands.repeatingSequence(
+                    Commands.runOnce(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.lowerJigglePos))),
+                    Commands.waitSeconds(2),
+                    Commands.runOnce(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.upperJigglePos))),
+                    Commands.waitSeconds(2))
+                .finallyDo(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition))),
+            new RunCommand(this::runIntake).finallyDo(this::stopIntake)
+        );
+    }
+
     public Command jiggleIntakeCommand() {
         return Commands.repeatingSequence(
-            Commands.runOnce(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.lowerJigglePos)), this), 
-            Commands.waitSeconds(2), 
-            Commands.runOnce(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.upperJigglePos)), this),
-            Commands.waitSeconds(2))
-            .finallyDo(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition)));
+                Commands.runOnce(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.lowerJigglePos))),
+                Commands.waitSeconds(2),
+                Commands.runOnce(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.upperJigglePos))),
+                Commands.waitSeconds(2))
+            .finallyDo(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition)));
     }
 
     public void runIntake() {
@@ -135,14 +139,12 @@ public class Intake extends SubsystemBase {
 
     public Command runIntakeCommand() {
         SmartDashboard.putNumber("Intake/Run Speed", 7);
-        return Commands.runOnce(() -> this.runIntake(), this);
+        return Commands.runOnce(this::runIntake, this);
 
     }
 
     public Command stopIntakeCommand() {
-        return Commands.runOnce(() -> {
-            this.stopIntake();
-        });
+        return Commands.runOnce(this::stopIntake, this);
     }
 
     public Command applyTorqueDownward() {
@@ -153,13 +155,13 @@ public class Intake extends SubsystemBase {
 
     private boolean pivotAtTuckPosition() {
         return Math.abs(pivotMotor.getPosition().getValueAsDouble()
-                - IntakeConstants.tuckedEncoderPosition) <= IntakeConstants.pivotPositionTolerance;
+            - IntakeConstants.tuckedEncoderPosition) <= IntakeConstants.pivotPositionTolerance;
     }
 
     @AutoLogOutput(key = IntakeConstants.dashboardPath + "/pivotAtExtensionPosition")
     private boolean pivotAtExtensionPosition() {
         return Math.abs(pivotMotor.getPosition().getValueAsDouble()
-                - IntakeConstants.extendedEncoderPosition) <= IntakeConstants.pivotPositionTolerance;
+            - IntakeConstants.extendedEncoderPosition) <= IntakeConstants.pivotPositionTolerance;
     }
 
     public void zeroPivot() {
@@ -196,67 +198,66 @@ public class Intake extends SubsystemBase {
 
     public class Tunables {
         private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(
-                IntakeConstants.dashboardPath + "/tuningEnabled");
+            IntakeConstants.dashboardPath + "/tuningEnabled", false);
 
         private final LoggedNetworkNumber pivotKS = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kS",
-                IntakeConstants.pivotKS),
-                pivotKV = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kV", IntakeConstants.pivotKV),
-                pivotKA = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kA", IntakeConstants.pivotKA),
-                pivotKP = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kP", IntakeConstants.pivotKP),
-                pivotKI = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kI", IntakeConstants.pivotKI),
-                pivotKD = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kD", IntakeConstants.pivotKD),
-                pivotGravityArmPositionOffset = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/pivot/gravityArmPositionOffset",
-                        IntakeConstants.pivotGravityArmPositionOffset),
-                pivotKG = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kG", IntakeConstants.pivotKG),
-                pivotMotionMagicCruiseVelocity = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/pivot/motionMagicCruiseVelocity",
-                        IntakeConstants.pivotMotionMagicCruiseVelocity),
-                pivotMotionMagicAcceleration = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/pivot/motionMagicAcceleration",
-                        IntakeConstants.pivotMotionMagicAcceleration),
-                pivotMotionMagicJerk = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/motionMagicJerk",
-                        IntakeConstants.pivotMotionMagicJerk),
+            IntakeConstants.pivotKS),
+            pivotKV = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kV", IntakeConstants.pivotKV),
+            pivotKA = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kA", IntakeConstants.pivotKA),
+            pivotKP = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kP", IntakeConstants.pivotKP),
+            pivotKI = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kI", IntakeConstants.pivotKI),
+            pivotKD = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kD", IntakeConstants.pivotKD),
+            pivotGravityArmPositionOffset = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/pivot/gravityArmPositionOffset",
+                IntakeConstants.pivotGravityArmPositionOffset),
+            pivotKG = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/kG", IntakeConstants.pivotKG),
+            pivotMotionMagicCruiseVelocity = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/pivot/motionMagicCruiseVelocity",
+                IntakeConstants.pivotMotionMagicCruiseVelocity),
+            pivotMotionMagicAcceleration = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/pivot/motionMagicAcceleration",
+                IntakeConstants.pivotMotionMagicAcceleration),
+            pivotMotionMagicJerk = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/pivot/motionMagicJerk",
+                IntakeConstants.pivotMotionMagicJerk),
 
-                // non-motor-config constants
-                pivotRunMotorAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/runMotorAmps",
-                        IntakeConstants.runMotorAmps),
-                // pivotHoldDownAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath +
-                // "/pivotHoldDownAmps", IntakeConstants.pivotHoldDownAmps),
-                pivotTorqueDownwardAmps = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/pivotTorqueDownwardAmps",
-                        IntakeConstants.pivotTorqueDownwardAmps),
+        // non-motor-config constants
+        pivotRunMotorAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/runMotorAmps",
+            IntakeConstants.runMotorAmps),
+        // pivotHoldDownAmps = new LoggedNetworkNumber(IntakeConstants.dashboardPath +
+        // "/pivotHoldDownAmps", IntakeConstants.pivotHoldDownAmps),
+        pivotTorqueDownwardAmps = new LoggedNetworkNumber(
+            IntakeConstants.dashboardPath + "/pivotTorqueDownwardAmps",
+            IntakeConstants.pivotTorqueDownwardAmps),
 
-                stallDebounceSeconds = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/stallDebounceSeconds",
-                        IntakeConstants.stallDebounceSeconds),
-                stallCurrentAmpsThreshold = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/stallCurrentAmpsThreshold",
-                        IntakeConstants.stallCurrentAmpsThreshold),
-                stallVelocityRpsThreshold = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/stallVelocityRpsThreshold",
-                        IntakeConstants.stallVelocityRpsThreshold),
+        stallDebounceSeconds = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/stallDebounceSeconds",
+            IntakeConstants.stallDebounceSeconds),
+            stallCurrentAmpsThreshold = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/stallCurrentAmpsThreshold",
+                IntakeConstants.stallCurrentAmpsThreshold),
+            stallVelocityRpsThreshold = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/stallVelocityRpsThreshold",
+                IntakeConstants.stallVelocityRpsThreshold),
 
-                tuckVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckVoltage",
-                        IntakeConstants.tuckVoltage),
-                tuckHoldVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckHoldVoltage",
-                        IntakeConstants.tuckHoldVoltage),
-                extendVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/extendVoltage",
-                        IntakeConstants.extendVoltage),
-                runMotorVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/runMotorVoltage",
-                        IntakeConstants.runMotorVoltage),
+        tuckVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckVoltage",
+            IntakeConstants.tuckVoltage),
+            tuckHoldVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/tuckHoldVoltage",
+                IntakeConstants.tuckHoldVoltage),
+            extendVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/extendVoltage",
+                IntakeConstants.extendVoltage),
+            runMotorVoltage = new LoggedNetworkNumber(IntakeConstants.dashboardPath + "/runMotorVoltage",
+                IntakeConstants.runMotorVoltage),
 
-                ln_pivotPositionTolerance = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/pivotPositionTolerance",
-                        IntakeConstants.pivotPositionTolerance),
-                ln_extendedEncoderPosition = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/extendedEncoderPosition",
-                        IntakeConstants.extendedEncoderPosition),
-                ln_tuckedEncoderPosition = new LoggedNetworkNumber(
-                        IntakeConstants.dashboardPath + "/tuckedEncoderPosition",
-                        IntakeConstants.tuckedEncoderPosition);
+        ln_pivotPositionTolerance = new LoggedNetworkNumber(
+            IntakeConstants.dashboardPath + "/pivotPositionTolerance",
+            IntakeConstants.pivotPositionTolerance),
+            ln_extendedEncoderPosition = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/extendedEncoderPosition",
+                IntakeConstants.extendedEncoderPosition),
+            ln_tuckedEncoderPosition = new LoggedNetworkNumber(
+                IntakeConstants.dashboardPath + "/tuckedEncoderPosition",
+                IntakeConstants.tuckedEncoderPosition);
 
         public void updateDashboardConfig() {
-
             if (!tuningEnabled.get())
                 return;
 
@@ -359,13 +360,13 @@ public class Intake extends SubsystemBase {
             IntakeConstants.pivotPositionTolerance = ln_pivotPositionTolerance.get();
             IntakeConstants.extendedEncoderPosition = ln_extendedEncoderPosition.get();
             IntakeConstants.tuckedEncoderPosition = ln_tuckedEncoderPosition.get();
-
             if (changed) {
+
                 // Applying the configs can be blocking/flash operation, so only do it when
                 // necessary
                 pivotMotorConfig = pivotMotorConfig
-                        .withSlot0(slot)
-                        .withMotionMagic(mm);
+                    .withSlot0(slot)
+                    .withMotionMagic(mm);
                 pivotMotor.getConfigurator().apply(pivotMotorConfig);
             }
         }

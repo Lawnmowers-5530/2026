@@ -15,6 +15,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -66,7 +67,7 @@ public class RobotContainer {
         NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
         new EventTrigger("feed2s").onTrue(
                 new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
-        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand().alongWith(this.subsystems.intake.runIntakeCommand()));
+        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand().andThen(this.subsystems.intake.runIntakeCommand()));
        
     
         // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
@@ -89,7 +90,8 @@ public class RobotContainer {
 
         // Controller.getInstance().getSecondaryController().y().toggleOnTrue(this.subsystems.intake.manualPivotControl(()
         // -> {return Controller.getInstance().getSecondaryController().getLeftY();}));
-       
+
+        DriverStation.silenceJoystickConnectionWarning(true);
     }
 
     public Command getAutonomousCommand() {

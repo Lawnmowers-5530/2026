@@ -5,10 +5,12 @@ import static edu.wpi.first.units.Units.*;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.*;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.container.Controller;
 import org.littletonrobotics.junction.AutoLog;
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -21,10 +23,6 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
-import edu.wpi.first.math.MatBuilder;
-import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.Nat;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -129,14 +127,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     null,
                     this));
 
-    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/Field")
-    Field2d field = new Field2d();
+    //@AutoLogOutput(key = SwerveConstants.dashboardPath + "/Field")
+    //Field2d field = new Field2d();
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCamBack);
-    private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
+    //private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
 
-    Vision[] cameras = {visionBack, visionLeft};
+
+    Vision[] cameras = {visionBack};
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
     /* Keep track if we've ever applied the operator perspective before or not */
@@ -164,6 +163,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         configureAutoBuilder();
         super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 0.1, 0.1, 0.1));
         CommandScheduler.getInstance().registerSubsystem(this);
+        initCommon();
     }
 
     /**
@@ -192,6 +192,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         configureAutoBuilder();
         super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
         CommandScheduler.getInstance().registerSubsystem(this);
+        initCommon();
     }
 
     /**
@@ -235,6 +236,18 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         configureAutoBuilder();
         super.setStateStdDevs(MatBuilder.fill(Nat.N3(), Nat.N1(), 1, 1, 1));
         CommandScheduler.getInstance().registerSubsystem(this);
+        initCommon();
+    }
+
+    Notifier visionThread;
+
+    private void initCommon() {
+        this.visionThread = new Notifier(() -> {
+            for (var camera : cameras) {
+                camera.periodic();
+            }
+        });
+        visionThread.startPeriodic(Hertz.of(125));
     }
 
     /**
@@ -343,9 +356,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
-    Vector<N2> robotJerk;
-    Vector<N2> commandedJerk;
-    Vector<N2> accelerationVector;
+    Vector<N2> robotJerk = VecBuilder.fill(0, 0); // assume that robot is initially not moving and not accelerating so logging doesnt crash
+    Vector<N2> commandedJerk = VecBuilder.fill(0, 0);
+    Vector<N2> accelerationVector = VecBuilder.fill(0, 0);
 
     @Override
     public void periodic() {
@@ -360,8 +373,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * This ensures driving behavior doesn't change until an explicit disable event
          * occurs during testing.
          */
-
-        field.setRobotPose(getState().Pose);
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(
@@ -492,4 +503,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return ChassisSpeeds.fromRobotRelativeSpeeds(this.getState().Speeds, this.getState().Pose.getRotation());
     }
 
+    @AutoLogOutput(key = SwerveConstants.dashboardPath + "robotPose")
+    public Pose2d getRobotPose() {
+        return this.getState().Pose;
+    }
 }
