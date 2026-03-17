@@ -13,19 +13,19 @@ public class IntakeConstants {
 
     // Grouped PID / motion constants
     public double
-        pivotKS = 0.25,
+        pivotKS = 0.5,
         pivotKV = 0,
         pivotKA = 0,
-        pivotKP = 1,
+        pivotKP = 12,
         pivotKI = 0,
         pivotKD = 0,
         pivotGravityArmPositionOffset = 0.1,
-        pivotKG = 0.6,
-        pivotMotionMagicCruiseVelocity = 64,
-        pivotMotionMagicAcceleration = 128,
-        pivotMotionMagicJerk = 4000,
-        lowerJigglePos = 8,
-        upperJigglePos = 14;
+        pivotKG = 0,
+        pivotMotionMagicCruiseVelocity = 20,
+        pivotMotionMagicAcceleration = 0.5,
+        pivotMotionMagicJerk = 0.5,
+        lowerJigglePos = 0,
+        upperJigglePos = 0;
 
 
     public double
@@ -49,7 +49,7 @@ public class IntakeConstants {
         runMotorVoltage = 6;
 
     public double
-        pivotPositionTolerance = 1,
-        extendedEncoderPosition = 16,
+        pivotPositionTolerance = 0.001,
+        extendedEncoderPosition = 17.21582,
         tuckedEncoderPosition = 0;
 }

@@ -62,7 +62,7 @@ public class Vision extends SubsystemBase {
         this.estConsumer = estConsumer;
         cameras = new PhotonCamera[]{new PhotonCamera(cameraName)};
         photonEstimator = new PhotonPoseEstimator(kTagLayout, cameraTransform);
-        CommandScheduler.getInstance().registerSubsystem(this);
+        //CommandScheduler.getInstance().registerSubsystem(this);
     }
 
     public void periodic() {
@@ -83,7 +83,7 @@ public class Vision extends SubsystemBase {
                         est -> {
                             // Change our trust in the measurement based on the tags we can see
                             var estStdDevs = getEstimationStdDevs();
-                            SmartDashboard.putString("estStdDevs", estStdDevs.toString());
+                            //SmartDashboard.putString("estStdDevs", estStdDevs.toString());
                             estConsumer.accept(est, estStdDevs); //estStdDevs);
                         });
             }
