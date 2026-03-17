@@ -132,6 +132,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCamBack);
+    private Vision visionRight = new Vision(this::addVisionMeasurement, "right", VisionConstants.kRobotToCamRight);
     //private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
 
 
