@@ -5,6 +5,8 @@ import com.pathplanner.lib.util.FlippingUtil;
 
 import static edu.wpi.first.units.Units.Meters;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.MathUtil;
@@ -124,6 +126,8 @@ public final class Bindings {
         //                -2)
         //                .rotateBy(rot.times(-1)); // Add in robot rotation
         //    });
+     
+
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
                 if (DriverStation.getAlliance().isEmpty()) {
@@ -147,7 +151,9 @@ public final class Bindings {
                 double velo = TurretConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
                 TurretState state = new TurretState(yaw, pitchAngle, velo);
                 SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
+                
                 return state.rotateBy(pose.getRotation().times(-1));
+       
             });
         }
 

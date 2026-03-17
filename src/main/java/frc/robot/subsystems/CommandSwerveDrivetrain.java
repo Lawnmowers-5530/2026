@@ -46,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Robot;
 import frc.robot.constants.SwerveConstants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.constants.VisionConstants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.vision.Vision;
@@ -129,7 +130,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     null,
                     this));
 
-    @AutoLogOutput(key = SwerveConstants.dashboardPath + "/Field")
+    //@AutoLogOutput(key = SwerveConstants.dashboardPath + "/Field")
     Field2d field = new Field2d();
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
@@ -362,6 +363,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          */
 
         field.setRobotPose(getState().Pose);
+        
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(

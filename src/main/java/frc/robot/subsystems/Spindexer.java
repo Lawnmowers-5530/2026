@@ -4,6 +4,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
@@ -40,6 +41,15 @@ public class Spindexer extends SubsystemBase {
     @Override
     public void periodic() {
         tunables.updateDashboardConfig();
+    }
+
+    public Command smartDashboardSpindexerCommand(String kickerSpeedKey, String spindexerSpeedKey) {
+        SmartDashboard.putNumber(kickerSpeedKey, 0);
+        SmartDashboard.putNumber(spindexerSpeedKey, 0);
+        return Commands.run(()->{
+            this.spindexer.setControl(new VoltageOut(SmartDashboard.getNumber(spindexerSpeedKey, 0)));
+            this.kicker.setControl(new VoltageOut(SmartDashboard.getNumber(kickerSpeedKey, 0)));
+        }, this);
     }
 
     public void spin() {

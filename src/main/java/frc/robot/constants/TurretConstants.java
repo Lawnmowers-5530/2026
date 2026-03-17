@@ -58,12 +58,13 @@ public class TurretConstants { // TODO: fill in constants
     // Separate PID/motion constants for each axis and flywheel (mutable for tuning)
     // Yaw
     public double
-        yaw_kS = 0.4,
-        yaw_kV = 0.12,
-        yaw_kA = 0.01,
-        yaw_kP = 4.8,
+    
+        yaw_kS = 1.0,
+        yaw_kV = 0.017991,
+        yaw_kA = 0.011841,
+        yaw_kP = 2.0,
         yaw_kI = 0.0,
-        yaw_kD = 0.1,
+        yaw_kD = 0.0,
         yawMotionMagicCruiseVelocity = 16,
         yawMotionMagicAcceleration = 40,
         yawMotionMagicJerk = 2000;
@@ -82,10 +83,10 @@ public class TurretConstants { // TODO: fill in constants
 
     // Flywheel
     public double
-        flywheel_kS = 0.0,
-        flywheel_kV = 0.0,
-        flywheel_kA = 0.0,
-        flywheel_kP = 0.5,
+        flywheel_kS = 0.34,
+        flywheel_kV = 0.12379,
+        flywheel_kA = 0.011841,
+        flywheel_kP = 0.19033,
         flywheel_kI = 0.0,
         flywheel_kD = 0.0;
 
@@ -117,8 +118,8 @@ public class TurretConstants { // TODO: fill in constants
     }
 
     static {
-        distToSpinrate.put(1.524, 42.0);
-        distToSpinrate.put(2.286, 46.0);
+        distToSpinrate.put(1.5367, 50.0);
+        distToSpinrate.put(2.286, 57.0);
         distToSpinrate.put(3.048, 50.0);
         distToSpinrate.put(3.81, 54.0);
         distToSpinrate.put(4.972, 59.0);
@@ -126,8 +127,8 @@ public class TurretConstants { // TODO: fill in constants
     }
 
     static {
-        launchHoodAngleMap.put(1.34, Rotation2d.fromDegrees(90 - 19.0));
-        launchHoodAngleMap.put(1.78, Rotation2d.fromDegrees(90 - 19.0));
+        launchHoodAngleMap.put(1.5367, Rotation2d.fromDegrees(70));
+        launchHoodAngleMap.put(2.286, Rotation2d.fromDegrees(68));
         launchHoodAngleMap.put(2.17, Rotation2d.fromDegrees(90 - 24.0));
         launchHoodAngleMap.put(2.81, Rotation2d.fromDegrees(90 - 27.0));
         launchHoodAngleMap.put(3.82, Rotation2d.fromDegrees(90 - 29.0));

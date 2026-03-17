@@ -6,6 +6,8 @@ package frc.robot.container;
 
 import java.util.function.Supplier;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.events.EventTrigger;
@@ -25,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.lib.BuildMetadata;
 import frc.robot.Telemetry;
 import frc.robot.constants.SwerveConstants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
@@ -46,6 +49,8 @@ public class RobotContainer {
     boolean _programmingDashboard = true;
     private double pitchSp;
 
+    
+
     public RobotContainer() {
         this.subsystems = new Subsystems();
 
@@ -59,14 +64,14 @@ public class RobotContainer {
 
         this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
         this.subsystems.turret.setDefaultCommand(this.subsystems.turret.smartDashboardTurretCommand("Turret Pitch", "Turret Speed", "Turret Yaw"));
-
+        this.subsystems.spindexer.setDefaultCommand(this.subsystems.spindexer.smartDashboardSpindexerCommand("Kicker Volts", "Spindexer Volts"));
         autoChooser = AutoBuilder.buildAutoChooser("singleShot");
         SmartDashboard.putData("autoChooser", autoChooser);
 
         NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
         new EventTrigger("feed2s").onTrue(
                 new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
-        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand().alongWith(this.subsystems.intake.runIntakeCommand()));
+        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand().andThen(this.subsystems.intake.runIntakeCommand()));
        
     
         // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
@@ -81,6 +86,8 @@ public class RobotContainer {
         Controller.getInstance().getSecondaryController().b().onTrue(this.subsystems.intake.runIntakeCommand());
         Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.stopIntakeCommand());
 
+
+       
         Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
                 .manualIntakeControl(Controller.getInstance().secondaryTriggerAxesSum));
         Controller.getInstance().getSwitches().x().onTrue(new InstantCommand(() -> {
@@ -104,8 +111,11 @@ public class RobotContainer {
     public void teleopInit() {
        
     }
+    @AutoLogOutput(key = TurretConstants.dashboardPath + "/Distance To Hub")
+    public double distanceToHub = 0;
 
     public void teleopPeriodic() {
+        distanceToHub = this.subsystems.drivetrain.getState().Pose.getTranslation().getDistance(TurretConstants.blueTargetPose.toTranslation2d());
         // SmartDashboard.putString("pose",
         // this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
         // SmartDashboard.putNumber("pitchSp", pitchSp);

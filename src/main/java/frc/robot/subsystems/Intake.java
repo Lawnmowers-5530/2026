@@ -10,6 +10,7 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TorqueCurrentConfigs;
+import com.ctre.phoenix6.controls.DynamicMotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.MotionMagicExpoVoltage;
 import com.ctre.phoenix6.controls.TorqueCurrentFOC;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -109,20 +110,22 @@ public class Intake extends SubsystemBase {
             pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition));
         }, this), Commands.runOnce(() -> {
             isExtended = true;
+            runMotor.setControl(new VoltageOut(-2.5));
             pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition));
         }, this)
         .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-        .andThen(applyTorqueDownward()), () -> {
+        .andThen(applyTorqueDownward())
+        .andThen(stopIntakeCommand()), () -> {
             return isExtended;
         });
     }
     public Command jiggleIntakeCommand() {
         return Commands.repeatingSequence(
-            Commands.runOnce(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.lowerJigglePos)), this), 
-            Commands.waitSeconds(2), 
-            Commands.runOnce(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.upperJigglePos)), this),
-            Commands.waitSeconds(2))
-            .finallyDo(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition)));
+            Commands.runOnce(()->pivotMotor.setControl(new VoltageOut(-4).withEnableFOC(true)), this), 
+            Commands.waitUntil(()->{return pivotMotor.getPosition().getValueAsDouble() < IntakeConstants.lowerJigglePos;}), 
+            Commands.runOnce(()->pivotMotor.setControl(new VoltageOut(2).withEnableFOC(true)), this),
+            Commands.waitUntil(()->{return pivotMotor.getPosition().getValueAsDouble() > IntakeConstants.upperJigglePos;}))
+            .finallyDo(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition)));
     }
 
     public void runIntake() {
