@@ -12,7 +12,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.events.EventTrigger;
 
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -50,8 +49,6 @@ public class RobotContainer {
     boolean _programmingDashboard = true;
     private double pitchSp;
 
-    
-
     public RobotContainer() {
         this.subsystems = new Subsystems();
 
@@ -64,34 +61,40 @@ public class RobotContainer {
         this.bindings = new Bindings(this.subsystems);
 
         this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
-        this.subsystems.turret.setDefaultCommand(this.subsystems.turret.smartDashboardTurretCommand("Turret Pitch", "Turret Speed", "Turret Yaw"));
-        this.subsystems.spindexer.setDefaultCommand(this.subsystems.spindexer.smartDashboardSpindexerCommand("Kicker Volts", "Spindexer Volts"));
+        this.subsystems.turret.setDefaultCommand(
+                this.subsystems.turret.smartDashboardTurretCommand("Turret Pitch", "Turret Speed", "Turret Yaw"));
+        this.subsystems.spindexer.setDefaultCommand(
+                this.subsystems.spindexer.smartDashboardSpindexerCommand("Kicker Volts", "Spindexer Volts"));
         autoChooser = AutoBuilder.buildAutoChooser("singleShot");
         SmartDashboard.putData("autoChooser", autoChooser);
 
         NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
-        new EventTrigger("feed2s").onTrue(
-                new ParallelDeadlineGroup(new WaitCommand(2), this.bindings.spindexer.spinKick()));
-        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand().andThen(this.subsystems.intake.runIntakeCommand()));
-       
-    
+        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand()
+                .andThen(this.subsystems.intake.runIntakeCommand()));
+        new EventTrigger("shoot3s").onTrue(
+                new ParallelDeadlineGroup(new WaitCommand(3), this.bindings.turret.smartShootingCommand()
+                        .alongWith(this.subsystems.spindexer.spinKickCommand())));
+
         // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
         // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
         Controller.getInstance().getDriveController().x().onTrue(this.bindings.drivetrain.zeroGyro());
 
-        //TODO: THis needs to 1) Slow down drivetrain, 2) figure out when to spin indexer, 3) do auto aim
-        Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.smartShootingCommand().alongWith(this.subsystems.spindexer.spinKickCommand())); 
-    
-        Controller.getInstance().getSecondaryController().rightBumper().onTrue(this.subsystems.intake.toggleIntakeExtensionCommand());
-        Controller.getInstance().getSecondaryController().leftBumper().whileTrue(this.subsystems.intake.jiggleIntakeCommand());
+        // TODO: THis needs to 1) Slow down drivetrain, 2) figure out when to spin
+        // indexer, 3) do auto aim
+        Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(
+                this.bindings.turret.smartShootingCommand().alongWith(this.subsystems.spindexer.spinKickCommand()));
+
+        Controller.getInstance().getSecondaryController().rightBumper()
+                .onTrue(this.subsystems.intake.toggleIntakeExtensionCommand());
+        Controller.getInstance().getSecondaryController().leftBumper()
+                .whileTrue(this.subsystems.intake.jiggleIntakeCommand());
         Controller.getInstance().getSecondaryController().b().onTrue(this.subsystems.intake.runIntakeCommand());
         Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.stopIntakeCommand());
-       // Controller.getInstance().getSecondaryController().a().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kForward));
-         //Controller.getInstance().getSecondaryController().x().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kForward));
-         //Controller.getInstance().getSecondaryController().b().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kReverse));
-         // Controller.getInstance().getSecondaryController().y().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kReverse));
+        // Controller.getInstance().getSecondaryController().a().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kForward));
+        // Controller.getInstance().getSecondaryController().x().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kForward));
+        // Controller.getInstance().getSecondaryController().b().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kReverse));
+        // Controller.getInstance().getSecondaryController().y().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kReverse));
 
-       
         Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
                 .manualIntakeControl(Controller.getInstance().secondaryTriggerAxesSum));
         Controller.getInstance().getSwitches().x().onTrue(new InstantCommand(() -> {
@@ -112,15 +115,17 @@ public class RobotContainer {
     public void robotInit() {
         this.subsystems.zero();
     }
- 
+
     public void teleopInit() {
-       
+
     }
+
     @AutoLogOutput(key = TurretConstants.dashboardPath + "/Distance To Hub")
     public double distanceToHub = 0;
 
     public void teleopPeriodic() {
-        distanceToHub = this.subsystems.drivetrain.getState().Pose.getTranslation().getDistance(TurretConstants.blueTargetPose.toTranslation2d());
+        distanceToHub = this.subsystems.drivetrain.getState().Pose.getTranslation()
+                .getDistance(TurretConstants.blueTargetPose.toTranslation2d());
         // SmartDashboard.putString("pose",
         // this.subsystems.drivetrain.getState().Pose.getTranslation().toString());
         // SmartDashboard.putNumber("pitchSp", pitchSp);
@@ -144,6 +149,7 @@ public class RobotContainer {
         public Spindexer spindexer;
         public CommandSwerveDrivetrain drivetrain;
         public Turret turret;
+
         public void zero() {
             this.drivetrain.resetPose(new Pose2d(16.081, 0.467, Rotation2d.k180deg));
             this.intake.zeroPivot();
