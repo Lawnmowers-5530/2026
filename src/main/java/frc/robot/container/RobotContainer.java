@@ -68,7 +68,9 @@ public class RobotContainer {
         autoChooser = AutoBuilder.buildAutoChooser("singleShot");
         SmartDashboard.putData("autoChooser", autoChooser);
 
-        NamedCommands.registerCommand("spinKick", this.bindings.spindexer.spinKick());
+        NamedCommands.registerCommand("shoot3sCommand",
+                new ParallelDeadlineGroup(new WaitCommand(3), this.bindings.turret.smartShootingCommand()
+                        .alongWith(this.subsystems.spindexer.spinKickCommand())));
         new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand()
                 .andThen(this.subsystems.intake.runIntakeCommand()));
         new EventTrigger("shoot3s").onTrue(
