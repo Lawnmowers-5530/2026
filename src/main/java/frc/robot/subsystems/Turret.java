@@ -137,9 +137,11 @@ public class Turret extends SubsystemBase {
         this.yawPositionSignal.setUpdateFrequency(1000);
         this.yawVelocitySignal.setUpdateFrequency(1000);
         this.yawVoltageSignal.setUpdateFrequency(1000);
-        //SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kp", 3.5);
-        //SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-ks", TurretConstants.yaw_kS);
-        //SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kv", TurretConstants.yaw_kV);
+        // SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kp", 3.5);
+        // SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-ks",
+        // TurretConstants.yaw_kS);
+        // SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kv",
+        // TurretConstants.yaw_kV);
         SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
                 this::setVoltage,
                 null,
@@ -159,6 +161,9 @@ public class Turret extends SubsystemBase {
     }
 
     public void setYaw(Rotation2d pos) {
+        // clamp input
+        pos = Rotation2d.fromDegrees(
+                MathUtil.clamp(pos.getDegrees(), TurretConstants.turretYawMin, TurretConstants.turretYawMax));
         // convert angle to controller position units (radians here as an example)
         Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians()))
                 .plus(TurretConstants.turretOffset);
@@ -362,7 +367,8 @@ public class Turret extends SubsystemBase {
 
         private void updateDashboardConfig() {
             // System.out.println("updating dashboard config");
-            if (!tuningEnabled.get()) return;
+            if (!tuningEnabled.get())
+                return;
             // System.out.println("passed tuning enabled check");
 
             Slot0Configs yawSlot = yawConfig.Slot0;
