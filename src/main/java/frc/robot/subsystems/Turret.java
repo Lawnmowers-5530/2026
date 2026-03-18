@@ -10,6 +10,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -17,6 +19,7 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -126,7 +129,7 @@ public class Turret extends SubsystemBase {
         this.flywheelVoltageStatusSignal.setUpdateFrequency(1000);
         this.flywheelPositionSignal.setUpdateFrequency(1000);
         this.flywheelVelocitySignal.setUpdateFrequency(1000);
-        
+
         this.yawPositionSignal = this.m_yaw.getPosition();
         this.yawVelocitySignal = this.m_yaw.getVelocity();
         this.yawVoltageSignal = this.m_yaw.getMotorVoltage();
@@ -134,9 +137,9 @@ public class Turret extends SubsystemBase {
         this.yawPositionSignal.setUpdateFrequency(1000);
         this.yawVelocitySignal.setUpdateFrequency(1000);
         this.yawVoltageSignal.setUpdateFrequency(1000);
-        SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kp", 3.5);
-                SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-ks", TurretConstants.yaw_kS);
-                        SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kv",TurretConstants.yaw_kV);
+        //SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kp", 3.5);
+        //SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-ks", TurretConstants.yaw_kS);
+        //SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kv", TurretConstants.yaw_kV);
         SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
                 this::setVoltage,
                 null,
@@ -186,18 +189,18 @@ public class Turret extends SubsystemBase {
         this.pitchControl.Position = targetPosition;
         this.m_pitch.setControl(this.pitchControl);
     }
+
     boolean flag = false;
+
     public void setFlywheelSpeed(double speed) {
-        
-        SmartDashboard.putNumber("Turret/ Real Velo", this.m_flywheel.getVelocity().getValueAsDouble() );
-      
-        SmartDashboard.putNumber("Turret/ Applied Voltage",this.m_flywheel.getMotorVoltage().getValueAsDouble());
-       if (m_flywheel.getVelocity().getValue().in(RotationsPerSecond) < speed * 0.7) {
-         m_flywheel.setControl(flywheelControl.withVelocity(speed).withSlot(1));
-         return;
-       }
-       m_flywheel.setControl(flywheelControl.withVelocity(speed).withSlot(0));
-        
+        SmartDashboard.putNumber("Turret/ Real Velo", this.m_flywheel.getVelocity().getValueAsDouble());
+        SmartDashboard.putNumber("Turret/ Applied Voltage", this.m_flywheel.getMotorVoltage().getValueAsDouble());
+        if (m_flywheel.getVelocity().getValue().in(RotationsPerSecond) < speed * 0.7) {
+            m_flywheel.setControl(flywheelControl.withVelocity(speed).withSlot(1));
+            return;
+        }
+        m_flywheel.setControl(flywheelControl.withVelocity(speed).withSlot(0));
+
     }
 
     public TurretState getTurretState() {
@@ -252,7 +255,7 @@ public class Turret extends SubsystemBase {
 
     public void periodic() {
         tunables.updateDashboardConfig();
-       
+
     }
 
     public void setVoltage(Voltage voltage) {
@@ -295,7 +298,7 @@ public class Turret extends SubsystemBase {
     private class Tunables {
         // Tuning enable
         private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(
-                TurretConstants.dashboardPath + "/tuningEnabled");
+                TurretConstants.dashboardPath + "/tuningEnabled", false);
 
         // Grouped LoggedNetworkNumber declarations for motor configs and non-motor
         // constants
@@ -358,9 +361,9 @@ public class Turret extends SubsystemBase {
                         TurretConstants.sysIdDynamicStepVoltage);
 
         private void updateDashboardConfig() {
-            //System.out.println("updating dashboard config");
-          
-            //System.out.println("passed tuning enabled check");
+            // System.out.println("updating dashboard config");
+            if (!tuningEnabled.get()) return;
+            // System.out.println("passed tuning enabled check");
 
             Slot0Configs yawSlot = yawConfig.Slot0;
             MotionMagicConfigs yawMM = yawConfig.MotionMagic;
@@ -372,15 +375,14 @@ public class Turret extends SubsystemBase {
 
             boolean changed = false;
 
-            double newYawKS = SmartDashboard.getNumber(TurretConstants.dashboardPath + "/yaw-ks", TurretConstants.yaw_kS);
-                       
+            double newYawKS = yaw_kS.get();
+
             if (yawSlot.kS != newYawKS) {
                 yawSlot.kS = newYawKS;
                 changed = true;
                 TurretConstants.yaw_kS = newYawKS;
             }
-            double newYawKV =    
-                        SmartDashboard.getNumber(TurretConstants.dashboardPath + "/yaw-kv",TurretConstants.yaw_kV);;
+            double newYawKV = yaw_kV.get();
             if (yawSlot.kV != newYawKV) {
                 yawSlot.kV = newYawKV;
                 changed = true;
@@ -392,7 +394,7 @@ public class Turret extends SubsystemBase {
                 changed = true;
                 TurretConstants.yaw_kA = newYawKA;
             }
-            double newYawKP = SmartDashboard.getNumber(TurretConstants.dashboardPath + "kp", 3.5);
+            double newYawKP = yaw_kP.get();
             if (yawSlot.kP != newYawKP) {
                 System.out.println("new yaw kp: " + newYawKP);
                 yawSlot.kP = newYawKP;

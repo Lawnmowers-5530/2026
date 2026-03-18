@@ -20,11 +20,11 @@ public class VisionConstants {
     public final String kCameraName = "main";
     // Cam mounted facing forward, half a meter forward of center, half a meter up from center.
     public final Transform3d kRobotToCamBack =
-            new Transform3d(new Translation3d(Units.inchesToMeters(-27.5 / 2), Units.inchesToMeters(27 / 2 - 8), Units.inchesToMeters(7.5)), new Rotation3d(Math.toRadians(5), Math.toRadians(45), Math.toRadians(180)));
+            new Transform3d(new Translation3d(Units.inchesToMeters(-27.5 / 2), Units.inchesToMeters(-26.5/2 + 12), Units.inchesToMeters(11)), new Rotation3d(Math.toRadians(0), Math.toRadians(15), Math.toRadians(180)));
     public final Transform3d kRobotToCamLeft = //TODO
             new Transform3d(new Translation3d(Units.inchesToMeters(27.5 / 2 - 3), Units.inchesToMeters(26.5 / 2), Units.inchesToMeters(8.5)), new Rotation3d(Math.toRadians(16.5), Math.toRadians(30), Math.toRadians(0)));
     public final Transform3d kRobotToCamRight = //TODO
-            new Transform3d(new Translation3d(Units.inchesToMeters(27.5 / 2 - 3), Units.inchesToMeters(-26.5 / 2), Units.inchesToMeters(8.5)), new Rotation3d(Math.toRadians(16.5), Math.toRadians(-30), Math.toRadians(0)));
+            new Transform3d(new Translation3d(Units.inchesToMeters(-27.5 / 2 + 3), Units.inchesToMeters(-26.5 / 2), Units.inchesToMeters(11)), new Rotation3d(Math.toRadians(0), Math.toRadians(15), Math.toRadians(-90)));
     // The layout of the AprilTags on the field
     public final AprilTagFieldLayout kTagLayout =
             AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);

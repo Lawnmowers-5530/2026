@@ -24,14 +24,14 @@ public class IntakeConstants {
         pivotMotionMagicCruiseVelocity = 20,
         pivotMotionMagicAcceleration = 0.5,
         pivotMotionMagicJerk = 0.5,
-        lowerJigglePos = 0,
-        upperJigglePos = 0;
+        lowerJigglePos = 14,
+        upperJigglePos = 7;
 
 
     public double
         runMotorAmps = 15,
         //pivotHoldDownAmps = 10,
-        pivotTorqueDownwardAmps = 10.0;
+        pivotTorqueDownwardAmps = 15.0;
 
     public double
         // New constants to remove magic numbers from Intake.java
@@ -46,7 +46,7 @@ public class IntakeConstants {
         tuckVoltage = -3.0,
         tuckHoldVoltage = -0.4,
         extendVoltage = 2.0,
-        runMotorVoltage = 6;
+        runMotorVoltage = 11.5;
 
     public double
         pivotPositionTolerance = 0.001,

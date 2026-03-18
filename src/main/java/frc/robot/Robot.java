@@ -5,6 +5,7 @@
 package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
+import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -40,13 +41,14 @@ public class Robot extends LoggedRobot {
             });
 
         if (isReal()) {
-            Logger.addDataReceiver(new WPILOGWriter());
+            //Logger.addDataReceiver(new WPILOGWriter());
             Logger.addDataReceiver(new NT4Publisher());
         } else {
             Logger.recordMetadata("HootAutoReplay", "Disabled");
         }
 
         Logger.start();
+        SignalLogger.start();
 
         m_robotContainer = new RobotContainer();
         m_robotContainer.robotInit();

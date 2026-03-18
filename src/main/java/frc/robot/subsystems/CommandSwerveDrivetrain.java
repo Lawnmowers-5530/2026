@@ -22,6 +22,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.util.FlippingUtil;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -129,7 +130,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     this));
 
     //@AutoLogOutput(key = SwerveConstants.dashboardPath + "/Field")
-    //Field2d field = new Field2d();
+    Field2d field = new Field2d();
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCamBack);
@@ -137,7 +138,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     //private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
 
 
-    Vision[] cameras = {visionBack};
+    Vision[] cameras = {visionBack, visionRight};
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
     /* Keep track if we've ever applied the operator perspective before or not */
@@ -375,6 +376,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          * This ensures driving behavior doesn't change until an explicit disable event
          * occurs during testing.
          */
+        field.setRobotPose(getState().Pose);
+        field.getObject("target").setPose(new Pose2d(FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d()), Rotation2d.kZero));
+        SmartDashboard.putData(field);
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
                 setOperatorPerspectiveForward(

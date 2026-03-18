@@ -36,7 +36,7 @@ public class TurretConstants { // TODO: fill in constants
         motorToYawRot = 8,
         motorRotToPitchDeg = 1.4 / 20.0; // 17 * 0.75;
 
-    public final Rotation2d turretOffset = Rotation2d.fromRotations(0.647).times(1.0 / 8.0);
+    public final Rotation2d turretOffset = Rotation2d.fromRotations(-1.09277).times(1.0 / 8.0);
     public final Rotation2d pitchZeroAngle = Rotation2d.fromDegrees(72);
     public double motorToFlywheelRot = 1;
 
@@ -59,12 +59,12 @@ public class TurretConstants { // TODO: fill in constants
     // Yaw
     public double
     
-        yaw_kS = 1.0,
-        yaw_kV = 0.017991,
-        yaw_kA = 0.011841,
-        yaw_kP = 2.0,
+        yaw_kS = 0.6527,
+        yaw_kV = 0.1321,
+        yaw_kA = 0.01178,
+        yaw_kP = 18,
         yaw_kI = 0.0,
-        yaw_kD = 0.0,
+        yaw_kD = 0,
         yawMotionMagicCruiseVelocity = 16,
         yawMotionMagicAcceleration = 40,
         yawMotionMagicJerk = 2000;
@@ -93,8 +93,6 @@ public class TurretConstants { // TODO: fill in constants
     public final TurretState state1 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
     public final TurretState state2 = new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(70), 7);
 
-    public final InterpolatingTreeMap<Double, Double> velocityToRPS = new InterpolatingTreeMap<>(
-            InverseInterpolator.forDouble(), Interpolator.forDouble());
     public final InterpolatingTreeMap<Double, Double> distToSpinrate = new InterpolatingTreeMap<>(
             InverseInterpolator.forDouble(), Interpolator.forDouble());
     public final InterpolatingDoubleTreeMap distToSpinratePassing = new InterpolatingDoubleTreeMap();
@@ -105,61 +103,34 @@ public class TurretConstants { // TODO: fill in constants
     public final InterpolatingTreeMap<Double, Double> distToTOF = new InterpolatingTreeMap<>(
             InverseInterpolator.forDouble(), Interpolator.forDouble());
 
-    static {
-        velocityToRPS.put(0.0, 0.0);
-        velocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(27), Rotation2d.fromDegrees(76),
-                Units.inchesToMeters(15.5)), 25.0);
-        velocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(89), Rotation2d.fromDegrees(76),
-                Units.inchesToMeters(15.5)), 40.0);
-        velocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(128), Rotation2d.fromDegrees(76),
-                Units.inchesToMeters(15.5)), 50.0);
-        velocityToRPS.put(ProjectileAimer.findv0(Units.inchesToMeters(156), Rotation2d.fromDegrees(76),
-                Units.inchesToMeters(15.5)), 55.0);
-    }
+   
 
     static {
-        distToSpinrate.put(1.5367, 50.0);
-        distToSpinrate.put(2.286, 57.0);
-        distToSpinrate.put(3.048, 50.0);
-        distToSpinrate.put(3.81, 54.0);
-        distToSpinrate.put(4.972, 59.0);
-        distToSpinrate.put(5.334, 61.5);
+       
+        addNumberToKeys(78.73*0.0254, 52, 0, 72);
+
+        addNumberToKeys(98.2*0.0254, 60.0,0, 70);
+       
+        addNumberToKeys(121.73*0.0254, 62,0, 68.5);
+
+        addNumberToKeys(143.73*0.0254, 67, 0, 68);
+
+        addNumberToKeys(158.73*0.0254, 69.5, 0, 66);
+
+        addNumberToKeys(171.23*0.0254, 72, 0, 65);
+
+        addNumberToKeys(183.23*0.0254, 74, 0, 64);
+
+        addNumberToKeys(219.23*0.0254, 82, 0, 62);
+
     }
 
-    static {
-        launchHoodAngleMap.put(1.5367, Rotation2d.fromDegrees(70));
-        launchHoodAngleMap.put(2.286, Rotation2d.fromDegrees(68));
-        launchHoodAngleMap.put(2.17, Rotation2d.fromDegrees(90 - 24.0));
-        launchHoodAngleMap.put(2.81, Rotation2d.fromDegrees(90 - 27.0));
-        launchHoodAngleMap.put(3.82, Rotation2d.fromDegrees(90 - 29.0));
-        launchHoodAngleMap.put(5.6, Rotation2d.fromDegrees(90 - 29.0));
+    static void addNumberToKeys(double distance, double rps, double tof, double rotationDegs) {
+        distToSpinrate.put(distance,rps);
+        launchHoodAngleMap.put(distance, Rotation2d.fromDegrees(rotationDegs));
+        distToTOF.put(distance, tof);
     }
 
-    static {
-        distToTOF.put(1.524, 0.9025);
-        distToTOF.put(2.286, 0.98);
-        distToTOF.put(3.81, 1.235);
-        distToTOF.put(4.572, 1.353);
-        distToTOF.put(5.334, 1.413);
-    }
+    
 
-    static {
-        distToSpinratePassing.put(1.524, 42.0);
-        distToSpinratePassing.put(2.286, 46.0);
-        distToSpinratePassing.put(3.048, 50.0);
-        distToSpinratePassing.put(3.81, 54.0);
-        distToSpinratePassing.put(4.972, 59.0);
-        distToSpinratePassing.put(5.334, 61.5);
-        distToSpinratePassing.put(10.0, 90.0);
-    }
-    static {
-        //this is some bullshit I made up but hopefully it works
-        launchHoodAngleMapPassing.put(1.34, Rotation2d.fromDegrees(90 - 19.0));
-        launchHoodAngleMapPassing.put(1.78, Rotation2d.fromDegrees(90 - 19.0));
-        launchHoodAngleMapPassing.put(2.17, Rotation2d.fromDegrees(90 - 24.0));
-        launchHoodAngleMapPassing.put(2.81, Rotation2d.fromDegrees(90 - 27.0));
-        launchHoodAngleMapPassing.put(3.82, Rotation2d.fromDegrees(90 - 29.0));
-        launchHoodAngleMapPassing.put(5.6, Rotation2d.fromDegrees(90 - 29.0));
-        launchHoodAngleMapPassing.put(10.0, Rotation2d.fromDegrees(90 - 35));
-    }
 }

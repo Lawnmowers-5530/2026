@@ -12,7 +12,7 @@ public class SpindexerConstants {
         kickerMotorPort = 27;
 
     public double
-        spindexerForwardSpeed = 4,
+        spindexerForwardSpeed = 3,
         spindexerFastSpeed = 10,
         spindexerReverseSpeed = -4,
         kickerForwardSpeed = 4,

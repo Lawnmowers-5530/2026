@@ -80,13 +80,16 @@ public class RobotContainer {
         Controller.getInstance().getDriveController().x().onTrue(this.bindings.drivetrain.zeroGyro());
 
         //TODO: THis needs to 1) Slow down drivetrain, 2) figure out when to spin indexer, 3) do auto aim
-        Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.smartShootingCommand()); 
+        Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(this.bindings.turret.smartShootingCommand().alongWith(this.subsystems.spindexer.spinKickCommand())); 
     
         Controller.getInstance().getSecondaryController().rightBumper().onTrue(this.subsystems.intake.toggleIntakeExtensionCommand());
         Controller.getInstance().getSecondaryController().leftBumper().whileTrue(this.subsystems.intake.jiggleIntakeCommand());
         Controller.getInstance().getSecondaryController().b().onTrue(this.subsystems.intake.runIntakeCommand());
         Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.stopIntakeCommand());
-
+       // Controller.getInstance().getSecondaryController().a().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kForward));
+         //Controller.getInstance().getSecondaryController().x().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kForward));
+         //Controller.getInstance().getSecondaryController().b().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kReverse));
+         // Controller.getInstance().getSecondaryController().y().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kReverse));
 
        
         Controller.getInstance().getSwitches().b().whileTrue(subsystems.intake
@@ -142,7 +145,7 @@ public class RobotContainer {
         public CommandSwerveDrivetrain drivetrain;
         public Turret turret;
         public void zero() {
-            this.drivetrain.resetPose(new Pose2d(0.482, 7.58, Rotation2d.kZero));
+            this.drivetrain.resetPose(new Pose2d(16.081, 0.467, Rotation2d.k180deg));
             this.intake.zeroPivot();
             this.turret.zeroYaw();
             this.turret.zeroPitch();

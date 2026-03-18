@@ -97,63 +97,43 @@ public final class Bindings {
             };
         }
 
-        //Command autoAim() {
-        //    Translation3d target = DriverStation.getAlliance().isPresent()
-        //            && DriverStation.getAlliance().get() == DriverStation.Alliance.Red ? LauncherConstants.redTargetPose
-        //                    : LauncherConstants.blueTargetPose;
-//
-        //    return subsystems.turret.setTurretStateCommand(() -> {
-        //        Rotation2d rot = subsystems.drivetrain.getState().Pose.getRotation();
-        //        Translation2d relTurretPos = LauncherConstants.distFromCenter.rotateBy(rot);
-        //        Rotation2d theta = relTurretPos.getAngle().plus(Rotation2d.fromDegrees(90));
-        //        double r = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond
-        //                * LauncherConstants.distFromCenter.getNorm();
-        //        ChassisSpeeds fieldRelativeSpeeds = ChassisSpeeds
-        //                .fromRobotRelativeSpeeds(subsystems.drivetrain.getState().Speeds, rot);
-        //        Vector<N2> turretVel = VecBuilder.fill(r * theta.getCos() + fieldRelativeSpeeds.vxMetersPerSecond,
-        //                r * theta.getSin() + fieldRelativeSpeeds.vyMetersPerSecond);
-        //        Vector<N2> turretPos = subsystems.drivetrain.getState().Pose.getTranslation()
-        //                .plus(LauncherConstants.distFromCenter.rotateBy(rot)).toVector()
-        //                .plus(turretVel.times(LauncherConstants.feedTime));
-        //        return ProjectileAimer.parabolicTurretState(target,
-        //                turretPos,
-        //                turretVel,
-        //                -2)
-        //                .rotateBy(rot.times(-1)); // Add in robot rotation
-        //    });
+        
      
 
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
                 if (DriverStation.getAlliance().isEmpty()) {
-                    return new TurretState(TurretConstants.turretOffset, TurretConstants.pitchZeroAngle, 0);
+                    return new TurretState(TurretConstants.turretOffset.times(-1), TurretConstants.pitchZeroAngle, 0);
                 }
                 Translation2d target = DriverStation.getAlliance().get() == Alliance.Red ? FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d()) : TurretConstants.blueTargetPose.toTranslation2d();
                 Pose2d pose = subsystems.drivetrain.getState().Pose;
                 Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
-                Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
-                Translation2d robotVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
-                double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * TurretConstants.distFromCenter.getNorm();
-                Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
-                Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw * theta.getSin());
-                double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
-                Translation2d adjustedTargetPose = target.minus((turretVelo.plus(turretVeloRot)).times(TurretConstants.distToTOF.get(dist)));
+                //Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                //Translation2d robotVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                //double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * TurretConstants.distFromCenter.getNorm();
+                //Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
+                //Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw * theta.getSin());
+                //double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
+                //Translation2d adjustedTargetPose = target.minus((turretVelo.plus(turretVeloRot)).times(TurretConstants.distToTOF.get(dist)));
 
                 //  for (int i = 0; i < 2)
 
-                Rotation2d pitchAngle = TurretConstants.launchHoodAngleMap.get(adjustedTargetPose.getDistance(turretTranslation));
-                Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
-                double velo = TurretConstants.distToSpinrate.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+                Rotation2d pitchAngle = TurretConstants.launchHoodAngleMap.get(target.getDistance(turretTranslation));
+                Rotation2d yaw = (target.minus(turretTranslation)).getAngle();
+                double velo = TurretConstants.distToSpinrate.get(target.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
                 TurretState state = new TurretState(yaw, pitchAngle, velo);
                 SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
-                
+
+           
+
                 return state.rotateBy(pose.getRotation().times(-1));
        
             });
         }
 
         Command smartShootingCommand() {
-            return Commands.either(autoAim(), autoPass(), this::inAllianceZone);
+           // return Commands.either(autoAim(), autoPass(), this::inAllianceZone);
+           return autoAim();
         }
 
         Command autoPass() {

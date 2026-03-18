@@ -102,9 +102,9 @@ public class Intake extends SubsystemBase {
             Commands.runOnce(() -> {
                     isExtended = true;
                     pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition).withEnableFOC(true));
-                    }, this),
-                //.andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-                //.andThen(this::applyTorqueDownward, this),
+                    }, this)
+                .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
+                .andThen(this::applyTorqueDownward, this),
             () -> this.isExtended
         );
     }
@@ -123,9 +123,9 @@ public class Intake extends SubsystemBase {
 
     public Command jiggleIntakeCommand() {
         return Commands.repeatingSequence(
-            Commands.runOnce(()->pivotMotor.setControl(new VoltageOut(-4).withEnableFOC(true)), this), 
+            Commands.runOnce(()->pivotMotor.setControl(new VoltageOut(-5).withEnableFOC(true)), this), 
             Commands.waitUntil(()->{return pivotMotor.getPosition().getValueAsDouble() < IntakeConstants.lowerJigglePos;}), 
-            Commands.runOnce(()->pivotMotor.setControl(new VoltageOut(2).withEnableFOC(true)), this),
+            Commands.runOnce(()->pivotMotor.setControl(new VoltageOut(4).withEnableFOC(true)), this),
             Commands.waitUntil(()->{return pivotMotor.getPosition().getValueAsDouble() > IntakeConstants.upperJigglePos;}))
             .finallyDo(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition)));
     }
