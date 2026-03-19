@@ -9,6 +9,18 @@
           "data": {
             "pathName": "Single Shot Path"
           }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 3.0
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Single Shot Path 2"
+          }
         }
       ]
     }

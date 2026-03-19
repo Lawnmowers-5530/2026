@@ -174,7 +174,7 @@ public class Intake extends SubsystemBase {
     }
 
     public void zeroPivot() {
-        this.pivotMotor.setPosition(IntakeConstants.tuckedEncoderPosition);
+        this.pivotMotor.setPosition(0);
     }
 
     public Command manualIntakeControl(Supplier<Double> runSpeed) {

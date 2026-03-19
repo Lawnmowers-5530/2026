@@ -52,5 +52,5 @@ public class IntakeConstants {
     public double
         pivotPositionTolerance = 0.001,
         extendedEncoderPosition = 18.0,
-        tuckedEncoderPosition = 0;
+        tuckedEncoderPosition = 18.0/4.0;
 }

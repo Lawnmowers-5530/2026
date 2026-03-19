@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.62953488372093,
-        "y": 4.026887298747764
+        "x": 3.63,
+        "y": 4.0
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.7960644007155633,
-        "y": 4.124239713774597
+        "x": 1.7939467587339715,
+        "y": 4.0
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.9096422182468693,
-        "y": 4.026887298747764
+        "x": 1.9,
+        "y": 4.0
       },
       "prevControl": {
-        "x": 2.2179248658318427,
-        "y": 4.043112701252236
+        "x": 2.2087093365747674,
+        "y": 4.0
       },
       "nextControl": null,
       "isLocked": false,
@@ -47,7 +47,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "feed2s",
+      "name": "shoot3s",
       "waypointRelativePos": 0.65,
       "endWaypointRelativePos": null,
       "command": null

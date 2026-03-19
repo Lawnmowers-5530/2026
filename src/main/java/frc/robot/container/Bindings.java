@@ -25,7 +25,6 @@ public final class Bindings {
 
     RobotContainer.Subsystems subsystems;
 
-
     Drivetrain drivetrain;
     Intake intake;
     Turret turret;
@@ -49,28 +48,34 @@ public final class Bindings {
             return subsystems.drivetrain.applyRequest(
                     () -> {
                         double slowModeMult;
-                        if (Controller.getInstance().slowMode.getAsBoolean()) slowModeMult = 0.5; else slowModeMult = 1;
+                        if (Controller.getInstance().slowMode.getAsBoolean())
+                            slowModeMult = 0.5;
+                        else
+                            slowModeMult = 1;
                         return drive
-                            .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.maxSpeed * slowModeMult) // Drive
-                            // forward
-                            // with
-                            // negative Y (forward)
-                            .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.maxSpeed * slowModeMult) // Drive
-                            // left
-                            // with
-                            // negative X (left)
-                            .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.maxAngularRate * slowModeMult); // Drive
+                                .withVelocityX(Controller.getInstance().driveVector.get().get(0)
+                                        * SwerveConstants.maxSpeed * slowModeMult) // Drive
+                                // forward
+                                // with
+                                // negative Y (forward)
+                                .withVelocityY(Controller.getInstance().driveVector.get().get(1)
+                                        * SwerveConstants.maxSpeed * slowModeMult) // Drive
+                                // left
+                                // with
+                                // negative X (left)
+                                .withRotationalRate(Controller.getInstance().driveRotation.get()
+                                        * SwerveConstants.maxAngularRate * slowModeMult); // Drive
                     }
-                    // counterclockwise
-                    // with
-                    // negative X (left)
+            // counterclockwise
+            // with
+            // negative X (left)
             );
         }
 
         Command zeroGyro() {
             return new InstantCommand(() -> {
                 if (DriverStation.getAlliance().isPresent()) {
-        
+
                     if (DriverStation.getAlliance().get() == DriverStation.Alliance.Red) {
                         subsystems.drivetrain.setOperatorPerspectiveForward(
                                 subsystems.drivetrain.getState().Pose.getRotation().plus(Rotation2d.k180deg));
@@ -101,43 +106,117 @@ public final class Bindings {
             };
         }
 
-        
-     
+        Command trackYawCommand() {
+            return subsystems.turret.setTurretStateCommand(() -> {
+                if (DriverStation.getAlliance().isEmpty()) {
+                    return new TurretState(TurretConstants.turretOffset.times(-1), TurretConstants.pitchZeroAngle, 0);
+                }
+                Translation2d target = DriverStation.getAlliance().get() == Alliance.Red
+                        ? FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d())
+                        : TurretConstants.blueTargetPose.toTranslation2d();
+                Pose2d pose = subsystems.drivetrain.getState().Pose;
+                Translation2d turretTranslation = pose.getTranslation()
+                        .plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
+                // Translation2d turretVelo = new
+                // Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond,
+                // subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                // Translation2d robotVelo = new
+                // Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond,
+                // subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                // double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond *
+                // TurretConstants.distFromCenter.getNorm();
+                // Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
+                // Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw *
+                // theta.getSin());
+                // double dist =
+                // target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to
+                // hub",
+                // 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
+                // Translation2d adjustedTargetPose =
+                // target.minus((turretVelo.plus(turretVeloRot)).times(TurretConstants.distToTOF.get(dist)));
+
+                // for (int i = 0; i < 2)
+                Rotation2d yaw = (target.minus(turretTranslation)).getAngle();
+                TurretState state = new TurretState(yaw, Rotation2d.fromDegrees(72), 0);
+                SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
+
+                return state.rotateBy(pose.getRotation().times(-1));
+
+            });
+        }
 
         Command autoAim() {
             return subsystems.turret.setTurretStateCommand(() -> {
                 if (DriverStation.getAlliance().isEmpty()) {
                     return new TurretState(TurretConstants.turretOffset.times(-1), TurretConstants.pitchZeroAngle, 0);
                 }
-                Translation2d target = DriverStation.getAlliance().get() == Alliance.Red ? FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d()) : TurretConstants.blueTargetPose.toTranslation2d();
+                Translation2d target = DriverStation.getAlliance().get() == Alliance.Red
+                        ? FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d())
+                        : TurretConstants.blueTargetPose.toTranslation2d();
                 Pose2d pose = subsystems.drivetrain.getState().Pose;
-                Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
-                //Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
-                //Translation2d robotVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
-                //double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond * TurretConstants.distFromCenter.getNorm();
-                //Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
-                //Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw * theta.getSin());
-                //double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
-                //Translation2d adjustedTargetPose = target.minus((turretVelo.plus(turretVeloRot)).times(TurretConstants.distToTOF.get(dist)));
+                Translation2d turretTranslation = pose.getTranslation()
+                        .plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
+                // Translation2d turretVelo = new
+                // Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond,
+                // subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                // Translation2d robotVelo = new
+                // Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond,
+                // subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                // double rw = subsystems.drivetrain.getState().Speeds.omegaRadiansPerSecond *
+                // TurretConstants.distFromCenter.getNorm();
+                // Rotation2d theta = turretTranslation.getAngle().plus(Rotation2d.kCCW_90deg);
+                // Translation2d turretVeloRot = new Translation2d(rw * theta.getCos(), rw *
+                // theta.getSin());
+                // double dist =
+                // target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to
+                // hub",
+                // 0);//pose.getTranslation().getDistance(LauncherConstants.blueTargetPose.toTranslation2d());
+                // Translation2d adjustedTargetPose =
+                // target.minus((turretVelo.plus(turretVeloRot)).times(TurretConstants.distToTOF.get(dist)));
 
-                //  for (int i = 0; i < 2)
+                // for (int i = 0; i < 2)
 
                 Rotation2d pitchAngle = TurretConstants.launchHoodAngleMap.get(target.getDistance(turretTranslation));
                 Rotation2d yaw = (target.minus(turretTranslation)).getAngle();
-                double velo = TurretConstants.distToSpinrate.get(target.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+                double velo = TurretConstants.distToSpinrate.get(target.getDistance(turretTranslation));// SmartDashboard.getNumber("set
+                                                                                                        // turret velo",
+                                                                                                        // 0);
                 TurretState state = new TurretState(yaw, pitchAngle, velo);
                 SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
 
-           
-
                 return state.rotateBy(pose.getRotation().times(-1));
-       
+
             });
         }
 
         Command smartShootingCommand() {
-           // return Commands.either(autoAim(), autoPass(), this::inAllianceZone);
-           return autoAim();
+            // return Commands.either(autoAim(), autoPass(), this::inAllianceZone);
+            return autoAim();
+        }
+
+        Command distPass() {
+            double passingDist = DriverStation.getAlliance().get() == Alliance.Red ? 15 : 1.5;
+            return subsystems.turret.setTurretStateCommand(() -> {
+                if (DriverStation.getAlliance().isEmpty()) {
+                    return new TurretState(TurretConstants.turretOffset.times(-1), TurretConstants.pitchZeroAngle, 0);
+                }
+                Translation2d target = DriverStation.getAlliance().get() == Alliance.Red
+                        ? FlippingUtil.flipFieldPosition(TurretConstants.blueTargetPose.toTranslation2d())
+                        : TurretConstants.blueTargetPose.toTranslation2d();
+                Pose2d pose = subsystems.drivetrain.getState().Pose;
+                double dist = Math.abs(pose.getX()-passingDist);
+                SmartDashboard.putNumber("passDist", dist);
+
+                Rotation2d pitchAngle = TurretConstants.launchHoodAngleMap.get(dist);
+                Rotation2d yaw = DriverStation.getAlliance().get() == Alliance.Red ? Rotation2d.kZero : Rotation2d.k180deg;
+                double velo = TurretConstants.distToSpinrate.get(dist);// SmartDashboard.getNumber("set
+                                                                                                        // turret velo",
+                                                                                                        // 0);
+                TurretState state = new TurretState(yaw, pitchAngle, velo);
+                SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
+
+                return state.rotateBy(pose.getRotation().times(-1));
+            });
         }
 
         Command autoPass() {
@@ -147,13 +226,20 @@ public final class Bindings {
                 }
                 Pose2d pose = subsystems.drivetrain.getState().Pose;
                 Translation2d target = getTargetFromCurrentPose(pose, DriverStation.getAlliance().get());
-                Translation2d turretTranslation = pose.getTranslation().plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
-                Translation2d turretVelo = new Translation2d(subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond, subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
-                double dist = target.getDistance(turretTranslation);//SmartDashboard.getNumber("set dist to hub", 0);//pose.getTranslation().getDistance(LauncherConstants.bluePassingPose.toTranslation2d());
+                Translation2d turretTranslation = pose.getTranslation()
+                        .plus(TurretConstants.distFromCenter.rotateBy(pose.getRotation()));
+                Translation2d turretVelo = new Translation2d(
+                        subsystems.drivetrain.getFieldRelativeSpeeds().vxMetersPerSecond,
+                        subsystems.drivetrain.getFieldRelativeSpeeds().vyMetersPerSecond);
+                double dist = target.getDistance(turretTranslation);// SmartDashboard.getNumber("set dist to hub",
+                                                                    // 0);//pose.getTranslation().getDistance(LauncherConstants.bluePassingPose.toTranslation2d());
                 Translation2d adjustedTargetPose = target.minus(turretVelo.times(TurretConstants.distToTOF.get(dist)));
-                Rotation2d pitchAngle = TurretConstants.launchHoodAngleMapPassing.get(adjustedTargetPose.getDistance(turretTranslation));
+                Rotation2d pitchAngle = TurretConstants.launchHoodAngleMapPassing
+                        .get(adjustedTargetPose.getDistance(turretTranslation));
                 Rotation2d yaw = (adjustedTargetPose.minus(turretTranslation)).getAngle();
-                double velo = TurretConstants.distToSpinratePassing.get(adjustedTargetPose.getDistance(turretTranslation));//SmartDashboard.getNumber("set turret velo", 0);
+                double velo = TurretConstants.distToSpinratePassing
+                        .get(adjustedTargetPose.getDistance(turretTranslation));// SmartDashboard.getNumber("set turret
+                                                                                // velo", 0);
                 TurretState state = new TurretState(yaw, pitchAngle, velo);
                 SmartDashboard.putNumber("demanded yaw", yaw.getDegrees());
                 return state.rotateBy(pose.getRotation().times(-1));
@@ -174,7 +260,8 @@ public final class Bindings {
             if (DriverStation.getAlliance().isEmpty()) {
                 return false;
             }
-            return getDrivetrainInAllianceZone(DriverStation.getAlliance().get(), subsystems.drivetrain.getState().Pose) ;
+            return getDrivetrainInAllianceZone(DriverStation.getAlliance().get(),
+                    subsystems.drivetrain.getState().Pose);
         }
 
         Command turretState1() {

@@ -63,20 +63,25 @@ public class RobotContainer {
 
         this.subsystems.drivetrain.setDefaultCommand(this.bindings.drivetrain.drive());
         this.subsystems.turret.setDefaultCommand(
-                this.subsystems.turret.smartDashboardTurretCommand("Turret Pitch", "Turret Speed", "Turret Yaw"));
+                this.bindings.turret.trackYawCommand());// this.subsystems.turret.smartDashboardTurretCommand("Turret
+                                                        // Pitch", "Turret Speed", "Turret Yaw"));
         this.subsystems.spindexer.setDefaultCommand(
                 this.subsystems.spindexer.smartDashboardSpindexerCommand("Kicker Volts", "Spindexer Volts"));
-        autoChooser = AutoBuilder.buildAutoChooser("singleShot");
-        SmartDashboard.putData("autoChooser", autoChooser);
 
         NamedCommands.registerCommand("shoot3sCommand",
                 new ParallelDeadlineGroup(new WaitCommand(3), this.bindings.turret.smartShootingCommand()
                         .alongWith(this.subsystems.spindexer.spinKickCommand())));
-        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand()
+        NamedCommands.registerCommand("debug print", new InstantCommand(() -> {
+            System.out.println("running namedcommand");
+        }));
+        new EventTrigger("Toggle And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand()
                 .andThen(this.subsystems.intake.runIntakeCommand()));
         new EventTrigger("shoot3s").onTrue(
                 new ParallelDeadlineGroup(new WaitCommand(3), this.bindings.turret.smartShootingCommand()
                         .alongWith(this.subsystems.spindexer.spinKickCommand())));
+
+        autoChooser = AutoBuilder.buildAutoChooser("singleShot");
+        SmartDashboard.putData("autoChooser", autoChooser);
 
         // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
         // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
@@ -97,6 +102,8 @@ public class RobotContainer {
                 .onTrue(this.subsystems.intake.toggleIntakeExtensionCommand());
         Controller.getInstance().getSecondaryController().leftBumper()
                 .whileTrue(this.subsystems.intake.jiggleIntakeCommand());
+        Controller.getInstance().getSecondaryController().leftTrigger(0.3).whileTrue(
+                this.bindings.turret.distPass().alongWith(this.subsystems.spindexer.spinKickCommand()));
         Controller.getInstance().getSecondaryController().b().onTrue(this.subsystems.intake.runIntakeCommand());
         Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.stopIntakeCommand());
         Controller.getInstance().getSecondaryController().x().onTrue(this.subsystems.intake.reverseIntakeCommand());
@@ -120,6 +127,11 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         // An example command will be run in autonomous
         return autoChooser.getSelected();
+    }
+
+    public void autonomousPeriodic() {
+        System.out.println(NamedCommands.hasCommand("shoot3sCommand"));
+        System.out.println(NamedCommands.hasCommand("debug print"));
     }
 
     public void robotInit() {
@@ -161,7 +173,7 @@ public class RobotContainer {
         public Turret turret;
 
         public void zero() {
-            this.drivetrain.resetPose(new Pose2d(16.081, 0.467, Rotation2d.k180deg));
+            this.drivetrain.resetPose(new Pose2d(0, 0, Rotation2d.kZero));
             this.intake.zeroPivot();
             this.turret.zeroYaw();
             this.turret.zeroPitch();
