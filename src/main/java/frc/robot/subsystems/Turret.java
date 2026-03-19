@@ -233,6 +233,11 @@ public class Turret extends SubsystemBase {
         this.m_pitch.setPosition(0);
     }
 
+    public boolean atSetpoint() {
+        return MathUtil.isNear(this.getTurretState().yaw.getDegrees(),
+                Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble()).getDegrees(), 2);
+    }
+
     public void fourRotations() {
         this.m_yaw.setPosition(0);
         this.yawControl.Position = 0.25 * TurretConstants.motorToYawRot;

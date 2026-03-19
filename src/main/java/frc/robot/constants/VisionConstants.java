@@ -18,18 +18,37 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class VisionConstants {
     public final String kCameraName = "main";
-    // Cam mounted facing forward, half a meter forward of center, half a meter up from center.
-    public final Transform3d kRobotToCamBack =
-            new Transform3d(new Translation3d(Units.inchesToMeters(-27.5 / 2), Units.inchesToMeters(-26.5/2 + 12), Units.inchesToMeters(11)), new Rotation3d(Math.toRadians(0), Math.toRadians(15), Math.toRadians(180)));
-    public final Transform3d kRobotToCamLeft = //TODO
-            new Transform3d(new Translation3d(Units.inchesToMeters(27.5 / 2 - 3), Units.inchesToMeters(26.5 / 2), Units.inchesToMeters(8.5)), new Rotation3d(Math.toRadians(16.5), Math.toRadians(30), Math.toRadians(0)));
-    public final Transform3d kRobotToCamRight = //TODO
-            new Transform3d(new Translation3d(Units.inchesToMeters(-27.5 / 2 + 3), Units.inchesToMeters(-26.5 / 2), Units.inchesToMeters(11)), new Rotation3d(Math.toRadians(0), Math.toRadians(15), Math.toRadians(-90)));
+    // Cam mounted facing forward, half a meter forward of center, half a meter up
+    // from center.
+    public final Transform3d kRobotToCamBack = new Transform3d(
+            new Translation3d(
+                    Units.inchesToMeters(-27.5 / 2),
+                    Units.inchesToMeters(-26.5 / 2 + 12),
+                    Units.inchesToMeters(10.5)),
+            new Rotation3d(
+                    Math.toRadians(0),
+                    Math.toRadians(15),
+                    Math.toRadians(180)));
+    public final Transform3d kRobotToCamLeft = // TODO
+            new Transform3d(
+                    new Translation3d(Units.inchesToMeters(27.5 / 2 - 3), Units.inchesToMeters(26.5 / 2),
+                            Units.inchesToMeters(8.5)),
+                    new Rotation3d(Math.toRadians(16.5), Math.toRadians(30), Math.toRadians(0)));
+    public final Transform3d kRobotToCamRight = // TODO
+            new Transform3d(
+                    new Translation3d(
+                            Units.inchesToMeters(-27.5 / 2 + 3),
+                            Units.inchesToMeters(-26.5 / 2 + 1.5),
+                            Units.inchesToMeters(10.5)),
+                    new Rotation3d(
+                            Math.toRadians(0),
+                            Math.toRadians(15),
+                            Math.toRadians(-90)));
     // The layout of the AprilTags on the field
-    public final AprilTagFieldLayout kTagLayout =
-            AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+    public final AprilTagFieldLayout kTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
-    // The standard deviations of our vision estimated poses, which affect correction rate
+    // The standard deviations of our vision estimated poses, which affect
+    // correction rate
     // (Fake values. Experiment and determine estimation noise on an actual robot.)
     public final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8);
     public final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);

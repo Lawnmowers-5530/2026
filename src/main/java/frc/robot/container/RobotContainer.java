@@ -31,6 +31,7 @@ import frc.robot.constants.TurretConstants;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.Turret.TurretState;
 import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.Intake;
 
@@ -80,9 +81,15 @@ public class RobotContainer {
         // Controller.getInstance().getDriveController().y().toggleOnTrue(bindings.turret.turretState1());
         // Controller.getInstance().getDriveController().a().toggleOnTrue(bindings.turret.turretState2());
         Controller.getInstance().getDriveController().x().onTrue(this.bindings.drivetrain.zeroGyro());
+        Controller.getInstance().getDriveController().rightBumper().onTrue(this.bindings.spindexer.spinKick());
 
         // TODO: THis needs to 1) Slow down drivetrain, 2) figure out when to spin
         // indexer, 3) do auto aim
+        Controller.getInstance().driverController.leftTrigger(0.3)
+                .whileTrue(this.subsystems.turret.setTurretStateCommand(
+                        () -> {
+                            return new TurretState(Rotation2d.fromDegrees(0), Rotation2d.fromDegrees(72), 50);
+                        }));
         Controller.getInstance().getDriveController().rightTrigger(0.3).whileTrue(
                 this.bindings.turret.smartShootingCommand().alongWith(this.subsystems.spindexer.spinKickCommand()));
 
@@ -92,6 +99,7 @@ public class RobotContainer {
                 .whileTrue(this.subsystems.intake.jiggleIntakeCommand());
         Controller.getInstance().getSecondaryController().b().onTrue(this.subsystems.intake.runIntakeCommand());
         Controller.getInstance().getSecondaryController().a().onTrue(this.subsystems.intake.stopIntakeCommand());
+        Controller.getInstance().getSecondaryController().x().onTrue(this.subsystems.intake.reverseIntakeCommand());
         // Controller.getInstance().getSecondaryController().a().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kForward));
         // Controller.getInstance().getSecondaryController().x().whileTrue(this.subsystems.turret.getSysIdRoutine().quasistatic(Direction.kForward));
         // Controller.getInstance().getSecondaryController().b().whileTrue(this.subsystems.turret.getSysIdRoutine().dynamic(Direction.kReverse));

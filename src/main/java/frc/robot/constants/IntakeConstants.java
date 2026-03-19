@@ -46,10 +46,11 @@ public class IntakeConstants {
         tuckVoltage = -3.0,
         tuckHoldVoltage = -0.4,
         extendVoltage = 2.0,
-        runMotorVoltage = 11.5;
+        runMotorVoltage = 12,
+        reverseMotorVoltage = -4;
 
     public double
         pivotPositionTolerance = 0.001,
-        extendedEncoderPosition = 17.21582,
+        extendedEncoderPosition = 18.0,
         tuckedEncoderPosition = 0;
 }

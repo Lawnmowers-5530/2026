@@ -102,9 +102,9 @@ public class Intake extends SubsystemBase {
             Commands.runOnce(() -> {
                     isExtended = true;
                     pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition).withEnableFOC(true));
-                    }, this)
-                .andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
-                .andThen(this::applyTorqueDownward, this),
+                    }, this),
+                //.andThen(Commands.waitUntil(this::pivotAtExtensionPosition))
+                //.andThen(this::applyTorqueDownward, this),
             () -> this.isExtended
         );
     }
@@ -134,6 +134,10 @@ public class Intake extends SubsystemBase {
         runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage));
     }
 
+    public void reverseIntake() {
+        runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage*-1));
+    }
+
     public void stopIntake() {
         runMotor.setControl(new TorqueCurrentFOC(0));
     }
@@ -142,6 +146,10 @@ public class Intake extends SubsystemBase {
         SmartDashboard.putNumber("Intake/Run Speed", 7);
         return Commands.runOnce(this::runIntake, this);
 
+    }
+
+    public Command reverseIntakeCommand() {
+        return Commands.runOnce(this::reverseIntake, this);
     }
 
     public Command stopIntakeCommand() {

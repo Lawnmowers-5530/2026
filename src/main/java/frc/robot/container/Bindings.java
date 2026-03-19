@@ -47,16 +47,20 @@ public final class Bindings {
                     .withRotationalDeadband(SwerveConstants.maxAngularRate * 0.1) // Add a 10% deadband
                     .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
             return subsystems.drivetrain.applyRequest(
-                    () -> drive
-                            .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.maxSpeed) // Drive
+                    () -> {
+                        double slowModeMult;
+                        if (Controller.getInstance().slowMode.getAsBoolean()) slowModeMult = 0.5; else slowModeMult = 1;
+                        return drive
+                            .withVelocityX(Controller.getInstance().driveVector.get().get(0) * SwerveConstants.maxSpeed * slowModeMult) // Drive
                             // forward
                             // with
                             // negative Y (forward)
-                            .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.maxSpeed) // Drive
+                            .withVelocityY(Controller.getInstance().driveVector.get().get(1) * SwerveConstants.maxSpeed * slowModeMult) // Drive
                             // left
                             // with
                             // negative X (left)
-                            .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.maxAngularRate) // Drive
+                            .withRotationalRate(Controller.getInstance().driveRotation.get() * SwerveConstants.maxAngularRate * slowModeMult); // Drive
+                    }
                     // counterclockwise
                     // with
                     // negative X (left)
