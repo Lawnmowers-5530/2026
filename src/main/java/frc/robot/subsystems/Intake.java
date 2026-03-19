@@ -21,7 +21,9 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.constants.IntakeConstants;
@@ -36,6 +38,7 @@ public class Intake extends SubsystemBase {
     private final Supplier<LinearVelocity> robotVelocity;
     private final Debouncer stallDebouncer;
     private final StatusSignal<Angle> pivotPositionSignal;
+    private final StatusSignal<AngularVelocity> runVelocitySignal;
     Tunables tunables;
     @AutoLogOutput(key = IntakeConstants.dashboardPath + "/Is Extended")
     private boolean isExtended = false;
@@ -81,6 +84,7 @@ public class Intake extends SubsystemBase {
         pivotMotor.getConfigurator().apply(pivotMotorConfig);
 
         pivotPositionSignal = pivotMotor.getPosition();
+        runVelocitySignal = runMotor.getVelocity();
 
         pivotMotor.optimizeBusUtilization();
         runMotor.optimizeBusUtilization();
@@ -130,12 +134,25 @@ public class Intake extends SubsystemBase {
             .finallyDo(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition)));
     }
 
+    private double stallingTimestamp = 0;
+
     public void runIntake() {
-        runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage));
+        boolean stalling = stallDebouncer.calculate(Math.abs(runVelocitySignal.refresh().getValueAsDouble()) < IntakeConstants.stallVelocityRpsThreshold);
+        if (stalling) {
+            stallingTimestamp = Timer.getFPGATimestamp();
+        }
+        if (stallingTimestamp != 0) {
+            runMotor.setControl(new VoltageOut(IntakeConstants.reverseMotorVoltage).withEnableFOC(true));
+            if (Timer.getFPGATimestamp() - stallingTimestamp > IntakeConstants.stallReverseTime) {
+                stallingTimestamp = 0; // reset timestamp after reverse time has elapsed
+            }
+        } else {
+            runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage).withEnableFOC(true));
+        }
     }
 
     public void reverseIntake() {
-        runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage*-1));
+        runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage*-1)); // did you mean reverseMotorVoltage?
     }
 
     public void stopIntake() {
@@ -143,9 +160,7 @@ public class Intake extends SubsystemBase {
     }
 
     public Command runIntakeCommand() {
-        SmartDashboard.putNumber("Intake/Run Speed", 7);
         return Commands.runOnce(this::runIntake, this);
-
     }
 
     public Command reverseIntakeCommand() {

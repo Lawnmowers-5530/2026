@@ -36,10 +36,11 @@ public class IntakeConstants {
     public double
         // New constants to remove magic numbers from Intake.java
         // Debounce time for stall detection (seconds)
-        stallDebounceSeconds = 0.05,
+        stallDebounceSeconds = 0.2,
         // Stall detection thresholds
-        stallCurrentAmpsThreshold = 100, // amps
-        stallVelocityRpsThreshold = 5;
+        stallCurrentAmpsThreshold = 50, // amps
+        stallVelocityRpsThreshold = 1,
+        stallReverseTime = 0.5;
 
     public double
         // Voltages used for moving/holding the pivot and running the intake
