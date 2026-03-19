@@ -83,7 +83,7 @@
     },
     {
       "waypointRelativePos": 1.4228456913827656,
-      "rotationDegrees": -89.2906354226303
+      "rotationDegrees": -89.29063542263032
     },
     {
       "waypointRelativePos": 2.8527131782945734,
@@ -94,9 +94,9 @@
     {
       "name": "Constraints Zone",
       "minWaypointRelativePos": 0,
-      "maxWaypointRelativePos": 0.48051948051948046,
+      "maxWaypointRelativePos": 0.2888888888888887,
       "constraints": {
-        "maxVelocity": 1.0,
+        "maxVelocity": 0.25,
         "maxAcceleration": 1.0,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -108,8 +108,20 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Extend And Run Intake",
+      "name": "Toggle And Run Intake",
       "waypointRelativePos": 0.0,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "shoot3s",
+      "waypointRelativePos": 0.0,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "Toggle And Run Intake",
+      "waypointRelativePos": 3.0,
       "endWaypointRelativePos": null,
       "command": null
     },
