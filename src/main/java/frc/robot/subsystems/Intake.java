@@ -89,6 +89,8 @@ public class Intake extends SubsystemBase {
         pivotMotor.optimizeBusUtilization();
         runMotor.optimizeBusUtilization();
 
+        SmartDashboard.putData("Zero intake", this.fullZeroIntakeCommand());
+
         tunables = new Tunables();
     }
 
@@ -112,15 +114,16 @@ public class Intake extends SubsystemBase {
             () -> this.isExtended
         );
     }
+    public Command extendIntakeFullyCommand() {
+        return Commands.runOnce(()->{
+            isExtended = true;
+            pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition).withEnableFOC(true));
+        }, this);
+    }
 
     public Command jiggleAndRunIntakeCommand() {
         return new ParallelCommandGroup(
-            Commands.repeatingSequence(
-                    Commands.runOnce(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.lowerJigglePos))),
-                    Commands.waitSeconds(2),
-                    Commands.runOnce(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.upperJigglePos))),
-                    Commands.waitSeconds(2))
-                .finallyDo(() -> pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.tuckedEncoderPosition))),
+            jiggleIntakeCommand(),
             new RunCommand(this::runIntake).finallyDo(this::stopIntake)
         );
     }
@@ -134,25 +137,20 @@ public class Intake extends SubsystemBase {
             .finallyDo(()->pivotMotor.setControl(new MotionMagicExpoVoltage(IntakeConstants.extendedEncoderPosition)));
     }
 
-    private double stallingTimestamp = 0;
+    public Command fullZeroIntakeCommand() {
+        return Commands.runOnce(()->{
+            pivotMotor.setControl(new MotionMagicExpoVoltage(0));
+        }, this);
+    }
+
+   
 
     public void runIntake() {
-        boolean stalling = stallDebouncer.calculate(Math.abs(runVelocitySignal.refresh().getValueAsDouble()) < IntakeConstants.stallVelocityRpsThreshold);
-        if (stalling) {
-            stallingTimestamp = Timer.getFPGATimestamp();
-        }
-        if (stallingTimestamp != 0) {
-            runMotor.setControl(new VoltageOut(IntakeConstants.reverseMotorVoltage).withEnableFOC(true));
-            if (Timer.getFPGATimestamp() - stallingTimestamp > IntakeConstants.stallReverseTime) {
-                stallingTimestamp = 0; // reset timestamp after reverse time has elapsed
-            }
-        } else {
-            runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage).withEnableFOC(true));
-        }
+        runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage).withEnableFOC(true));
     }
 
     public void reverseIntake() {
-        runMotor.setControl(new VoltageOut(IntakeConstants.runMotorVoltage*-1)); // did you mean reverseMotorVoltage?
+        runMotor.setControl(new VoltageOut(IntakeConstants.reverseMotorVoltage)); // did you mean reverseMotorVoltage?
     }
 
     public void stopIntake() {

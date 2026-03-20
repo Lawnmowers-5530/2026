@@ -157,23 +157,30 @@ public class Turret extends SubsystemBase {
 
         this.flywheelRoutine = new SysIdRoutine(flywheelConfig, flywheelMechanism);
 
+        SmartDashboard.putData("Zero turret", this.smartDashboardTurretCommand("1","2", "3"));
         tunables = new Tunables();
     }
 
     public void setYaw(Rotation2d pos) {
         // clamp input
-        pos = Rotation2d.fromDegrees(
-                MathUtil.clamp(pos.getDegrees(), TurretConstants.turretYawMin, TurretConstants.turretYawMax));
+       
         // convert angle to controller position units (radians here as an example)
         Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians()))
                 .plus(TurretConstants.turretOffset);
+         Rotation2d clampedPosition = Rotation2d.fromDegrees(
+                MathUtil.clamp(targetPosition.getDegrees(), TurretConstants.turretYawMin, TurretConstants.turretYawMax));
+        boolean canShoot =  (clampedPosition.minus(targetPosition).getDegrees() < 3);
+        SmartDashboard.putBoolean("Turret/Yaw Clamped", canShoot);
+        targetPosition = clampedPosition;
 
+
+        
         this.yawControl.Position = targetPosition.times(TurretConstants.motorToYawRot).getRotations();
         this.m_yaw.setControl(this.yawControl);
 
-        SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
+        //SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
     }
-
+    
     public Command smartDashboardTurretCommand(String pitchKey, String speedRPSKey, String yawKey) {
         SmartDashboard.putNumber(yawKey, TurretConstants.turretOffset.times(-1).getDegrees());
         SmartDashboard.putNumber(speedRPSKey, 0);
@@ -257,7 +264,7 @@ public class Turret extends SubsystemBase {
     }
 
     public Command setTurretStateCommand(Supplier<TurretState> state) {
-        SmartDashboard.putString("goalTurretState", state.get().toString());
+        //SmartDashboard.putString("goalTurretState", state.get().toString());
         return new RunCommand(() -> {
             this.setTurretState(state.get());
         }, this);

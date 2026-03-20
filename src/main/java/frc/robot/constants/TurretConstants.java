@@ -37,8 +37,8 @@ public class TurretConstants { // TODO: fill in constants
         motorRotToPitchDeg = 1.4 / 20.0; // 17 * 0.75;
 
     public final Rotation2d turretOffset = Rotation2d.fromRotations(-1.09277).times(1.0 / 8.0);
-    public final double turretYawMin = -30;
-    public final double turretYawMax = 90+40;
+    public final double turretYawMin = -79.65 + 10;
+    public final double turretYawMax = 115.2 - 10;
     public final Rotation2d pitchZeroAngle = Rotation2d.fromDegrees(72);
     public double motorToFlywheelRot = 1;
 

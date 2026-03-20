@@ -4,18 +4,22 @@
 
 package frc.robot.container;
 
+import static edu.wpi.first.units.Units.Seconds;
+
 import java.util.function.Supplier;
 
 import org.littletonrobotics.junction.AutoLogOutput;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.events.Event;
 import com.pathplanner.lib.events.EventTrigger;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -74,11 +78,16 @@ public class RobotContainer {
         NamedCommands.registerCommand("debug print", new InstantCommand(() -> {
             System.out.println("running namedcommand");
         }));
+       
         new EventTrigger("Toggle And Run Intake").onTrue(this.subsystems.intake.toggleIntakeExtensionCommand()
+                .andThen(this.subsystems.intake.runIntakeCommand()));
+        new EventTrigger("Extend And Run Intake").onTrue(this.subsystems.intake.extendIntakeFullyCommand()
                 .andThen(this.subsystems.intake.runIntakeCommand()));
         new EventTrigger("shoot3s").onTrue(
                 new ParallelDeadlineGroup(new WaitCommand(3), this.bindings.turret.smartShootingCommand()
                         .alongWith(this.subsystems.spindexer.spinKickCommand())));
+        new EventTrigger("jiggle").whileTrue(this.subsystems.intake.jiggleAndRunIntakeCommand());
+        new EventTrigger("jiggle3s").onTrue(this.subsystems.intake.jiggleAndRunIntakeCommand().withTimeout(Time.ofBaseUnits(3, Seconds)));
 
         autoChooser = AutoBuilder.buildAutoChooser("singleShot");
         SmartDashboard.putData("autoChooser", autoChooser);
@@ -130,8 +139,6 @@ public class RobotContainer {
     }
 
     public void autonomousPeriodic() {
-        System.out.println(NamedCommands.hasCommand("shoot3sCommand"));
-        System.out.println(NamedCommands.hasCommand("debug print"));
     }
 
     public void robotInit() {

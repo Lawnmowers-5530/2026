@@ -25,7 +25,7 @@ public class IntakeConstants {
         pivotMotionMagicAcceleration = 0.5,
         pivotMotionMagicJerk = 0.5,
         lowerJigglePos = 14,
-        upperJigglePos = 7;
+        upperJigglePos = 2; //higher physically, encoder rotations
 
 
     public double

@@ -134,11 +134,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Vector<N2> previousAcceleration;
     private Vector<N2> previousJoystickInput;
     private Vision visionBack = new Vision(this::addVisionMeasurement, "back", VisionConstants.kRobotToCamBack);
-    private Vision visionRight = new Vision(this::addVisionMeasurement, "right", VisionConstants.kRobotToCamRight);
+    //private Vision visionRight = new Vision(this::addVisionMeasurement, "right", VisionConstants.kRobotToCamRight);
     //private Vision visionLeft = new Vision(this::addVisionMeasurement, "left", VisionConstants.kRobotToCamLeft);
 
 
-    Vision[] cameras = {visionBack, visionRight};
+    Vision[] cameras = {visionBack, /*visionRight*/};
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
     /* Keep track if we've ever applied the operator perspective before or not */
