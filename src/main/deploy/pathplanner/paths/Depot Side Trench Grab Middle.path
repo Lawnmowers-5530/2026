@@ -86,7 +86,11 @@
       "rotationDegrees": -89.29063542263032
     },
     {
-      "waypointRelativePos": 2.8527131782945734,
+      "waypointRelativePos": 3,
+      "rotationDegrees": 0.0
+    },
+    {
+      "waypointRelativePos": 3.2437357630979498,
       "rotationDegrees": 0.0
     }
   ],
@@ -114,12 +118,6 @@
       "command": null
     },
     {
-      "name": "shoot3s",
-      "waypointRelativePos": 0.0,
-      "endWaypointRelativePos": null,
-      "command": null
-    },
-    {
       "name": "jiggle3s",
       "waypointRelativePos": 4.0,
       "endWaypointRelativePos": null,
@@ -133,7 +131,7 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 5.0,
+    "maxVelocity": 2.0,
     "maxAcceleration": 4.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
@@ -142,7 +140,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "reversed": false,
   "folder": null,
@@ -150,5 +148,5 @@
     "velocity": 0,
     "rotation": 0.0
   },
-  "useDefaultConstraints": true
+  "useDefaultConstraints": false
 }
