@@ -10,6 +10,8 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.math.filter.Debouncer.DebounceType;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -17,16 +19,275 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.constants.LauncherConstants;
+import frc.robot.constants.TurretConstants;
 
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Volts;
 
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.networktables.LoggedNetworkBoolean;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+
 public class Turret extends SubsystemBase {
+
+    // group related private fields with the same visibility modifier
+    private TalonFX m_yaw, m_pitch, m_flywheel;
+    private TalonFXConfiguration yawConfig = new TalonFXConfiguration(), pitchConfig = new TalonFXConfiguration(),
+            flywheelConfig = new TalonFXConfiguration();
+    private MotionMagicVoltage yawControl, pitchControl;
+    private VelocityVoltage flywheelControl;
+    private VoltageOut flywheelSysIdControl;
+    private StatusSignal<Angle> flywheelPositionSignal, pitchPositionSignal, yawPositionSignal;
+    private StatusSignal<AngularVelocity> flywheelVelocitySignal, yawVelocitySignal;
+    private StatusSignal<Voltage> flywheelVoltageStatusSignal, yawVoltageSignal;
+    private SysIdRoutine flywheelRoutine;
+    private Tunables tunables;
+
+    public Turret() {
+        CommandScheduler.getInstance().registerSubsystem(this);
+
+        var slot0yawConfig = yawConfig.Slot0;
+        slot0yawConfig.kS = TurretConstants.yaw_kS; // Add 0.25 V output to overcome static friction
+        slot0yawConfig.kV = TurretConstants.yaw_kV; // A velocity target of 1 rps results in 0.12 V output
+        slot0yawConfig.kA = TurretConstants.yaw_kA; // An acceleration of 1 rps/s requires 0.01 V output
+        slot0yawConfig.kP = TurretConstants.yaw_kP; // A position error of 2.5 rotations results in 12 V output
+        slot0yawConfig.kI = TurretConstants.yaw_kI; // no output for integrated error
+        slot0yawConfig.kD = TurretConstants.yaw_kD; // A velocity error of 1 rps results in 0.1 V output
+
+        var motionMagicConfigYaw = yawConfig.MotionMagic;
+        motionMagicConfigYaw.MotionMagicCruiseVelocity = TurretConstants.yawMotionMagicCruiseVelocity;
+        motionMagicConfigYaw.MotionMagicAcceleration = TurretConstants.yawMotionMagicAcceleration;
+        motionMagicConfigYaw.MotionMagicJerk = TurretConstants.yawMotionMagicJerk;
+
+        var slot0pitchConfig = pitchConfig.Slot0;
+        slot0pitchConfig.kS = TurretConstants.pitch_kS; // Add 0.25 V output to overcome static friction
+        slot0pitchConfig.kV = TurretConstants.pitch_kV; // A velocity target of 1 rps results in 0.12 V output
+        slot0pitchConfig.kA = TurretConstants.pitch_kA; // An acceleration of 1 rps/s requires 0.01 V output
+        slot0pitchConfig.kP = TurretConstants.pitch_kP;// 6; // A position error of 2.5 rotations results in 12 V output
+        slot0pitchConfig.kI = TurretConstants.pitch_kI; // no output for integrated error
+        slot0pitchConfig.kD = TurretConstants.pitch_kD; // A velocity error of 1 rps results in 0.1 V output
+
+        var motionMagicConfigpitch = pitchConfig.MotionMagic;
+        motionMagicConfigpitch.MotionMagicCruiseVelocity = TurretConstants.pitchMotionMagicCruiseVelocity;
+        motionMagicConfigpitch.MotionMagicAcceleration = TurretConstants.pitchMotionMagicAcceleration;
+        motionMagicConfigpitch.MotionMagicJerk = TurretConstants.pitchMotionMagicJerk;
+
+        var slot0flywheelConfig = flywheelConfig.Slot0;
+        slot0flywheelConfig.kS = TurretConstants.flywheel_kS; // Add 0.2 V output to overcome static friction
+        slot0flywheelConfig.kV = TurretConstants.flywheel_kV; // A velocity target of 1 rps results in 0.1 V output
+        slot0flywheelConfig.kA = TurretConstants.flywheel_kA; // An acceleration of 1 rps/s requires 0.005 V output
+        slot0flywheelConfig.kP = TurretConstants.flywheel_kP; // A position error of 2.5 rotations results in 12 V
+                                                              // output
+        slot0flywheelConfig.kI = TurretConstants.flywheel_kI; // no output for integrated error
+        slot0flywheelConfig.kD = TurretConstants.flywheel_kD; // A velocity error of 1 rps results in 0.05 V output
+
+        var slot1FlywheelConfig = flywheelConfig.Slot1;
+        slot1FlywheelConfig.kS = TurretConstants.flywheel_kS;
+        slot1FlywheelConfig.kV = TurretConstants.flywheel_kV;
+        slot1FlywheelConfig.kA = TurretConstants.flywheel_kA;
+        slot1FlywheelConfig.kP = 1;
+        slot1FlywheelConfig.kI = TurretConstants.flywheel_kI; // no output for integrated error
+        slot1FlywheelConfig.kD = TurretConstants.flywheel_kD; // A velocity error of 1 rps results in 0.05 V output
+
+        yawConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
+        this.m_yaw = new TalonFX(21, TurretConstants.canBus);
+        this.m_yaw.getConfigurator().apply(yawConfig);
+        this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
+
+        pitchConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; // TODO ensure correct direction
+
+        this.m_pitch = new TalonFX(22, TurretConstants.canBus);
+        this.m_pitch.getConfigurator().apply(pitchConfig);
+        this.pitchControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
+        this.m_pitch.setControl(pitchControl);
+
+        flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
+        this.m_flywheel = new TalonFX(23, TurretConstants.canBus);
+        this.m_flywheel.getConfigurator().apply(flywheelConfig);
+        this.flywheelControl = new VelocityVoltage(0).withEnableFOC(true);
+
+        this.m_flywheel.optimizeBusUtilization();
+        this.m_pitch.optimizeBusUtilization();
+        this.m_yaw.optimizeBusUtilization();
+
+        this.flywheelSysIdControl = new VoltageOut(0).withEnableFOC(true);
+        this.flywheelVoltageStatusSignal = this.m_flywheel.getMotorVoltage();
+        this.flywheelPositionSignal = this.m_flywheel.getPosition();
+        this.flywheelVelocitySignal = this.m_flywheel.getVelocity();
+        this.pitchPositionSignal = this.m_pitch.getPosition();
+
+        this.flywheelVoltageStatusSignal.setUpdateFrequency(1000);
+        this.flywheelPositionSignal.setUpdateFrequency(1000);
+        this.flywheelVelocitySignal.setUpdateFrequency(1000);
+
+        this.yawPositionSignal = this.m_yaw.getPosition();
+        this.yawVelocitySignal = this.m_yaw.getVelocity();
+        this.yawVoltageSignal = this.m_yaw.getMotorVoltage();
+
+        this.yawPositionSignal.setUpdateFrequency(1000);
+        this.yawVelocitySignal.setUpdateFrequency(1000);
+        this.yawVoltageSignal.setUpdateFrequency(1000);
+        // SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kp", 3.5);
+        // SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-ks",
+        // TurretConstants.yaw_kS);
+        // SmartDashboard.putNumber(TurretConstants.dashboardPath + "/yaw-kv",
+        // TurretConstants.yaw_kV);
+        SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
+                this::setVoltage,
+                null,
+                this);
+
+        SysIdRoutine.Config flywheelConfig = new SysIdRoutine.Config(
+                Volts.per(Second).of(0.5), // 1 V/s voltage ramp
+                Volts.of(2),
+                Second.of(20),
+                (state) -> {
+                    SignalLogger.writeString("flywheelState", state.toString());
+                });
+
+        this.flywheelRoutine = new SysIdRoutine(flywheelConfig, flywheelMechanism);
+
+        SmartDashboard.putData("Zero turret", this.smartDashboardTurretCommand("1","2", "3"));
+        tunables = new Tunables();
+    }
+
+    public void setYaw(Rotation2d pos) {
+        // clamp input
+       
+        // convert angle to controller position units (radians here as an example)
+        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians()))
+                .plus(TurretConstants.turretOffset);
+         Rotation2d clampedPosition = Rotation2d.fromDegrees(
+                MathUtil.clamp(targetPosition.getDegrees(), TurretConstants.turretYawMin, TurretConstants.turretYawMax));
+        boolean canShoot =  (clampedPosition.minus(targetPosition).getDegrees() < 3);
+        SmartDashboard.putBoolean("Turret/Yaw Clamped", canShoot);
+        targetPosition = clampedPosition;
+
+
+        
+        this.yawControl.Position = targetPosition.times(TurretConstants.motorToYawRot).getRotations();
+        this.m_yaw.setControl(this.yawControl);
+
+        //SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
+    }
+    
+    public Command smartDashboardTurretCommand(String pitchKey, String speedRPSKey, String yawKey) {
+        SmartDashboard.putNumber(yawKey, TurretConstants.turretOffset.times(-1).getDegrees());
+        SmartDashboard.putNumber(speedRPSKey, 0);
+        SmartDashboard.putNumber(pitchKey, 72);
+        return this.setTurretStateCommand(() -> {
+            return new TurretState(
+                    Rotation2d.fromDegrees(
+                            SmartDashboard.getNumber(yawKey, TurretConstants.turretOffset.times(-1).getDegrees())),
+                    Rotation2d.fromDegrees(SmartDashboard.getNumber(pitchKey, 72)),
+                    SmartDashboard.getNumber(speedRPSKey, 0));
+        });
+    }
+
+    public void setPitch(Rotation2d pos) {
+        pos = pos.minus(TurretConstants.pitchZeroAngle);
+        SmartDashboard.putNumber("pospreclamp", pos.getDegrees());
+        double targetPosition = pos.getDegrees() * TurretConstants.motorRotToPitchDeg;
+        this.pitchControl.Position = targetPosition;
+        this.m_pitch.setControl(this.pitchControl);
+    }
+
+    boolean flag = false;
+
+    public void setFlywheelSpeed(double speed) {
+        SmartDashboard.putNumber("Turret/ Real Velo", this.m_flywheel.getVelocity().getValueAsDouble());
+        SmartDashboard.putNumber("Turret/ Applied Voltage", this.m_flywheel.getMotorVoltage().getValueAsDouble());
+        if (m_flywheel.getVelocity().getValue().in(RotationsPerSecond) < speed * 0.7) {
+            m_flywheel.setControl(flywheelControl.withVelocity(speed).withSlot(1));
+            return;
+        }
+        m_flywheel.setControl(flywheelControl.withVelocity(speed).withSlot(0));
+
+    }
+
+    public TurretState getTurretState() {
+        return new TurretState(
+                Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / TurretConstants.motorToYawRot)
+                        .minus(TurretConstants.turretOffset),
+                Rotation2d
+                        .fromRotations(
+                                this.m_pitch.getPosition().getValueAsDouble() / TurretConstants.motorRotToPitchDeg)
+                        .plus(TurretConstants.pitchZeroAngle),
+                this.m_flywheel.getVelocity().getValueAsDouble() * TurretConstants.motorToFlywheelRot);
+    }
+
+    public void setTurretState(TurretState state) {
+        this.setYaw(state.yaw);
+        this.setPitch(state.pitch);
+        this.setFlywheelSpeed(state.flywheelSpeed);
+    }
+
+    public void zeroYaw() {
+        this.m_yaw.setPosition(0);
+    }
+
+    public void zeroPitch() {
+        this.m_pitch.setPosition(0);
+    }
+
+    public boolean atSetpoint() {
+        return MathUtil.isNear(this.getTurretState().yaw.getDegrees(),
+                Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble()).getDegrees(), 2);
+    }
+
+    public void fourRotations() {
+        this.m_yaw.setPosition(0);
+        this.yawControl.Position = 0.25 * TurretConstants.motorToYawRot;
+        this.m_yaw.setControl(this.yawControl);
+    }
+
+    public Command setFlywheelSpeedCommand(double speed) {
+        return new InstantCommand(() -> {
+            this.setFlywheelSpeed(speed);
+        }, this);
+    }
+
+    public Command setPitchCommand(Rotation2d angle) {
+        return new InstantCommand(() -> {
+            this.setPitch(angle);
+        }, this);
+    }
+
+    public Command setTurretStateCommand(Supplier<TurretState> state) {
+        //SmartDashboard.putString("goalTurretState", state.get().toString());
+        return new RunCommand(() -> {
+            this.setTurretState(state.get());
+        }, this);
+    }
+
+    public void periodic() {
+        tunables.updateDashboardConfig();
+
+    }
+
+    public void setVoltage(Voltage voltage) {
+        this.flywheelSysIdControl = this.flywheelSysIdControl.withOutput(voltage);
+        this.m_yaw.setControl(this.flywheelSysIdControl);
+    }
+
+    public SysIdRoutine getSysIdRoutine() {
+        return flywheelRoutine;
+    }
+
+    @AutoLogOutput(key = TurretConstants.dashboardPath + "/pitchPosition")
+    public double getPitchPosition() {
+        return this.pitchPositionSignal.refresh().getValueAsDouble();
+    }
 
     public static class TurretState {
         public Rotation2d yaw;
@@ -41,8 +302,8 @@ public class Turret extends SubsystemBase {
 
         @Override
         public String toString() {
-            return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)", 
-                yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
+            return String.format("TurretState(yaw=%.2f deg, pitch=%.2f deg, flywheelSpeed=%.2f)",
+                    yaw.getDegrees(), pitch.getDegrees(), flywheelSpeed);
         }
 
         public TurretState rotateBy(Rotation2d rotation) {
@@ -51,187 +312,254 @@ public class Turret extends SubsystemBase {
         }
     }
 
-    private TalonFX m_yaw;
-    private TalonFXConfiguration yawConfig = new TalonFXConfiguration();
-    private MotionMagicVoltage yawControl;
+    private class Tunables {
+        // Tuning enable
+        private final LoggedNetworkBoolean tuningEnabled = new LoggedNetworkBoolean(
+                TurretConstants.dashboardPath + "/tuningEnabled", false);
 
-    private TalonFX m_pitch;
-    private TalonFXConfiguration pitchConfig = new TalonFXConfiguration();
-    private MotionMagicVoltage pitchControl;
+        // Grouped LoggedNetworkNumber declarations for motor configs and non-motor
+        // constants
+        private final LoggedNetworkNumber yaw_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kS",
+                TurretConstants.yaw_kS),
+                yaw_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kV", TurretConstants.yaw_kV),
+                yaw_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kA", TurretConstants.yaw_kA),
+                yaw_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kP", TurretConstants.yaw_kP),
+                yaw_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kI", TurretConstants.yaw_kI),
+                yaw_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/kD", TurretConstants.yaw_kD),
+                yaw_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/cruise",
+                        TurretConstants.yawMotionMagicCruiseVelocity),
+                yaw_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/acc",
+                        TurretConstants.yawMotionMagicAcceleration),
+                yaw_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/yaw/jerk",
+                        TurretConstants.yawMotionMagicJerk),
 
-    private TalonFX m_flywheel;
-    private TalonFXConfiguration flywheelConfig = new TalonFXConfiguration();
-    private VelocityVoltage flywheelControl;
-    private VoltageOut flywheelSysIdControl;
-    private StatusSignal<Angle> flywheelPositionSignal;
-    private StatusSignal<AngularVelocity> flywheelVelocitySignal;
-    private StatusSignal<Voltage> voltageStatusSignal;
-    private SysIdRoutine flywheelRoutine;
+                pitch_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kS",
+                        TurretConstants.pitch_kS),
+                pitch_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kV",
+                        TurretConstants.pitch_kV),
+                pitch_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kA",
+                        TurretConstants.pitch_kA),
+                pitch_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kP",
+                        TurretConstants.pitch_kP),
+                pitch_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kI",
+                        TurretConstants.pitch_kI),
+                pitch_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/kD",
+                        TurretConstants.pitch_kD),
+                pitch_cruise = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/cruise",
+                        TurretConstants.pitchMotionMagicCruiseVelocity),
+                pitch_acc = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/acc",
+                        TurretConstants.pitchMotionMagicAcceleration),
+                pitch_jerk = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/pitch/jerk",
+                        TurretConstants.pitchMotionMagicJerk),
 
-    public Turret() {
-        CommandScheduler.getInstance().registerSubsystem(this);
+                fly_kS = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kS",
+                        TurretConstants.flywheel_kS),
+                fly_kV = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kV",
+                        TurretConstants.flywheel_kV),
+                fly_kA = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kA",
+                        TurretConstants.flywheel_kA),
+                fly_kP = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kP",
+                        TurretConstants.flywheel_kP),
+                fly_kI = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kI",
+                        TurretConstants.flywheel_kI),
+                fly_kD = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/flywheel/kD",
+                        TurretConstants.flywheel_kD),
 
-        var slot0yawConfig = yawConfig.Slot0;
-        slot0yawConfig.kS = 0.4; // Add 0.25 V output to overcome static friction
-        slot0yawConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
-        slot0yawConfig.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-        slot0yawConfig.kP = 4.8; // A position error of 2.5 rotations results in 12 V output
-        slot0yawConfig.kI = 0; // no output for integrated error
-        slot0yawConfig.kD = 0.1; // A velocity error of 1 rps results in 0.1 V output
+                // non-motor tunables (updated unconditionally)
+                motorToYawRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToYawRot",
+                        TurretConstants.motorToYawRot),
+                motorRotToPitchDeg = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorRotToPitchDeg",
+                        TurretConstants.motorRotToPitchDeg),
+                motorToFlywheelRot = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/motorToFlywheelRot",
+                        TurretConstants.motorToFlywheelRot),
+                sysIdRamp = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdRampRate",
+                        TurretConstants.sysIdRampRate),
+                sysIdStep = new LoggedNetworkNumber(TurretConstants.dashboardPath + "/sysIdDynamicStepVoltage",
+                        TurretConstants.sysIdDynamicStepVoltage);
 
-        var motionMagicConfigYaw = yawConfig.MotionMagic;
-        motionMagicConfigYaw.MotionMagicCruiseVelocity = 16; // Target cruise velocity of 80 rps
-        motionMagicConfigYaw.MotionMagicAcceleration = 40; // Target acceleration of 160 rps/s (0.5 seconds)
-        motionMagicConfigYaw.MotionMagicJerk = 2000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+        private void updateDashboardConfig() {
+            // System.out.println("updating dashboard config");
+            if (!tuningEnabled.get())
+                return;
+            // System.out.println("passed tuning enabled check");
 
-        var slot0pitchConfig = pitchConfig.Slot0;
-        slot0pitchConfig.kS = 0.25; // Add 0.25 V output to overcome static friction
-        slot0pitchConfig.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
-        slot0pitchConfig.kA = 0.01; // An acceleration of 1 rps/s requires 0.01 V output
-        slot0pitchConfig.kP = 6; // A position error of 2.5 rotations results in 12 V output
-        slot0pitchConfig.kI = 0; // no output for integrated error
-        slot0pitchConfig.kD = 0; // A velocity error of 1 rps results in 0.1 V output
+            Slot0Configs yawSlot = yawConfig.Slot0;
+            MotionMagicConfigs yawMM = yawConfig.MotionMagic;
 
-        var motionMagicConfigpitch = pitchConfig.MotionMagic;
-        motionMagicConfigpitch.MotionMagicCruiseVelocity = 16; // Target cruise velocity of 80 rps
-        motionMagicConfigpitch.MotionMagicAcceleration = 300; // Target acceleration of 160 rps/s (0.5 seconds)
-        motionMagicConfigpitch.MotionMagicJerk = 4000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+            Slot0Configs pitchSlot = pitchConfig.Slot0;
+            MotionMagicConfigs pitchMM = pitchConfig.MotionMagic;
 
-        var slot0flywheelConfig = flywheelConfig.Slot0;
-        slot0flywheelConfig.kS = 0; // Add 0.2 V output to overcome static friction
-        slot0flywheelConfig.kV = 0; // A velocity target of 1 rps results in 0.1 V output
-        slot0flywheelConfig.kA = 0; // An acceleration of 1 rps/s requires 0.005 V output
-        slot0flywheelConfig.kP = 0.5; // A position error of 2.5 rotations results in 12 V output
-        slot0flywheelConfig.kI = 0; // no output for integrated error
-        slot0flywheelConfig.kD = 0; // A velocity error of 1 rps results in 0.05 V output
+            Slot0Configs flySlot = flywheelConfig.Slot0;
 
-        yawConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+            boolean changed = false;
 
-        this.m_yaw = new TalonFX(21, "canivore");
-        this.m_yaw.getConfigurator().apply(yawConfig);
-        this.yawControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
-        //this.m_yaw.setControl(yawControl);
+            double newYawKS = yaw_kS.get();
 
-        pitchConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; //TODO ensure correct direction
+            if (yawSlot.kS != newYawKS) {
+                yawSlot.kS = newYawKS;
+                changed = true;
+                TurretConstants.yaw_kS = newYawKS;
+            }
+            double newYawKV = yaw_kV.get();
+            if (yawSlot.kV != newYawKV) {
+                yawSlot.kV = newYawKV;
+                changed = true;
+                TurretConstants.yaw_kV = newYawKV;
+            }
+            double newYawKA = yaw_kA.get();
+            if (yawSlot.kA != newYawKA) {
+                yawSlot.kA = newYawKA;
+                changed = true;
+                TurretConstants.yaw_kA = newYawKA;
+            }
+            double newYawKP = yaw_kP.get();
+            if (yawSlot.kP != newYawKP) {
+                System.out.println("new yaw kp: " + newYawKP);
+                yawSlot.kP = newYawKP;
+                changed = true;
+                TurretConstants.yaw_kP = newYawKP;
+            }
+            double newYawKI = yaw_kI.get();
+            if (yawSlot.kI != newYawKI) {
+                yawSlot.kI = newYawKI;
+                changed = true;
+                TurretConstants.yaw_kI = newYawKI;
+            }
+            double newYawKD = yaw_kD.get();
+            if (yawSlot.kD != newYawKD) {
+                yawSlot.kD = newYawKD;
+                changed = true;
+                TurretConstants.yaw_kD = newYawKD;
+            }
 
-        this.m_pitch = new TalonFX(22, "canivore");
-        this.m_pitch.getConfigurator().apply(pitchConfig);
-        this.pitchControl = new MotionMagicVoltage(0).withEnableFOC(true).withSlot(0);
-        this.m_pitch.setControl(pitchControl);
+            double newYawCruise = yaw_cruise.get();
+            if (yawMM.MotionMagicCruiseVelocity != newYawCruise) {
+                yawMM.MotionMagicCruiseVelocity = newYawCruise;
+                changed = true;
+                TurretConstants.yawMotionMagicCruiseVelocity = newYawCruise;
+            }
+            double newYawAcc = yaw_acc.get();
+            if (yawMM.MotionMagicAcceleration != newYawAcc) {
+                yawMM.MotionMagicAcceleration = newYawAcc;
+                changed = true;
+                TurretConstants.yawMotionMagicAcceleration = newYawAcc;
+            }
+            double newYawJerk = yaw_jerk.get();
+            if (yawMM.MotionMagicJerk != newYawJerk) {
+                yawMM.MotionMagicJerk = newYawJerk;
+                changed = true;
+                TurretConstants.yawMotionMagicJerk = newYawJerk;
+            }
 
-        flywheelConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+            double newPitchKS = pitch_kS.get();
+            if (pitchSlot.kS != newPitchKS) {
+                pitchSlot.kS = newPitchKS;
+                changed = true;
+                TurretConstants.pitch_kS = newPitchKS;
+            }
+            double newPitchKV = pitch_kV.get();
+            if (pitchSlot.kV != newPitchKV) {
+                pitchSlot.kV = newPitchKV;
+                changed = true;
+                TurretConstants.pitch_kV = newPitchKV;
+            }
+            double newPitchKA = pitch_kA.get();
+            if (pitchSlot.kA != newPitchKA) {
+                pitchSlot.kA = newPitchKA;
+                changed = true;
+                TurretConstants.pitch_kA = newPitchKA;
+            }
+            double newPitchKP = pitch_kP.get();
+            if (pitchSlot.kP != newPitchKP) {
+                pitchSlot.kP = newPitchKP;
+                changed = true;
+                TurretConstants.pitch_kP = newPitchKP;
+            }
+            double newPitchKI = pitch_kI.get();
+            if (pitchSlot.kI != newPitchKI) {
+                pitchSlot.kI = newPitchKI;
+                changed = true;
+                TurretConstants.pitch_kI = newPitchKI;
+            }
+            double newPitchKD = pitch_kD.get();
+            if (pitchSlot.kD != newPitchKD) {
+                pitchSlot.kD = newPitchKD;
+                changed = true;
+                TurretConstants.pitch_kD = newPitchKD;
+            }
 
-        this.m_flywheel = new TalonFX(23, "canivore");
-        this.m_flywheel.getConfigurator().apply(flywheelConfig);
-        this.flywheelControl = new VelocityVoltage(0);
-        this.m_flywheel.setControl(flywheelControl);
+            double newPitchCruise = pitch_cruise.get();
+            if (pitchMM.MotionMagicCruiseVelocity != newPitchCruise) {
+                pitchMM.MotionMagicCruiseVelocity = newPitchCruise;
+                changed = true;
+                TurretConstants.pitchMotionMagicCruiseVelocity = newPitchCruise;
+            }
+            double newPitchAcc = pitch_acc.get();
+            if (pitchMM.MotionMagicAcceleration != newPitchAcc) {
+                pitchMM.MotionMagicAcceleration = newPitchAcc;
+                changed = true;
+                TurretConstants.pitchMotionMagicAcceleration = newPitchAcc;
+            }
+            double newPitchJerk = pitch_jerk.get();
+            if (pitchMM.MotionMagicJerk != newPitchJerk) {
+                pitchMM.MotionMagicJerk = newPitchJerk;
+                changed = true;
+                TurretConstants.pitchMotionMagicJerk = newPitchJerk;
+            }
 
-        this.flywheelSysIdControl = new VoltageOut(0).withEnableFOC(true);
-        this.voltageStatusSignal = this.m_flywheel.getMotorVoltage();
-        this.flywheelPositionSignal = this.m_flywheel.getPosition();
-        this.flywheelVelocitySignal = this.m_flywheel.getVelocity();
-        this.m_flywheel.optimizeBusUtilization();
-        this.voltageStatusSignal.setUpdateFrequency(1000);
-        this.flywheelPositionSignal.setUpdateFrequency(1000);
-        this.flywheelVelocitySignal.setUpdateFrequency(1000);
+            double newFlyKS = fly_kS.get();
+            if (flySlot.kS != newFlyKS) {
+                flySlot.kS = newFlyKS;
+                changed = true;
+                TurretConstants.flywheel_kS = newFlyKS;
+            }
+            double newFlyKV = fly_kV.get();
+            if (flySlot.kV != newFlyKV) {
+                flySlot.kV = newFlyKV;
+                changed = true;
+                TurretConstants.flywheel_kV = newFlyKV;
+            }
+            double newFlyKA = fly_kA.get();
+            if (flySlot.kA != newFlyKA) {
+                flySlot.kA = newFlyKA;
+                changed = true;
+                TurretConstants.flywheel_kA = newFlyKA;
+            }
+            double newFlyKP = fly_kP.get();
+            if (flySlot.kP != newFlyKP) {
+                flySlot.kP = newFlyKP;
+                changed = true;
+                TurretConstants.flywheel_kP = newFlyKP;
+            }
+            double newFlyKI = fly_kI.get();
+            if (flySlot.kI != newFlyKI) {
+                flySlot.kI = newFlyKI;
+                changed = true;
+                TurretConstants.flywheel_kI = newFlyKI;
+            }
+            double newFlyKD = fly_kD.get();
+            if (flySlot.kD != newFlyKD) {
+                flySlot.kD = newFlyKD;
+                changed = true;
+                TurretConstants.flywheel_kD = newFlyKD;
+            }
 
-        SysIdRoutine.Mechanism flywheelMechanism = new SysIdRoutine.Mechanism(
-                this::setVoltage,
-                null,
-                this
-        );
+            // non motor constants: write unconditionally
+            TurretConstants.motorToYawRot = motorToYawRot.get();
+            TurretConstants.motorRotToPitchDeg = motorRotToPitchDeg.get();
+            TurretConstants.motorToFlywheelRot = motorToFlywheelRot.get();
+            TurretConstants.sysIdRampRate = sysIdRamp.get();
+            TurretConstants.sysIdDynamicStepVoltage = sysIdStep.get();
 
-        SysIdRoutine.Config flywheelConfig = new SysIdRoutine.Config(
-                Volts.per(Second).of(1), // 1 V/s voltage ramp
-                Volts.of(7),
-                Second.of(10),
-                (state) -> {
-                    SignalLogger.writeString("flywheelState", state.toString());
-                }
-        );
-
-        this.flywheelRoutine = new SysIdRoutine(flywheelConfig, flywheelMechanism);
-    }
-
-    public void setYaw(Rotation2d pos) {
-        // convert angle to controller position units (radians here as an example)
-        Rotation2d targetPosition = Rotation2d.fromRadians(MathUtil.angleModulus(pos.getRadians())).plus(LauncherConstants.turretOffset);
-
-        this.yawControl.Position = targetPosition.times(LauncherConstants.motorToYawRot).getRotations();
-        this.m_yaw.setControl(this.yawControl);
-
-        SmartDashboard.putString("Encoder Pos", this.m_yaw.getPosition().toString());
-    }
-
-    public void setPitch(Rotation2d pos) {
-        pos = pos.minus(LauncherConstants.pitchZeroAngle);
-        SmartDashboard.putNumber("pospreclamp", pos.getDegrees());
-        double targetPosition = pos.getDegrees() * LauncherConstants.motorRotToPitchDeg;
-        this.pitchControl.Position = targetPosition;
-        this.m_pitch.setControl(this.pitchControl);
-    }
-
-    public void setFlywheelSpeed(double speed) {
-        // convert speed to controller velocity units (rps here as an example)
-        double targetVelocity = speed;//LauncherConstants.VelocityToRPS.get(speed); // adjust by gear ratio / sensor units as needed
-        if(speed == 0) {
-            targetVelocity = 0;
+            if (changed) {
+                System.out.print("Applied Configs");
+                yawConfig = yawConfig.withSlot0(yawSlot).withMotionMagic(yawMM);
+                pitchConfig = pitchConfig.withSlot0(pitchSlot).withMotionMagic(pitchMM);
+                flywheelConfig = flywheelConfig.withSlot0(flySlot);
+                m_yaw.getConfigurator().apply(yawConfig);
+                m_pitch.getConfigurator().apply(pitchConfig);
+                m_flywheel.getConfigurator().apply(flywheelConfig);
+            }
         }
-        this.flywheelControl.Velocity = targetVelocity;
-        this.m_flywheel.setControl(this.flywheelControl);
-    }
-
-    public void setTurretState(TurretState state) {
-        this.setYaw(state.yaw);
-        this.setPitch(state.pitch);
-        this.setFlywheelSpeed(state.flywheelSpeed);
-    }
-
-    public TurretState getTurretState() {
-        return new TurretState(
-            Rotation2d.fromRotations(this.m_yaw.getPosition().getValueAsDouble() / LauncherConstants.motorToYawRot).minus(LauncherConstants.turretOffset),
-            Rotation2d.fromRotations(this.m_pitch.getPosition().getValueAsDouble() / LauncherConstants.motorRotToPitchDeg).plus(LauncherConstants.pitchZeroAngle),
-            this.m_flywheel.getVelocity().getValueAsDouble() * LauncherConstants.motorToFlywheelRot
-        );
-    }
-
-    public void zeroYaw() {
-        this.m_yaw.setPosition(0);
-    }
-
-    public void zeroPitch() {
-        this.m_pitch.setPosition(0);
-    }
-
-    public void fourRotations() {
-        this.m_yaw.setPosition(0);
-        this.yawControl.Position = 0.25*LauncherConstants.motorToYawRot;
-        this.m_yaw.setControl(this.yawControl);
-    }
-
-    public Command setFlywheelSpeedCommand(double speed) {
-        return new InstantCommand(() -> {this.setFlywheelSpeed(speed);}, this);
-    }
-
-    public Command setPitchCommand(Rotation2d angle) {
-        return new InstantCommand(() -> {this.setPitch(angle);}, this);
-    }
-
-    public Command setTurretStateCommand(Supplier<TurretState> state) {
-        SmartDashboard.putString("goalTurretState", state.get().toString());
-        return new RunCommand(() -> {this.setTurretState(state.get());}, this);
-    }
-
-    public void periodic() {
-        SmartDashboard.putNumber("pitch encoder value", this.m_pitch.getPosition().getValueAsDouble());
-    }
-
-    public void setVoltage(Voltage voltage) {
-        this.flywheelSysIdControl = this.flywheelSysIdControl.withOutput(voltage);
-        this.m_flywheel.setControl(this.flywheelSysIdControl);
-    }
-
-    public SysIdRoutine getSysIdRoutine() {
-        return flywheelRoutine;
     }
 }

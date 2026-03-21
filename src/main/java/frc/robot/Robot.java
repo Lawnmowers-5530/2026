@@ -5,25 +5,51 @@
 package frc.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
+import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.container.RobotContainer;
+import org.littletonrobotics.junction.LoggedRobot;
+import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.NT4Publisher;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 
-public class Robot extends TimedRobot {
-
-    public static class RobotContainer extends frc.robot.container.RobotContainer{};
-    
-    private Command m_autonomousCommand;
+public class Robot extends LoggedRobot {
 
     private final RobotContainer m_robotContainer;
+
+    ;
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
-        .withTimestampReplay()
-        .withJoystickReplay();
-
+            .withTimestampReplay()
+            .withJoystickReplay();
+    private Command m_autonomousCommand;
     public Robot() {
+        Logger.recordMetadata("ProjectName", "5530 2026 Robot Code");
+        Logger.recordMetadata("BuildDate", BuildConstants.BUILD_DATE);
+        Logger.recordMetadata("GitSHA", BuildConstants.GIT_SHA);
+        Logger.recordMetadata("GitDate", BuildConstants.GIT_DATE);
+        Logger.recordMetadata("GitBranch", BuildConstants.GIT_BRANCH);
+        Logger.recordMetadata(
+            "GitDirty",
+            switch (BuildConstants.DIRTY) {
+                case 0 -> "All changes committed";
+                case 1 -> "Uncommitted changes";
+                default -> "Unknown";
+            });
+
+        if (isReal()) {
+            //Logger.addDataReceiver(new WPILOGWriter());
+            Logger.addDataReceiver(new NT4Publisher());
+        } else {
+            Logger.recordMetadata("HootAutoReplay", "Disabled");
+        }
+
+        Logger.start();
+        SignalLogger.start();
+
         m_robotContainer = new RobotContainer();
         m_robotContainer.robotInit();
     }
@@ -31,17 +57,20 @@ public class Robot extends TimedRobot {
     @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
-        CommandScheduler.getInstance().run(); 
+        CommandScheduler.getInstance().run();
     }
 
     @Override
-    public void disabledInit() {}
+    public void disabledInit() {
+    }
 
     @Override
-    public void disabledPeriodic() {}
+    public void disabledPeriodic() {
+    }
 
     @Override
-    public void disabledExit() {}
+    public void disabledExit() {
+    }
 
     @Override
     public void autonomousInit() {
@@ -53,10 +82,13 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void autonomousPeriodic() {}
+    public void autonomousPeriodic() {
+        m_robotContainer.autonomousPeriodic();
+    }
 
     @Override
-    public void autonomousExit() {}
+    public void autonomousExit() {
+    }
 
     @Override
     public void teleopInit() {
@@ -82,11 +114,17 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void testPeriodic() {}
+    public void testPeriodic() {
+    }
 
     @Override
-    public void testExit() {}
+    public void testExit() {
+    }
 
     @Override
-    public void simulationPeriodic() {}
+    public void simulationPeriodic() {
+    }
+
+    public static class RobotContainer extends frc.robot.container.RobotContainer {
+    }
 }

@@ -5,11 +5,14 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import frc.robot.generated.TunerConstants;
+import lombok.experimental.UtilityClass;
 
+@UtilityClass
 public class SwerveConstants {
-        public static final double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
-                                                                                        // speed
-    public static final double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
-                                                                                      // max angular velocity
-        public static final double CollisionOccurredJerkThreshold = 0.3;
+    public final String dashboardPath = "Swerve";
+    public final double maxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
+    // speed
+    public final double maxAngularRate = RotationsPerSecond.of(1.5).in(RadiansPerSecond); // 3/4 of a rotation per second
+    // max angular velocity
+    public final double collisionOccurredJerkThreshold = 0.3;
 }

@@ -1,10 +1,21 @@
 package frc.robot.constants;
 
+
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public class SpindexerConstants {
-    public static final int SPINDEXER_MOTOR_PORT = 26;
-    public static final int KICKER_MOTOR_PORT = 27;
-    public static final double spindexerForwardSpeed = 0.5;
-    public static final double spindexerReverseSpeed = -0.5;
-    public static final double kickerForwardSpeed = 0.8;
-    public static final double kickerReverseSpeed = -0.8;
+    public static final String dashboardPath = "Spindexer";
+
+    public final int
+        spindexerMotorPort = 26,
+        kickerMotorPort = 27;
+
+    public double
+        spindexerForwardSpeed = 3,
+        spindexerFastSpeed = 10,
+        spindexerReverseSpeed = -4,
+        kickerForwardSpeed = 4,
+        kickerFastSpeed = 10,
+        kickerReverseSpeed = -4;
 }
